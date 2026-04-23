@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(C:/Users/19841/anaconda3/python.exe c:/Users/19841/Desktop/我的坚果云/7035_LLM/3.chatbot/chatbot_simple.py)",
+      "Bash(\"/c/Users/19841/anaconda3/python.exe\" chatbot_simple.py \"What is machine learning?\")"
+    ]
+  }
+}

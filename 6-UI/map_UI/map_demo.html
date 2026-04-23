@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>高德地图 UI Demo</title>
+    <link rel="stylesheet" href="./map.css" />
+    <script src="./amap-env.js"></script>
+    <script>
+      (function loadAmapSdk() {
+        var key = window.AMAP_JS_API_KEY;
+        if (!key || key === "YOUR_AMAP_JS_API_KEY") {
+          window.__AMAP_DEMO_ERROR__ =
+            "未读取到高德 JS API Key。请用 serve_demo.py 启动 demo，或手动在 amap-env.js 中提供 window.AMAP_JS_API_KEY。";
+          return;
+        }
+
+        window.addEventListener("error", function (event) {
+          var status = document.getElementById("map-status");
+          if (!status) {
+            return;
+          }
+          if (String(event.message || "").toLowerCase().includes("amap")) {
+            status.textContent = "高德 SDK 报错：" + event.message;
+            status.style.background = "rgba(239, 68, 68, 0.12)";
+            status.style.color = "#991b1b";
+          }
+        });
+
+        var script = document.createElement("script");
+        script.src =
+          "https://webapi.amap.com/maps?v=2.0&key=" +
+          encodeURIComponent(key) +
+          "&plugin=AMap.Scale,AMap.ToolBar,AMap.Walking,AMap.Driving,AMap.Transfer";
+        script.async = true;
+        script.onerror = function () {
+          window.__AMAP_DEMO_ERROR__ = "高德 JS SDK 加载失败，请检查 Key、网络或域名白名单。";
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <section class="map-panel">
+        <div class="panel-header">
+          <span class="eyebrow">Amap UI Demo</span>
+          <h1 class="hero-title">独立可运行的高德地图组件</h1>
+          <p class="hero-text">
+            这页用于地图同学本地自测。地图逻辑只依赖
+            <code>window.renderTravelMap(mapPayload)</code>，不依赖后端、不依赖总 UI 页面。
+          </p>
+          <div id="map-toggles" class="map-toolbar"></div>
+          <p class="field-help">路线预览方式，仅影响地图画线，不修改后端行程时间、距离和预算。</p>
+          <div id="route-mode-controls" class="map-toolbar"></div>
+        </div>
+        <div id="map-container"></div>
+      </section>
+
+      <aside class="side-panel">
+        <h2 class="side-title">联调说明</h2>
+
+        <div class="field">
+          <label for="api-plan">首次生成接口</label>
+          <input id="api-plan" type="text" value="POST /api/plan" readonly />
+          <div class="field-help">总 UI 联调时调用后，直接把返回的 <code>data.map_payload</code> 传给组件。</div>
+        </div>
+
+        <div class="field">
+          <label for="api-refine">多轮修改接口</label>
+          <input id="api-refine" type="text" value="POST /api/refine" readonly />
+          <div class="field-help">组件本身不关心 conversation state，只消费最新的 <code>map_payload</code>。</div>
+        </div>
+
+        <div class="button-row">
+          <button id="render-all" class="action-button" type="button">渲染全部天数</button>
+          <button id="rerender" class="action-button is-secondary" type="button">重新渲染当前数据</button>
+        </div>
+
+        <div id="key-status-card" class="key-status-card">
+          <div class="key-status-title">高德 Key 状态</div>
+          <div id="key-status-body" class="key-status-line">正在检查当前页面使用的 key 来源。</div>
+        </div>
+
+        <div class="field">
+          <label for="payload-preview">示例接入代码</label>
+          <textarea id="payload-preview" readonly>
+const response = await fetch("/api/plan", { method: "POST" });
+const data = await response.json();
+window.renderTravelMap(data.map_payload);
+          </textarea>
+        </div>
+
+        <h3>路线图例</h3>
+        <div id="map-legend" class="legend-list"></div>
+
+        <h3>每日概览</h3>
+        <div id="day-list" class="day-list"></div>
+
+        <div id="map-status" class="status-box">等待地图初始化。</div>
+
+        <div class="hint-list">
+          <p>使用前请确认：</p>
+          <ul>
+            <li>这是高德前端 JS API Key，不是后端 Web 服务 Key。</li>
+            <li>如果你把 key 配在同级目录的 <code>../azure_client/.env</code>，请用 <code>python serve_demo.py</code> 启动。</li>
+            <li>坐标按文档默认视为 GCJ-02，无需前端转换。</li>
+            <li>如果真实接口返回坐标为 0 或 null，组件会自动跳过不渲染。</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <script src="./mock_map_payload.js"></script>
+    <script src="./map.js"></script>
+    <script>
+      function updateKeyStatusCard() {
+        var body = document.getElementById("key-status-body");
+        var card = document.getElementById("key-status-card");
+        if (!body || !card) {
+          return;
+        }
+
+        body.textContent = "正在读取 key 状态...";
+
+        fetch("./key-status")
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (info) {
+            var lines = [
+              '<div class="key-status-line"><strong>来源变量：</strong>' + String(info.source || "unknown") + "</div>",
+              '<div class="key-status-line"><strong>配置文件：</strong>' + String(info.env_path || "-") + "</div>",
+              '<div class="key-status-line"><strong>静态回退：</strong>' + String(info.static_env_path || "-") + "</div>",
+              '<div class="key-status-line"><strong>Key 预览：</strong>' + String(info.masked_key || "-") + "</div>",
+              '<div class="key-status-line"><strong>安全密钥：</strong>' +
+                (info.has_security_code
+                  ? String(info.security_code_source || "unknown") + " / " + String(info.masked_security_code || "***")
+                  : "未配置") +
+                "</div>"
+            ];
+
+            if (info.using_placeholder) {
+              card.style.background = "rgba(239, 68, 68, 0.08)";
+              card.style.borderColor = "rgba(239, 68, 68, 0.16)";
+              lines.push(
+                '<div class="key-status-line is-warning"><strong>状态：</strong>当前仍是占位 key，地图不会真正加载。</div>'
+              );
+            } else if (info.source === "AMAP_KEY") {
+              card.style.background = "rgba(249, 115, 22, 0.08)";
+              card.style.borderColor = "rgba(249, 115, 22, 0.16)";
+              lines.push(
+                '<div class="key-status-line is-warning"><strong>提醒：</strong>当前使用的是 AMAP_KEY。它可能是后端 Web 服务 key，不一定可用于前端 JS SDK。</div>'
+              );
+              if (!info.has_security_code) {
+                lines.push(
+                  '<div class="key-status-line is-warning"><strong>路线/底图提醒：</strong>未配置高德 JS 安全密钥 securityJsCode，JS API v2 可能无法正常加载底图或路线服务。</div>'
+                );
+              }
+            } else if (info.source === "amap-env.js") {
+              card.style.background = "rgba(15, 118, 110, 0.08)";
+              card.style.borderColor = "rgba(15, 118, 110, 0.12)";
+              lines.push(
+                '<div class="key-status-line"><strong>状态：</strong>当前使用交付包内置的 amap-env.js 配置，新电脑可直接运行 demo。</div>'
+              );
+            } else {
+              card.style.background = "rgba(15, 118, 110, 0.08)";
+              card.style.borderColor = "rgba(15, 118, 110, 0.12)";
+              lines.push(
+                '<div class="key-status-line"><strong>状态：</strong>已读取到前端 key，可继续验证地图是否真实渲染成功。</div>'
+              );
+              if (!info.has_security_code) {
+                lines.push(
+                  '<div class="key-status-line is-warning"><strong>提醒：</strong>如果底图空白或路线变直线，请在 .env 增加 AMAP_SECURITY_JSCODE。</div>'
+                );
+              }
+            }
+
+            body.innerHTML = lines.join("");
+          })
+          .catch(function () {
+            card.style.background = "rgba(239, 68, 68, 0.08)";
+            card.style.borderColor = "rgba(239, 68, 68, 0.16)";
+            body.innerHTML =
+              '<div class="key-status-line is-warning"><strong>状态：</strong>读取 ./key-status 失败。请优先用 <code>python serve_demo.py</code> 启动页面。</div>';
+          });
+      }
+
+      function bootDemo() {
+        if (window.__AMAP_DEMO_ERROR__) {
+          var status = document.getElementById("map-status");
+          status.textContent = window.__AMAP_DEMO_ERROR__;
+          status.style.background = "rgba(239, 68, 68, 0.12)";
+          status.style.color = "#991b1b";
+          return;
+        }
+
+        if (!window.AMap || !window.renderTravelMap || !window.mockMapPayload) {
+          window.setTimeout(bootDemo, 200);
+          return;
+        }
+
+        window.renderTravelMap(window.mockMapPayload, {
+          containerId: "map-container",
+          city: "上海",
+          togglesSelector: "#map-toggles",
+          modeSelector: "#route-mode-controls",
+          legendSelector: "#map-legend",
+          listSelector: "#day-list",
+          statusSelector: "#map-status"
+        });
+      }
+
+      document.getElementById("render-all").addEventListener("click", function () {
+        window.renderTravelMap(window.mockMapPayload, {
+          containerId: "map-container",
+          city: "上海",
+          focusDay: "all",
+          togglesSelector: "#map-toggles",
+          modeSelector: "#route-mode-controls",
+          legendSelector: "#map-legend",
+          listSelector: "#day-list",
+          statusSelector: "#map-status"
+        });
+      });
+
+      document.getElementById("rerender").addEventListener("click", function () {
+        window.renderTravelMap.reload({
+          containerId: "map-container",
+          city: "上海",
+          togglesSelector: "#map-toggles",
+          modeSelector: "#route-mode-controls",
+          legendSelector: "#map-legend",
+          listSelector: "#day-list",
+          statusSelector: "#map-status"
+        });
+      });
+
+      updateKeyStatusCard();
+      bootDemo();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,134 @@
+{
+  "city": "Beijing",
+  "aliases": ["beijing", "北京"],
+  "recommended_areas": [
+    {"name": "Dongcheng", "why": "best for imperial history and dense first-time highlights"},
+    {"name": "Chaoyang", "why": "good for modern museums, shopping, and dining"},
+    {"name": "Xicheng", "why": "strong cultural institutions and classic city texture"},
+    {"name": "Haidian", "why": "good for palace gardens and campus-adjacent museums"}
+  ],
+  "transport": [
+    "Keep major imperial sites and modern districts on separate days because the city is large.",
+    "Use the subway as the default backbone and budget extra time for security checks and crowding.",
+    "Avoid forcing the Great Wall into the same day as multiple central-city icons."
+  ],
+  "bad_weather_fallbacks": [
+    "Swap palace courtyards and hutong walks for museums, temples, or major indoor cultural venues.",
+    "Use shopping complexes and exhibition halls as weather buffers on heavy-rain days."
+  ],
+  "signature_foods": ["Peking duck", "zhajiangmian", "jiaozi", "instant-boiled mutton", "douzhi snacks"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["history", "culture", "landmark"],
+      "suggested_queries": ["Forbidden City", "Temple of Heaven", "Jingshan Park", "Shichahai"],
+      "pace_note": "Beijing rewards one major historic anchor plus one nearby walking neighborhood."
+    },
+    "family": {
+      "focus_tags": ["family", "museum", "park"],
+      "suggested_queries": ["Universal Beijing Resort", "Beijing Zoo", "China Science and Technology Museum", "Summer Palace"],
+      "pace_note": "Avoid overly dense historic-site stacking and keep transit simple."
+    },
+    "food": {
+      "focus_tags": ["food", "local", "market"],
+      "suggested_queries": ["Wangfujing snacks", "Niujie food", "Beijing roast duck", "hutong dining"],
+      "pace_note": "Plan meals by district and avoid long city crossings just for one reservation."
+    },
+    "theme": {
+      "focus_tags": ["history", "culture", "theme"],
+      "suggested_queries": ["National Museum of China", "Prince Gong's Mansion", "Capital Museum", "798 Art District"],
+      "pace_note": "Choose one historical or modern culture narrative rather than chasing all icons."
+    }
+  },
+  "indoor_keywords": ["museum", "mall", "temple", "science", "gallery", "indoor", "exhibition"],
+  "outdoor_keywords": ["wall", "park", "palace", "hutong", "garden", "lake", "square"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Clear sky",
+      "temp_min": 15,
+      "temp_max": 27,
+      "precipitation_probability": 15,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good window for major palace or park-based highlights."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Moderate rain",
+      "temp_min": 14,
+      "temp_max": 22,
+      "precipitation_probability": 70,
+      "outdoor_suitability": "poor",
+      "suggestions": ["Shift to museums, temples, and indoor culture venues."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Forbidden City",
+      "category": "attraction",
+      "district": "Dongcheng",
+      "lat": 39.9163,
+      "lon": 116.3972,
+      "duration_hours": 3.0,
+      "ticket_price": 60,
+      "price_level": 2,
+      "indoor_outdoor": "outdoor",
+      "tags": ["history", "landmark", "culture"],
+      "source": ["profile_seed"],
+      "address": "4 Jingshan Front Street, Dongcheng District",
+      "open_hours": "08:30-17:00",
+      "rating": 4.8,
+      "visit_reason": "The city's strongest imperial-history anchor."
+    },
+    {
+      "name": "Temple of Heaven",
+      "category": "attraction",
+      "district": "Dongcheng",
+      "lat": 39.8837,
+      "lon": 116.4120,
+      "duration_hours": 2.0,
+      "ticket_price": 34,
+      "price_level": 2,
+      "indoor_outdoor": "outdoor",
+      "tags": ["history", "park", "culture"],
+      "source": ["profile_seed"],
+      "address": "1 Tiantan East Road, Dongcheng District",
+      "open_hours": "06:00-22:00",
+      "rating": 4.7,
+      "visit_reason": "Major historic landmark with easier pacing than the palace core."
+    },
+    {
+      "name": "Jingshan Park",
+      "category": "attraction",
+      "district": "Xicheng",
+      "lat": 39.9254,
+      "lon": 116.3962,
+      "duration_hours": 1.2,
+      "ticket_price": 2,
+      "price_level": 1,
+      "indoor_outdoor": "outdoor",
+      "tags": ["view", "park", "landmark"],
+      "source": ["profile_seed"],
+      "address": "44 Jingshan West Street, Xicheng District",
+      "open_hours": "06:30-21:00",
+      "rating": 4.6,
+      "visit_reason": "Great skyline and palace-overlook anchor."
+    },
+    {
+      "name": "National Museum of China",
+      "category": "attraction",
+      "district": "Dongcheng",
+      "lat": 39.9051,
+      "lon": 116.4013,
+      "duration_hours": 2.5,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "indoor",
+      "tags": ["museum", "history", "culture"],
+      "source": ["profile_seed"],
+      "address": "16 East Chang'an Avenue",
+      "open_hours": "09:00-17:00",
+      "rating": 4.7,
+      "visit_reason": "High-value indoor history anchor for bad-weather days."
+    }
+  ]
+}

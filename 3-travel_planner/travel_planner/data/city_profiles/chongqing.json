@@ -1,0 +1,133 @@
+{
+  "city": "Chongqing",
+  "aliases": ["chongqing", "重庆"],
+  "recommended_areas": [
+    {"name": "Yuzhong", "why": "best first-time skyline, river, and old-city landmarks"},
+    {"name": "Jiangbei", "why": "strong night views and modern commercial flow"},
+    {"name": "Nan'an", "why": "good for scenic overlooks and river-facing night planning"}
+  ],
+  "transport": [
+    "Use metro and taxi strategically because vertical terrain makes walking effort feel larger.",
+    "Keep river-view points and old-city exploration in one district cluster when possible.",
+    "Night-view stops work best when you limit the day to one or two major areas."
+  ],
+  "bad_weather_fallbacks": [
+    "Swap heavy uphill walking for malls, museums, covered food streets, or indoor observation points.",
+    "Use indoor dining and transit-rich zones as rain buffers."
+  ],
+  "signature_foods": ["hotpot", "xiaomian", "suanlafen", "jianghu cuisine", "river snacks"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["view", "city walk", "local"],
+      "suggested_queries": ["Hongya Cave", "Jiefangbei", "Liziba", "Chaotianmen"],
+      "pace_note": "Chongqing rewards focused district planning because terrain and transfers add fatigue."
+    },
+    "family": {
+      "focus_tags": ["family", "park", "view"],
+      "suggested_queries": ["Chongqing Zoo", "Raffles City Chongqing", "Three Gorges Museum", "Yangtze River Cableway"],
+      "pace_note": "Keep the route low-transfer and avoid too many stairs or steep climbs."
+    },
+    "food": {
+      "focus_tags": ["food", "local", "night"],
+      "suggested_queries": ["Bayi Road food", "hotpot Chongqing", "Jiefangbei dining", "Nanbin Road night food"],
+      "pace_note": "Anchor meals in one district and build the evening around a single skyline zone."
+    },
+    "theme": {
+      "focus_tags": ["night views", "city", "local"],
+      "suggested_queries": ["Hongya Cave night", "Yangtze River Cableway", "Nanshan overlook", "mountain city lane"],
+      "pace_note": "Treat the mountain-city texture and nightscape as the core narrative."
+    }
+  },
+  "indoor_keywords": ["museum", "mall", "market", "indoor", "cave", "shopping"],
+  "outdoor_keywords": ["river", "cableway", "road", "viewpoint", "street", "park", "overlook"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Cloudy",
+      "temp_min": 20,
+      "temp_max": 28,
+      "precipitation_probability": 30,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good day for river-facing viewpoints and light city walking."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Light rain",
+      "temp_min": 19,
+      "temp_max": 24,
+      "precipitation_probability": 60,
+      "outdoor_suitability": "mixed",
+      "suggestions": ["Use indoor dining and museums to reduce steep-weather walking."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Hongya Cave",
+      "category": "attraction",
+      "district": "Yuzhong",
+      "lat": 29.5623,
+      "lon": 106.5804,
+      "duration_hours": 1.8,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["night views", "landmark", "local"],
+      "source": ["profile_seed"],
+      "address": "88 Binjiang Road, Yuzhong District",
+      "open_hours": "11:00-23:00",
+      "rating": 4.5,
+      "visit_reason": "Most iconic nightscape anchor."
+    },
+    {
+      "name": "Liziba Station",
+      "category": "attraction",
+      "district": "Yuzhong",
+      "lat": 29.5568,
+      "lon": 106.5306,
+      "duration_hours": 0.8,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "outdoor",
+      "tags": ["city", "transport_experience", "landmark"],
+      "source": ["profile_seed"],
+      "address": "Liziba, Yuzhong District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.5,
+      "visit_reason": "Strong mountain-city identity stop."
+    },
+    {
+      "name": "Jiefangbei",
+      "category": "attraction",
+      "district": "Yuzhong",
+      "lat": 29.5584,
+      "lon": 106.5771,
+      "duration_hours": 1.4,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["shopping", "food", "city walk"],
+      "source": ["profile_seed"],
+      "address": "Jiefangbei CBD, Yuzhong District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.4,
+      "visit_reason": "Best urban core anchor for food and shopping."
+    },
+    {
+      "name": "Three Gorges Museum",
+      "category": "attraction",
+      "district": "Yuzhong",
+      "lat": 29.5633,
+      "lon": 106.5510,
+      "duration_hours": 2.0,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "indoor",
+      "tags": ["museum", "history", "culture"],
+      "source": ["profile_seed"],
+      "address": "236 Renmin Road, Yuzhong District",
+      "open_hours": "09:00-17:00",
+      "rating": 4.6,
+      "visit_reason": "Best weather-safe culture anchor."
+    }
+  ]
+}

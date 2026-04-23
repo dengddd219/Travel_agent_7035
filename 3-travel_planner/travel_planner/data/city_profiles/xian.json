@@ -1,0 +1,133 @@
+{
+  "city": "Xian",
+  "aliases": ["xian", "xi'an", "西安"],
+  "recommended_areas": [
+    {"name": "Beilin / City Wall", "why": "best first-time historic cluster and walkable landmarks"},
+    {"name": "Yanta", "why": "good for museum, pagoda, and theme-based planning"},
+    {"name": "Qujiang", "why": "better for family, night lighting, and bigger modern venues"}
+  ],
+  "transport": [
+    "Keep old-city walls and Muslim Quarter on the same day when possible.",
+    "Use one strong history cluster per day instead of spreading sites too widely.",
+    "Terracotta Warriors should usually stand as a separate half-day or full-day excursion."
+  ],
+  "bad_weather_fallbacks": [
+    "Swap wall walking and broad outdoor parks for museums, pagoda interiors, or indoor heritage venues.",
+    "Use covered dining streets and malls to reduce exposed walking."
+  ],
+  "signature_foods": ["roujiamo", "biangbiang noodles", "yangrou paomo", "persimmon cakes", "cold skin noodles"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["history", "culture", "landmark"],
+      "suggested_queries": ["Xi'an City Wall", "Bell Tower Xi'an", "Giant Wild Goose Pagoda", "Muslim Quarter"],
+      "pace_note": "Xi'an is strongest when you keep the day tightly anchored around one history cluster."
+    },
+    "family": {
+      "focus_tags": ["family", "museum", "history"],
+      "suggested_queries": ["Terracotta Warriors", "Shaanxi History Museum", "Tang Paradise", "Qujiang Ocean Park"],
+      "pace_note": "Give the family one flagship attraction and keep the rest lighter."
+    },
+    "food": {
+      "focus_tags": ["food", "local", "market"],
+      "suggested_queries": ["Muslim Quarter", "Yongxingfang", "Xi'an snacks", "local noodles Xi'an"],
+      "pace_note": "Pair food neighborhoods with nearby monuments rather than long-distance detours."
+    },
+    "theme": {
+      "focus_tags": ["history", "theme", "culture"],
+      "suggested_queries": ["Shaanxi History Museum", "Han Yangling Museum", "Daming Palace", "Tang-era Xi'an"],
+      "pace_note": "Choose one dynasty or historical theme and build depth around it."
+    }
+  },
+  "indoor_keywords": ["museum", "mall", "pagoda", "history", "indoor", "exhibition"],
+  "outdoor_keywords": ["wall", "tower", "quarter", "park", "palace", "garden"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Mainly clear",
+      "temp_min": 16,
+      "temp_max": 26,
+      "precipitation_probability": 20,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good day for city-wall or pagoda-based outdoor highlights."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Light rain",
+      "temp_min": 15,
+      "temp_max": 22,
+      "precipitation_probability": 55,
+      "outdoor_suitability": "mixed",
+      "suggestions": ["Use history museums and food streets as weather-safe anchors."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Xi'an City Wall",
+      "category": "attraction",
+      "district": "Beilin",
+      "lat": 34.2583,
+      "lon": 108.9423,
+      "duration_hours": 2.0,
+      "ticket_price": 54,
+      "price_level": 2,
+      "indoor_outdoor": "outdoor",
+      "tags": ["history", "landmark", "view"],
+      "source": ["profile_seed"],
+      "address": "South Gate Area, Beilin District",
+      "open_hours": "08:00-22:00",
+      "rating": 4.7,
+      "visit_reason": "The city's strongest visual and historic landmark."
+    },
+    {
+      "name": "Shaanxi History Museum",
+      "category": "attraction",
+      "district": "Yanta",
+      "lat": 34.2256,
+      "lon": 108.9542,
+      "duration_hours": 2.5,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "indoor",
+      "tags": ["museum", "history", "culture"],
+      "source": ["profile_seed"],
+      "address": "91 Xiaozhai East Road, Yanta District",
+      "open_hours": "09:00-17:30",
+      "rating": 4.8,
+      "visit_reason": "Best weather-safe history anchor."
+    },
+    {
+      "name": "Giant Wild Goose Pagoda",
+      "category": "attraction",
+      "district": "Yanta",
+      "lat": 34.2194,
+      "lon": 108.9602,
+      "duration_hours": 1.8,
+      "ticket_price": 40,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["history", "culture", "landmark"],
+      "source": ["profile_seed"],
+      "address": "1 Cien Road, Yanta District",
+      "open_hours": "08:30-18:00",
+      "rating": 4.6,
+      "visit_reason": "Iconic Tang-era anchor with easy nearby extensions."
+    },
+    {
+      "name": "Muslim Quarter",
+      "category": "food",
+      "district": "Lianhu",
+      "lat": 34.2654,
+      "lon": 108.9437,
+      "duration_hours": 1.6,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["food", "local", "market"],
+      "source": ["profile_seed"],
+      "address": "Huimin Street Area, Lianhu District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.4,
+      "visit_reason": "Best-known local snack and night-energy cluster."
+    }
+  ]
+}

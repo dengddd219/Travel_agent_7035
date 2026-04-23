@@ -1,0 +1,10 @@
+# RAG 离线摄取管道依赖
+python-frontmatter>=1.0.0
+chromadb>=0.4.0
+rank-bm25>=0.2.2
+jieba>=0.42.1
+openai>=1.0.0
+
+# 可选：使用本地中文 embedding 模型时取消注释
+# sentence-transformers>=2.2.0
+# torch>=2.0.0
