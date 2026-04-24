@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from travel_planner.agent import TravelPlanningAgent, ConversationState
 from travel_planner.ui_backend import (
@@ -61,6 +61,9 @@ class ChatResponse(BaseModel):
     itinerary_json: dict
     map_payload: dict
     hotel_recommendations: dict
+    needs_clarification: bool = False
+    missing_profile_slots: list[str] = Field(default_factory=list)
+    pending_profile_slots: list[str] = Field(default_factory=list)
     tool_logs: list[dict]
 
 
@@ -110,6 +113,9 @@ def chat(req: ChatRequest):
             itinerary_json=payload["itinerary_json"],
             map_payload=payload["map_payload"],
             hotel_recommendations=payload["hotel_recommendations"],
+            needs_clarification=payload.get("needs_clarification", False),
+            missing_profile_slots=payload.get("missing_profile_slots", []),
+            pending_profile_slots=payload.get("pending_profile_slots", []),
             tool_logs=payload["tool_logs"],
         )
     except Exception as e:
