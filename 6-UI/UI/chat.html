@@ -307,6 +307,7 @@
 
     /* Cost summary */
     .cost-panel {
+      display: none;
       margin: 0 12px 10px;
       border: 1px solid rgba(124,58,237,.16);
       border-radius: 18px;
@@ -317,6 +318,7 @@
       overflow: hidden;
       flex-shrink: 0;
     }
+    .cost-panel.visible { display: block; }
     .cost-toggle {
       width: 100%;
       padding: 14px 16px;
@@ -866,28 +868,10 @@
     }
 
     function resetCostPanel() {
+      costPanel.classList.remove('visible');
       costBody.classList.remove('collapsed');
       costToggleIcon.textContent = '−';
       costPanelOpen = true;
-      costTitle.textContent = '预算摘要';
-      costSubtitle.textContent = '页面已准备好，等待 cost 组预算数据接入…';
-      costTotalBadge.textContent = '--';
-      costTags.innerHTML = '<span class="cost-tag">默认展开</span><span class="cost-tag">支持收起</span>';
-      renderMetricCards([
-        { label: '总预算', value: '--', caption: '收到行程后自动更新' },
-        { label: '机票预算', value: '--', caption: '往返价格汇总' },
-        { label: '酒店预算', value: '--', caption: '住宿总价估算' },
-        { label: '餐饮 / 交通', value: '-- / --', caption: '日常开销拆分' }
-      ]);
-      renderDetailRows([
-        { label: '去程机票单价', value: '--' },
-        { label: '返程机票单价', value: '--' },
-        { label: '酒店每晚参考价', value: '--' },
-        { label: '餐饮每天参考价', value: '--' },
-        { label: '本地交通参考总价', value: '--' }
-      ]);
-      costSourceList.innerHTML = '<span class="cost-source-item">等待预算接口返回</span>';
-      costNotes.innerHTML = '<div class="cost-note">这块卡片现在会始终显示在左侧聊天区下方。拿到 `budget` 或 `cost` 数据后，会自动替换成真实预算内容。</div>';
     }
 
     function formatBudgetValue(value) {
@@ -939,40 +923,10 @@
     }
 
     function findCostPayload(data) {
-      const containers = [
-        data,
-        data && data.itinerary_json,
-        data && data.itinerary_json && data.itinerary_json.trip_plan,
-        data && data.itinerary_json && data.itinerary_json.travel_info,
-        data && data.trip_plan,
-        data && data.travel_info,
-        data && data.conversation_state,
-        data && data.conversation_state && data.conversation_state.trip_plan,
-        data && data.conversation_state && data.conversation_state.travel_info
-      ].filter(Boolean);
-
-      for (const container of containers) {
-        if (container.budget && typeof container.budget === 'object') {
-          return { kind: 'trip', payload: container.budget, container };
-        }
+      // 优先读后端直接暴露的 cost_summary 字段
+      if (data && data.cost_summary && typeof data.cost_summary === 'object' && data.cost_summary.totals) {
+        return { kind: 'estimate', payload: data.cost_summary, container: data.cost_summary };
       }
-
-      for (const container of containers) {
-        if (container.cost && typeof container.cost === 'object') {
-          return { kind: 'estimate', payload: container.cost, container };
-        }
-      }
-
-      for (const container of containers) {
-        if (container['总预算'] || container['总计最低']) {
-          return {
-            kind: container['总预算'] ? 'trip' : 'estimate',
-            payload: container,
-            container
-          };
-        }
-      }
-
       return null;
     }
 
@@ -1002,94 +956,67 @@
     function renderCostPanel(costData) {
       if (!costData || !costData.payload) return;
 
-      const payload = costData.payload;
-      const container = costData.container || {};
-      const tripTitle = payload.destination_city || container.destination_city || container.city || '当前行程';
-      toggleCostPanel(costPanelOpen);
+      const p = costData.payload;   // cost_summary object from backend
+      const totals   = p.totals   || {};
+      const breakdown = p.breakdown || {};
+      const budgetFit = p.budget_fit || {};
 
-      if (costData.kind === 'trip') {
-        const totalBudget = formatBudgetValue(payload['总预算']);
-        const travelMeta = [
-          payload.departure_city || container.departure_city,
-          payload.destination_city || container.destination_city,
-        ].filter(Boolean).join(' → ');
-        const subtitleParts = [
-          travelMeta,
-          payload.depart_date && payload.return_date ? `${payload.depart_date} - ${payload.return_date}` : '',
-          payload.travel_days ? `${payload.travel_days} 天` : '',
-          payload.hotel_nights ? `${payload.hotel_nights} 晚` : ''
-        ].filter(Boolean);
+      const city = p.city || '当前城市';
+      const days = p.days || '';
+      const budgetLabel = humanizeBudgetLevel(p.budget_level || 'medium');
 
-        costTitle.textContent = `${tripTitle}费用摘要`;
-        costSubtitle.textContent = subtitleParts.join(' · ') || '综合预算已根据机票、酒店和餐饮生成';
-        costTotalBadge.textContent = totalBudget;
-
-        const tags = [
-          payload.budget_level ? humanizeBudgetLevel(payload.budget_level) : '',
-          payload.adults ? `${payload.adults} 位旅客` : ''
-        ].filter(Boolean);
-        costTags.innerHTML = tags.map(tag => `<span class="cost-tag">${escapeHtml(tag)}</span>`).join('');
-
-        renderMetricCards([
-          { label: '总预算', value: totalBudget, caption: '机票 + 酒店 + 餐饮 + 本地交通' },
-          { label: '机票预算', value: formatBudgetValue(payload['机票预算']), caption: '往返合计' },
-          { label: '酒店预算', value: formatBudgetValue(payload['酒店预算']), caption: '住宿总价' },
-          { label: '餐饮 / 交通', value: `${formatBudgetValue(payload['餐饮预算'])} / ${formatBudgetValue(payload['本地交通预算'])}`, caption: '日常开销估算' }
-        ]);
-
-        const details = [];
-        const detailPayload = payload['预算明细'] || {};
-        if (detailPayload['去程机票单价'] != null) details.push({ label: '去程机票单价', value: formatBudgetValue(detailPayload['去程机票单价']) });
-        if (detailPayload['返程机票单价'] != null) details.push({ label: '返程机票单价', value: formatBudgetValue(detailPayload['返程机票单价']) });
-        if (detailPayload['酒店每晚参考价'] != null) details.push({ label: '酒店每晚参考价', value: formatBudgetValue(detailPayload['酒店每晚参考价']) });
-        if (detailPayload['餐饮每天参考价'] != null) details.push({ label: '餐饮每天参考价', value: formatBudgetValue(detailPayload['餐饮每天参考价']) });
-        if (detailPayload['本地交通参考总价'] != null) details.push({ label: '本地交通参考总价', value: formatBudgetValue(detailPayload['本地交通参考总价']) });
-        renderDetailRows(details);
-
-        const sources = Object.entries(payload['数据来源'] || {})
-          .filter(([, value]) => value != null && value !== '')
-          .map(([key, value]) => humanizeSource(key, value));
-        costSourceList.innerHTML = sources.length
-          ? sources.map(source => `<span class="cost-source-item">${escapeHtml(source)}</span>`).join('')
-          : '<span class="cost-source-item">等待数据来源</span>';
-
-        const notes = Array.isArray(payload['说明']) ? payload['说明'] : [];
-        costNotes.innerHTML = notes.length
-          ? notes.map(note => `<div class="cost-note">${escapeHtml(note)}</div>`).join('')
-          : '<div class="cost-note">当前预算优先使用实时机酒数据，缺失字段会自动回落到本地城市参考价。</div>';
-        return;
-      }
-
-      const totalMin = payload['总计最低'];
-      const totalMax = payload['总计最高'];
+      const totalMin = totals.min != null ? totals.min : null;
+      const totalMax = totals.max != null ? totals.max : null;
       const rangeText = totalMin != null && totalMax != null
-        ? `${formatBudgetValue(totalMin)} - ${formatBudgetValue(totalMax)}`
+        ? `¥${Math.round(totalMin).toLocaleString()} - ¥${Math.round(totalMax).toLocaleString()}`
         : '--';
-      const city = container.city || container.destination_city || tripTitle;
-      const days = container.days || container.travel_days;
 
-      costTitle.textContent = `${city}费用预估`;
-      costSubtitle.textContent = [city, days ? `${days} 天行程` : '', container.budget_level ? humanizeBudgetLevel(container.budget_level) : ''].filter(Boolean).join(' · ');
+      const hotelRange = breakdown.hotel_per_night || {};
+      const foodRange  = breakdown.food_per_day    || {};
+      const transRange = breakdown.local_transport_total || {};
+
+      const fmt = (obj) => {
+        if (!obj || obj.min == null) return '--';
+        if (obj.min === obj.max) return `¥${Math.round(obj.min).toLocaleString()}`;
+        return `¥${Math.round(obj.min).toLocaleString()} - ¥${Math.round(obj.max).toLocaleString()}`;
+      };
+
+      costTitle.textContent = `${city} 费用预估`;
+      costSubtitle.textContent = [days ? `${days} 天行程` : '', budgetLabel].filter(Boolean).join(' · ');
       costTotalBadge.textContent = rangeText;
-      costTags.innerHTML = '<span class="cost-tag">估算模式</span><span class="cost-tag">本地参考价</span>';
+
+      costTags.innerHTML = [
+        `<span class="cost-tag">${escapeHtml(budgetLabel)}</span>`,
+        `<span class="cost-tag">酒店+餐饮+交通</span>`,
+        budgetFit.within_budget === true ? '<span class="cost-tag">预算充足</span>' :
+        budgetFit.within_budget === false ? '<span class="cost-tag">超出预算</span>' : ''
+      ].join('');
 
       renderMetricCards([
-        { label: '总费用范围', value: rangeText, caption: '基础住宿 / 餐饮 / 交通' },
-        { label: '酒店每晚', value: payload['酒店每晚'] || '--', caption: '住宿区间' },
-        { label: '餐饮每天', value: payload['餐饮每天'] || '--', caption: '饮食区间' },
-        { label: '交通合计', value: payload['交通合计'] || '--', caption: '本地通勤' }
+        { label: '总费用范围', value: rangeText, caption: '酒店 + 餐饮 + 本地交通' },
+        { label: '酒店每晚', value: fmt(hotelRange), caption: '住宿区间估算' },
+        { label: '餐饮每天', value: fmt(foodRange), caption: '日常饮食估算' },
+        { label: '本地交通', value: fmt(transRange), caption: '全程交通合计' }
       ]);
 
       renderDetailRows([
-        { label: '酒店每晚', value: payload['酒店每晚'] || '--' },
-        { label: '餐饮每天', value: payload['餐饮每天'] || '--' },
-        { label: '交通合计', value: payload['交通合计'] || '--' },
-        { label: '总计最低', value: formatBudgetValue(totalMin) },
-        { label: '总计最高', value: formatBudgetValue(totalMax) }
+        { label: '酒店每晚参考价', value: fmt(hotelRange) },
+        { label: '餐饮每天参考价', value: fmt(foodRange) },
+        { label: '本地交通参考总价', value: fmt(transRange) },
+        { label: '总计最低', value: totalMin != null ? `¥${Math.round(totalMin).toLocaleString()}` : '--' },
+        { label: '总计最高', value: totalMax != null ? `¥${Math.round(totalMax).toLocaleString()}` : '--' }
       ]);
 
       costSourceList.innerHTML = '<span class="cost-source-item">费用参考: 本地城市成本库</span>';
-      costNotes.innerHTML = '<div class="cost-note">这组数据来自 cost 组的基础估算接口，适合在实时机票或酒店价格尚未完整返回时快速给出预算范围。</div>';
+
+      const notes = Array.isArray(p.pricing_notes) ? p.pricing_notes : [];
+      costNotes.innerHTML = notes.length
+        ? notes.map(n => `<div class="cost-note">${escapeHtml(n)}</div>`).join('')
+        : '';
+
+      // 有数据才显示
+      costPanel.classList.add('visible');
+      toggleCostPanel(true);
     }
 
     /* ═══════════════════════════════════

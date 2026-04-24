@@ -396,4 +396,5 @@ def build_frontend_response(
         "replan_summary": itinerary_json.get("replan_summary", ""),
         "replan_metadata": itinerary_json.get("replan_metadata", {}),
         "map_payload": build_map_payload(itinerary_json),
+        "cost_summary": (itinerary_json.get("conditions_context") or {}).get("cost_summary") or {},
     }
