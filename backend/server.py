@@ -61,6 +61,7 @@ class ChatResponse(BaseModel):
     itinerary_json: dict
     map_payload: dict
     hotel_recommendations: dict
+    cost_summary: dict = Field(default_factory=dict)
     needs_clarification: bool = False
     missing_profile_slots: list[str] = Field(default_factory=list)
     pending_profile_slots: list[str] = Field(default_factory=list)
@@ -113,6 +114,7 @@ def chat(req: ChatRequest):
             itinerary_json=payload["itinerary_json"],
             map_payload=payload["map_payload"],
             hotel_recommendations=payload["hotel_recommendations"],
+            cost_summary=payload.get("cost_summary", {}),
             needs_clarification=payload.get("needs_clarification", False),
             missing_profile_slots=payload.get("missing_profile_slots", []),
             pending_profile_slots=payload.get("pending_profile_slots", []),
