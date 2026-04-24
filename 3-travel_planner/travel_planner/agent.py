@@ -100,6 +100,9 @@ class ConversationState:
     latest_plan: dict | None = None
     latest_hotel_recommendations: dict | None = None
     latest_report: str = ""
+    confirmed_profile_slots: list[str] = field(default_factory=list)
+    pending_profile_slots: list[str] = field(default_factory=list)
+    needs_clarification: bool = False
     turn_history: list[dict] = field(default_factory=list)
 
 
@@ -111,6 +114,8 @@ class ConversationRunResult:
     answer: str
     tool_logs: list[dict]
     plan: dict | None = None
+    needs_clarification: bool = False
+    missing_profile_slots: list[str] = field(default_factory=list)
 
 
 class TravelPlanningAgent:
@@ -131,12 +136,12 @@ class TravelPlanningAgent:
     BUDGET_ALIASES = {
         "low": ["low budget", "budget low", "低预算", "省钱", "economy"],
         "medium": ["medium budget", "budget medium", "中等预算", "适中预算"],
-        "high": ["high budget", "budget high", "高预算", "luxury", "豪华"],
+        "high": ["high budget", "budget high", "高预算", "luxury", "豪华", "不限预算", "预算不是问题"],
     }
     PACE_ALIASES = {
-        "slow": ["slow", "more relaxed", "take it easy", "轻松", "慢节奏", "不要太赶"],
+        "slow": ["slow", "more relaxed", "take it easy", "轻松", "慢节奏", "不要太赶", "松一点", "慢一点", "悠闲"],
         "balanced": ["balanced", "适中", "均衡"],
-        "packed": ["packed", "fit more", "more packed", "紧凑", "特种兵"],
+        "packed": ["packed", "fit more", "more packed", "紧凑", "特种兵", "排满", "多塞一点", "尽量多玩"],
     }
     INTEREST_ALIASES = {
         "local food": ["food", "dining", "美食", "吃"],
@@ -172,6 +177,75 @@ class TravelPlanningAgent:
         "museums": "museum",
         "shopping": "shopping mall",
         "night views": "night view",
+    }
+    PROFILE_SLOT_ORDER = ("city", "trip_days", "travel_style", "budget_level", "pace", "constraints")
+    PROFILE_FLEXIBLE_REPLIES = (
+        "都可以",
+        "都行",
+        "随便",
+        "你定",
+        "你决定",
+        "你来定",
+        "无所谓",
+        "没要求",
+        "whatever",
+        "either is fine",
+        "up to you",
+    )
+    PROFILE_NEGATIVE_REPLIES = (
+        "没有",
+        "没了",
+        "none",
+        "no",
+        "不用",
+        "不需要",
+        "没有特别的",
+        "没有要求",
+        "没有必须去的",
+        "没有想避开的",
+    )
+    TRAVEL_TYPE_LABELS = {
+        "leisure": "轻松逛逛",
+        "family": "亲子友好",
+        "food": "美食优先",
+        "theme": "主题体验",
+    }
+    BUDGET_LEVEL_LABELS = {
+        "low": "低预算",
+        "medium": "中等预算",
+        "high": "高预算",
+    }
+    PACE_LABELS = {
+        "slow": "轻松节奏",
+        "balanced": "适中节奏",
+        "packed": "紧凑节奏",
+    }
+    INTEREST_LABELS = {
+        "local food": "本地美食",
+        "viewpoints": "观景夜景",
+        "culture": "文化体验",
+        "family friendly": "亲子友好",
+        "museums": "博物馆",
+        "shopping": "购物逛街",
+        "hidden gems": "小众路线",
+        "night views": "夜景",
+    }
+    CHINESE_DAY_NUMBERS = {
+        "一": 1,
+        "二": 2,
+        "两": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+        "十一": 11,
+        "十二": 12,
+        "十三": 13,
+        "十四": 14,
     }
 
     def __init__(self, settings: Settings | None = None) -> None:
@@ -424,6 +498,21 @@ class TravelPlanningAgent:
         return cls._extract_explicit_city(user_request) or normalize_city_name(default_city) or default_city
 
     @classmethod
+    def _parse_trip_days(cls, user_request: str) -> int | None:
+        lower = user_request.lower()
+        trip_days_match = re.search(r"(\d+)\s*-\s*day|(\d+)\s+day|(\d+)\s*天", lower)
+        if trip_days_match:
+            return int(next(group for group in trip_days_match.groups() if group))
+
+        chinese_days_match = re.search(r"([一二两三四五六七八九十]{1,3})\s*天", user_request)
+        if chinese_days_match:
+            return cls.CHINESE_DAY_NUMBERS.get(chinese_days_match.group(1))
+
+        if "weekend" in lower or "周末" in user_request:
+            return 2
+        return None
+
+    @classmethod
     def _extract_user_profile(cls, user_request: str, default_city: str = "Hong Kong") -> dict:
         # Build a normalized profile from noisy natural language input.
         # This function is intentionally permissive because user input is often:
@@ -433,14 +522,7 @@ class TravelPlanningAgent:
         lower = user_request.lower()
         city = cls._extract_city(user_request, default_city)
 
-        trip_days_match = re.search(r"(\d+)\s*-\s*day|(\d+)\s+day", lower)
-        trip_days = 3
-        if trip_days_match:
-            trip_days = int(next(group for group in trip_days_match.groups() if group))
-        else:
-            chinese_days_match = re.search(r"(\d+)\s*天", user_request)
-            if chinese_days_match:
-                trip_days = int(chinese_days_match.group(1))
+        trip_days = cls._parse_trip_days(user_request) or 3
 
         travel_type = cls._match_alias_group(lower + user_request, cls.TRAVEL_TYPE_ALIASES, "leisure")
 
@@ -551,6 +633,161 @@ class TravelPlanningAgent:
         return " | ".join(merged)
 
     @classmethod
+    def _is_flexible_reply(cls, user_request: str) -> bool:
+        lowered = user_request.lower()
+        return any(alias in user_request or alias in lowered for alias in cls.PROFILE_FLEXIBLE_REPLIES)
+
+    @classmethod
+    def _is_negative_reply(cls, user_request: str) -> bool:
+        lowered = user_request.lower().strip()
+        if any(alias == lowered for alias in cls.PROFILE_NEGATIVE_REPLIES):
+            return True
+        return any(alias in user_request or alias in lowered for alias in cls.PROFILE_NEGATIVE_REPLIES)
+
+    @classmethod
+    def _extract_confirmed_profile_slots(
+        cls,
+        user_request: str,
+        pending_profile_slots: list[str] | None = None,
+    ) -> set[str]:
+        combined_text = user_request.lower() + user_request
+        confirmed: set[str] = set()
+        pending_profile_slots = pending_profile_slots or []
+
+        must_visit_items = cls._extract_action_items(
+            user_request,
+            [
+                r"(?:add|include|also include|保留|加上|加入|想去|一定要去|必须去|安排去)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+            ],
+        )
+        avoid_items = cls._extract_action_items(
+            user_request,
+            [
+                r"(?:avoid|skip|不要去|别去|避开|排除)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+                r"(?:remove|drop|delete|删掉|去掉)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+            ],
+        )
+
+        if cls._extract_explicit_city(user_request):
+            confirmed.add("city")
+        if cls._parse_trip_days(user_request) is not None:
+            confirmed.add("trip_days")
+        if (
+            cls._find_alias_group(combined_text, cls.TRAVEL_TYPE_ALIASES)
+            or cls._extract_clause(user_request, "Interests")
+            or any(alias in combined_text for aliases in cls.INTEREST_ALIASES.values() for alias in aliases)
+            or must_visit_items
+            or cls._extract_clause(user_request, "Must visit")
+        ):
+            confirmed.add("travel_style")
+        if cls._find_alias_group(combined_text, cls.BUDGET_ALIASES):
+            confirmed.add("budget_level")
+        if cls._find_alias_group(combined_text, cls.PACE_ALIASES):
+            confirmed.add("pace")
+        if must_visit_items or avoid_items or cls._extract_clause(user_request, "Must visit") or cls._extract_clause(user_request, "Avoid"):
+            confirmed.add("constraints")
+
+        if pending_profile_slots:
+            active_slot = pending_profile_slots[0]
+            if active_slot in {"travel_style", "budget_level", "pace"} and cls._is_flexible_reply(user_request):
+                confirmed.add(active_slot)
+            if active_slot == "constraints" and (cls._is_negative_reply(user_request) or cls._is_flexible_reply(user_request)):
+                confirmed.add(active_slot)
+
+        return confirmed
+
+    @classmethod
+    def _order_profile_slots(cls, slots: set[str] | list[str]) -> list[str]:
+        slot_set = {slot for slot in slots if slot}
+        return [slot for slot in cls.PROFILE_SLOT_ORDER if slot in slot_set]
+
+    @classmethod
+    def _resolve_confirmed_profile_slots(
+        cls,
+        previous_state: ConversationState | None,
+        user_request: str,
+        user_profile: dict,
+    ) -> list[str]:
+        if previous_state and previous_state.confirmed_profile_slots:
+            confirmed = set(previous_state.confirmed_profile_slots)
+        elif previous_state and previous_state.latest_plan:
+            confirmed = set(cls.PROFILE_SLOT_ORDER)
+        else:
+            confirmed = set()
+
+        previous_city = str(previous_state.preference_memory.get("city", "")).strip() if previous_state else ""
+        current_city = str(user_profile.get("city", "")).strip()
+        if previous_city and current_city and previous_city != current_city:
+            confirmed.discard("constraints")
+
+        confirmed.update(
+            cls._extract_confirmed_profile_slots(
+                user_request,
+                pending_profile_slots=previous_state.pending_profile_slots if previous_state else [],
+            )
+        )
+        return cls._order_profile_slots(confirmed)
+
+    @classmethod
+    def _next_missing_profile_slots(cls, confirmed_profile_slots: list[str]) -> list[str]:
+        confirmed = set(confirmed_profile_slots)
+        return [slot for slot in cls.PROFILE_SLOT_ORDER if slot not in confirmed]
+
+    @classmethod
+    def _build_profile_checkpoint(cls, user_profile: dict, confirmed_profile_slots: list[str]) -> str:
+        confirmed = set(confirmed_profile_slots)
+        snippets: list[str] = []
+        if "city" in confirmed and user_profile.get("city"):
+            snippets.append(f"去 {user_profile['city']}")
+        if "trip_days" in confirmed and user_profile.get("trip_days"):
+            snippets.append(f"玩 {user_profile['trip_days']} 天")
+        if "travel_style" in confirmed:
+            if user_profile.get("must_visit"):
+                snippets.append("想去 " + "、".join(user_profile["must_visit"][:2]))
+            elif user_profile.get("interests"):
+                snippets.append(
+                    "偏好 "
+                    + "、".join(cls.INTEREST_LABELS.get(item, item) for item in user_profile["interests"][:2])
+                )
+            else:
+                snippets.append(cls.TRAVEL_TYPE_LABELS.get(user_profile.get("travel_type", "leisure"), "轻松逛逛"))
+        if "budget_level" in confirmed:
+            snippets.append(cls.BUDGET_LEVEL_LABELS.get(user_profile.get("budget_level", "medium"), "中等预算"))
+        if "pace" in confirmed:
+            snippets.append(cls.PACE_LABELS.get(user_profile.get("pace", "balanced"), "适中节奏"))
+        return "，".join(snippets[:4])
+
+    @classmethod
+    def _build_clarification_question(
+        cls,
+        user_profile: dict,
+        confirmed_profile_slots: list[str],
+        missing_profile_slots: list[str],
+    ) -> str:
+        active_slot = missing_profile_slots[0]
+        checkpoint = cls._build_profile_checkpoint(user_profile, confirmed_profile_slots)
+        if active_slot == "city":
+            return "为了把攻略做准一点，我先确认一下目的地：你这次想去哪个城市？"
+        if active_slot == "trip_days":
+            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
+            return f"{prefix}这次大概玩几天？比如 2 天、3 天、5 天都可以。"
+        if active_slot == "travel_style":
+            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
+            return (
+                f"{prefix}你更想走哪种路线？比如轻松逛、美食、亲子、主题体验；"
+                "如果有特别想去的点，也可以直接告诉我。"
+            )
+        if active_slot == "budget_level":
+            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
+            return f"{prefix}预算大概想走什么档位？低预算 / 中等 / 高预算 都可以。"
+        if active_slot == "pace":
+            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
+            return f"{prefix}行程节奏想轻松一点、适中，还是尽量排满？"
+
+        prefix = "信息已经差不多齐了。" if len(missing_profile_slots) == 1 else (f"目前我先记下了：{checkpoint}。" if checkpoint else "")
+        return f"{prefix}有没有一定要去或想避开的地方？没有的话直接回复“没有”，我就开始生成完整攻略。"
+
+    @classmethod
     def _extract_profile_updates(cls, user_request: str) -> dict:
         # Parse incremental update instructions from follow-up conversation turns.
         # Structure:
@@ -569,9 +806,9 @@ class TravelPlanningAgent:
         if explicit_city:
             updates["replace"]["city"] = explicit_city
 
-        trip_days_match = re.search(r"(\d+)\s*-\s*day|(\d+)\s+day|(\d+)\s*天", user_request.lower())
-        if trip_days_match:
-            updates["replace"]["trip_days"] = int(next(group for group in trip_days_match.groups() if group))
+        trip_days = cls._parse_trip_days(user_request)
+        if trip_days is not None:
+            updates["replace"]["trip_days"] = trip_days
 
         travel_type = cls._find_alias_group(combined_text, cls.TRAVEL_TYPE_ALIASES)
         if travel_type:
@@ -1481,9 +1718,12 @@ class TravelPlanningAgent:
         previous_state: ConversationState | None,
         user_message: str,
         user_profile: dict,
-        plan: dict,
+        plan: dict | None,
         hotel_recommendations: dict | None,
         report: str,
+        confirmed_profile_slots: list[str] | None = None,
+        pending_profile_slots: list[str] | None = None,
+        needs_clarification: bool = False,
     ) -> ConversationState:
         # Append a compact turn record and refresh "latest" snapshots.
         turn_history = list(previous_state.turn_history) if previous_state else []
@@ -1493,33 +1733,119 @@ class TravelPlanningAgent:
                 "resolved_profile": deepcopy(user_profile),
                 "trip_city": user_profile.get("city", ""),
                 "trip_days": user_profile.get("trip_days", 0),
+                "needs_clarification": needs_clarification,
+                "pending_profile_slots": list(pending_profile_slots or []),
             }
         )
         return ConversationState(
             preference_memory=deepcopy(user_profile),
             latest_user_profile=deepcopy(user_profile),
-            latest_plan=deepcopy(plan),
+            latest_plan=deepcopy(plan) if plan else None,
             latest_hotel_recommendations=deepcopy(hotel_recommendations),
             latest_report=report,
+            confirmed_profile_slots=list(confirmed_profile_slots or []),
+            pending_profile_slots=list(pending_profile_slots or []),
+            needs_clarification=needs_clarification,
             turn_history=turn_history,
         )
 
-    def start_conversation(self, user_request: str, max_rounds: int = 8) -> ConversationRunResult:
-        # Initialize state for first turn.
-        user_profile, tool_results, plan, report = self._execute(user_request, max_rounds=max_rounds)
+    def _run_conversation_turn(
+        self,
+        *,
+        previous_state: ConversationState | None,
+        user_request: str,
+        max_rounds: int = 8,
+    ) -> ConversationRunResult:
+        stored_preferences = previous_state.preference_memory if previous_state else None
+        default_city = (
+            stored_preferences.get("city", self.settings.default_city)
+            if stored_preferences
+            else self.settings.default_city
+        )
+        preview_profile = self._resolve_user_profile(
+            user_request,
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+        )
+        confirmed_profile_slots = self._resolve_confirmed_profile_slots(
+            previous_state=previous_state,
+            user_request=user_request,
+            user_profile=preview_profile,
+        )
+        missing_profile_slots = self._next_missing_profile_slots(confirmed_profile_slots)
+
+        if missing_profile_slots:
+            question = self._build_clarification_question(
+                user_profile=preview_profile,
+                confirmed_profile_slots=confirmed_profile_slots,
+                missing_profile_slots=missing_profile_slots,
+            )
+            tool_logs = [
+                {
+                    "tool_name": "profile_completeness_check",
+                    "arguments": {"user_request": user_request},
+                    "result_preview": json.dumps(
+                        {
+                            "resolved_profile": preview_profile,
+                            "confirmed_profile_slots": confirmed_profile_slots,
+                            "missing_profile_slots": missing_profile_slots,
+                            "follow_up_question": question,
+                        },
+                        ensure_ascii=False,
+                    )[:800],
+                }
+            ]
+            state = self._build_conversation_state(
+                previous_state=previous_state,
+                user_message=user_request,
+                user_profile=preview_profile,
+                plan=None,
+                hotel_recommendations=None,
+                report=question,
+                confirmed_profile_slots=confirmed_profile_slots,
+                pending_profile_slots=missing_profile_slots,
+                needs_clarification=True,
+            )
+            return ConversationRunResult(
+                state=state,
+                answer=question,
+                tool_logs=tool_logs,
+                plan=None,
+                needs_clarification=True,
+                missing_profile_slots=missing_profile_slots,
+            )
+
+        user_profile, tool_results, plan, report = self._execute(
+            user_request,
+            max_rounds=max_rounds,
+            stored_preferences=stored_preferences,
+        )
         state = self._build_conversation_state(
-            previous_state=None,
+            previous_state=previous_state,
             user_message=user_request,
             user_profile=user_profile,
             plan=plan,
             hotel_recommendations=tool_results.get("get_hotel_candidates"),
             report=report,
+            confirmed_profile_slots=confirmed_profile_slots,
+            pending_profile_slots=[],
+            needs_clarification=False,
         )
         return ConversationRunResult(
             state=state,
             answer=report,
             tool_logs=tool_results.get("_logs", []),
             plan=plan,
+            needs_clarification=False,
+            missing_profile_slots=[],
+        )
+
+    def start_conversation(self, user_request: str, max_rounds: int = 8) -> ConversationRunResult:
+        # Initialize state for first turn.
+        return self._run_conversation_turn(
+            previous_state=None,
+            user_request=user_request,
+            max_rounds=max_rounds,
         )
 
     def continue_conversation(
@@ -1529,24 +1855,10 @@ class TravelPlanningAgent:
         max_rounds: int = 8,
     ) -> ConversationRunResult:
         # Continue planning with preference memory from prior turns.
-        user_profile, tool_results, plan, report = self._execute(
-            user_request,
-            max_rounds=max_rounds,
-            stored_preferences=state.preference_memory,
-        )
-        new_state = self._build_conversation_state(
+        return self._run_conversation_turn(
             previous_state=state,
-            user_message=user_request,
-            user_profile=user_profile,
-            plan=plan,
-            hotel_recommendations=tool_results.get("get_hotel_candidates"),
-            report=report,
-        )
-        return ConversationRunResult(
-            state=new_state,
-            answer=report,
-            tool_logs=tool_results.get("_logs", []),
-            plan=plan,
+            user_request=user_request,
+            max_rounds=max_rounds,
         )
 
     def run(self, user_request: str, max_rounds: int = 8) -> AgentRunResult:

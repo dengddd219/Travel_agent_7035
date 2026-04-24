@@ -63,6 +63,9 @@ def serialize_conversation_state(state: ConversationState) -> dict:
         "latest_plan": state.latest_plan,
         "latest_hotel_recommendations": state.latest_hotel_recommendations,
         "latest_report": state.latest_report,
+        "confirmed_profile_slots": state.confirmed_profile_slots,
+        "pending_profile_slots": state.pending_profile_slots,
+        "needs_clarification": state.needs_clarification,
         "turn_history": state.turn_history,
     }
 
@@ -74,6 +77,9 @@ def deserialize_conversation_state(payload: dict) -> ConversationState:
         latest_plan=payload.get("latest_plan"),
         latest_hotel_recommendations=payload.get("latest_hotel_recommendations"),
         latest_report=payload.get("latest_report", ""),
+        confirmed_profile_slots=payload.get("confirmed_profile_slots", []),
+        pending_profile_slots=payload.get("pending_profile_slots", []),
+        needs_clarification=payload.get("needs_clarification", False),
         turn_history=payload.get("turn_history", []),
     )
 
@@ -361,12 +367,15 @@ def build_frontend_response(
     polish_user_report: bool = False,
 ) -> dict:
     itinerary_json = run_result.plan or {}
-    user_friendly_report = build_user_friendly_report(
-        itinerary_json,
-        run_result.state.latest_hotel_recommendations or {},
-    )
-    if polish_user_report:
-        user_friendly_report = polish_user_friendly_report(user_friendly_report, itinerary_json)
+    if run_result.needs_clarification or not itinerary_json:
+        user_friendly_report = run_result.answer
+    else:
+        user_friendly_report = build_user_friendly_report(
+            itinerary_json,
+            run_result.state.latest_hotel_recommendations or {},
+        )
+        if polish_user_report:
+            user_friendly_report = polish_user_friendly_report(user_friendly_report, itinerary_json)
     return {
         "conversation_id": conversation_id,
         "conversation_state": serialize_conversation_state(run_result.state),
@@ -378,6 +387,9 @@ def build_frontend_response(
         "hotel_recommendations": run_result.state.latest_hotel_recommendations or {},
         "user_friendly_report": user_friendly_report,
         "report": run_result.answer,
+        "needs_clarification": run_result.needs_clarification,
+        "missing_profile_slots": run_result.missing_profile_slots,
+        "pending_profile_slots": run_result.state.pending_profile_slots,
         "tool_logs": run_result.tool_logs,
         "review_summary": itinerary_json.get("review_summary", ""),
         "review_findings": itinerary_json.get("review_findings", []),
