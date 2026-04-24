@@ -433,6 +433,23 @@ class TravelPlanningAgent:
             return []
         return [part.strip() for part in re.split(r"[,;，；、\n]|(?:\s+(?:and|or)\s+)|(?:\s*[和及与]\s*)", raw) if part.strip()]
 
+    # Tokens that look like instruction verbs or time expressions — not real POI names.
+    _NOISE_POI_PATTERNS: list[str] = [
+        r"^规划.*路线$",
+        r"^(?:给我|帮我|请|帮|给)[\s\S]{0,6}(?:规划|安排|制定|设计|生成|出|写)[\s\S]{0,6}(?:路线|行程|计划|攻略)$",
+        r"^[\s\S]{0,4}(?:出行|出发|旅行|假期|节假日|五一|十一|春节|元旦|清明|端午|中秋|暑假|寒假)[\s\S]{0,6}$",
+        r"^\d+\s*天$",
+        r"^[一二两三四五六七八九十]+\s*天$",
+        r"^(?:路线|行程|计划|攻略|安排)$",
+    ]
+
+    @classmethod
+    def _is_noise_poi(cls, value: str) -> bool:
+        for pattern in cls._NOISE_POI_PATTERNS:
+            if re.search(pattern, value.strip(), flags=re.IGNORECASE):
+                return True
+        return False
+
     @classmethod
     def _normalize_poi_name(cls, value: str) -> str:
         # Users often mention POIs in a conversational way:
@@ -455,6 +472,8 @@ class TravelPlanningAgent:
             previous = normalized
             for pattern in cleanup_patterns:
                 normalized = re.sub(pattern, "", normalized).strip("，,；;、。.!？?：: ")
+        if cls._is_noise_poi(normalized):
+            return ""
         return cls.POI_NAME_ALIASES.get(normalized, normalized)
 
     @classmethod
@@ -473,29 +492,119 @@ class TravelPlanningAgent:
                 return canonical
         return None
 
+    # Patterns that signal "origin city" (departure), not destination.
+    # We strip these segments before city scanning so "从深圳出发去厦门" picks Xiamen.
+    _ORIGIN_PATTERNS: list[str] = [
+        r"从\s*(.+?)\s*(?:出发|飞|乘|搭|坐|开车|驾车|自驾)",
+        r"(?:starting|departing|flying)\s+from\s+([A-Za-z\s]+?)(?:\s+to|\s*,|\s*$)",
+    ]
+
+    @classmethod
+    def _strip_origin_city(cls, user_request: str) -> str:
+        # Remove "从X出发" style segments so origin city doesn't compete with destination.
+        stripped = user_request
+        for pattern in cls._ORIGIN_PATTERNS:
+            for match in re.finditer(pattern, stripped, flags=re.IGNORECASE):
+                stripped = stripped.replace(match.group(0), " ")
+        return stripped
+
+    @classmethod
+    def _strip_negated_cities(cls, text: str) -> str:
+        # Remove cities mentioned in negation phrases like "不想去成都", "不去上海", "改成去X" implies X stays.
+        # Pattern: negation marker + city → erase just that city token so the positive city wins.
+        negation_patterns = [
+            r"(?:不想去|不去|不想到|别去|不要去|取消去|放弃去)\s*([^\s，,。!？]+)",
+            r"(?:don't want to go to|not going to|cancel)\s+([A-Za-z\s]+?)(?:\s*[,，。]|$)",
+        ]
+        result = text
+        for pattern in negation_patterns:
+            for match in re.finditer(pattern, result, flags=re.IGNORECASE):
+                negated_token = match.group(1).strip()
+                # Only erase it if it's a known city alias, to avoid removing real words.
+                if normalize_city_name(negated_token) != negated_token:
+                    result = result.replace(match.group(0), " ")
+        return result
+
     @classmethod
     def _extract_explicit_city(cls, user_request: str) -> str | None:
-        # 1) Try regex-based extraction from phrases like "trip in Tokyo".
+        # 1. Strip "从X出发" so origin city doesn't win over destination.
+        dest_text = cls._strip_origin_city(user_request)
+        # 2. Strip negated cities ("不想去成都") so they don't match before the intended city.
+        dest_text = cls._strip_negated_cities(dest_text)
+
+        # 3. Try regex-based extraction from phrases like "改成去北京", "trip in Tokyo".
         city_match = re.search(
-            r"(?:trip in|in|to|去|到)\s+([A-Z][A-Za-z\s\-]+?)(?:\.|,| for | with | budget| pace| must visit)",
-            user_request,
+            r"(?:改成去|换成去|trip in|in|to|去|到)\s+([A-Z][A-Za-z\s\-]+?)(?:\.|,| for | with | budget| pace| must visit)",
+            dest_text,
         )
         if city_match:
             explicit = normalize_city_name(city_match.group(1).strip())
             if explicit:
                 return explicit
 
-        # 2) Fall back to unified city normalization for mixed Chinese/English mentions.
-        lower = user_request.lower()
-        for alias in CITY_ALIASES:
-            if alias in lower or alias in user_request:
-                return CITY_ALIASES[alias]
-        return None
+        # Also try Chinese destination phrase: "改成去北京" / "换到上海"
+        cn_match = re.search(
+            r"(?:改成去|换成去|改去|换去|换到|改到)\s*([一-鿿]{2,4})",
+            dest_text,
+        )
+        if cn_match:
+            explicit = normalize_city_name(cn_match.group(1).strip())
+            if explicit and explicit != cn_match.group(1).strip():
+                return explicit
+
+        # 4. Fall back to unified city normalization — scan all aliases, longest match first
+        #    to avoid short alias shadowing a longer one that appears later in the text.
+        lower = dest_text.lower()
+        best_city: str | None = None
+        best_pos = len(dest_text)
+        for alias, canonical in CITY_ALIASES.items():
+            idx = lower.find(alias)
+            if idx == -1:
+                idx = dest_text.find(alias)
+            if idx == -1:
+                continue
+            # Prefer the city whose alias appears **last** in the string:
+            # "不想去[成都]了，改成去[北京]" → 北京 appears later, wins.
+            if idx > best_pos or best_city is None:
+                best_city = canonical
+                best_pos = idx
+        return best_city
 
     @classmethod
     def _extract_city(cls, user_request: str, default_city: str) -> str:
         # Never return empty city; always enforce a deterministic fallback.
         return cls._extract_explicit_city(user_request) or normalize_city_name(default_city) or default_city
+
+    # Chinese public holidays: name → (month, day, default_duration)
+    _CN_HOLIDAYS: dict[str, tuple[int, int, int]] = {
+        "五一": (5, 1, 5),
+        "劳动节": (5, 1, 5),
+        "十一": (10, 1, 7),
+        "国庆": (10, 1, 7),
+        "国庆节": (10, 1, 7),
+        "春节": (2, 1, 7),
+        "元旦": (1, 1, 3),
+        "清明": (4, 4, 3),
+        "清明节": (4, 4, 3),
+        "端午": (5, 31, 3),  # approximate; varies by year
+        "端午节": (5, 31, 3),
+        "中秋": (9, 15, 3),
+        "中秋节": (9, 15, 3),
+    }
+
+    @classmethod
+    def _parse_holiday_date(cls, user_request: str) -> tuple[str, int] | None:
+        """Return (iso_date_string, default_days) for a recognised holiday, or None."""
+        import datetime as _dt
+        current_year = _dt.date.today().year
+        for name, (month, day, duration) in cls._CN_HOLIDAYS.items():
+            if name in user_request:
+                # Snap to the upcoming occurrence of this holiday.
+                candidate = _dt.date(current_year, month, day)
+                if candidate < _dt.date.today():
+                    candidate = _dt.date(current_year + 1, month, day)
+                return candidate.isoformat(), duration
+        return None
 
     @classmethod
     def _parse_trip_days(cls, user_request: str) -> int | None:
@@ -506,10 +615,18 @@ class TravelPlanningAgent:
 
         chinese_days_match = re.search(r"([一二两三四五六七八九十]{1,3})\s*天", user_request)
         if chinese_days_match:
-            return cls.CHINESE_DAY_NUMBERS.get(chinese_days_match.group(1))
+            days = cls.CHINESE_DAY_NUMBERS.get(chinese_days_match.group(1))
+            if days is not None:
+                return days
 
         if "weekend" in lower or "周末" in user_request:
             return 2
+
+        # Infer days from holiday duration when user doesn't state days explicitly.
+        holiday = cls._parse_holiday_date(user_request)
+        if holiday:
+            return holiday[1]
+
         return None
 
     @classmethod
@@ -523,6 +640,10 @@ class TravelPlanningAgent:
         city = cls._extract_city(user_request, default_city)
 
         trip_days = cls._parse_trip_days(user_request) or 3
+
+        # Resolve start_date from explicit holiday mention when no days stated directly.
+        holiday_info = cls._parse_holiday_date(user_request)
+        start_date = holiday_info[0] if holiday_info else ""
 
         travel_type = cls._match_alias_group(lower + user_request, cls.TRAVEL_TYPE_ALIASES, "leisure")
 
@@ -539,14 +660,18 @@ class TravelPlanningAgent:
 
         profile = {
             "city": city,
-            "start_date": "",
+            "start_date": start_date,
             "trip_days": trip_days,
             "travel_type": travel_type,
             "travelers": travelers,
             "budget_level": budget_level,
             "pace": pace,
             "interests": cls._split_csv(interests_clause),
-            "must_visit": [cls._normalize_poi_name(item) for item in cls._split_csv(must_visit_clause)],
+            "must_visit": [
+                item for item in
+                (cls._normalize_poi_name(raw) for raw in cls._split_csv(must_visit_clause))
+                if item
+            ],
             "avoid": cls._split_csv(avoid_clause),
             "notes": notes_clause,
             "extra_request": extra_clause,
@@ -562,7 +687,7 @@ class TravelPlanningAgent:
                 for match in re.finditer(pattern, user_request, flags=re.IGNORECASE):
                     implicit_items.extend(cls._split_csv(match.group(1)))
             profile["must_visit"] = cls._dedupe_items(
-                [cls._normalize_poi_name(item) for item in implicit_items if cls._normalize_poi_name(item)]
+                [n for n in (cls._normalize_poi_name(item) for item in implicit_items) if n]
             )
         if not profile["must_visit"]:
             known_places = [

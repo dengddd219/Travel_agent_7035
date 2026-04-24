@@ -140,7 +140,8 @@ def _select_pois(
     seen: set[str] = set()
     base_target = preferences.trip_days * PACE_SLOT_COUNT[preferences.pace]
     enrichment_target = sum(_parse_day_enrichment_requests(preferences.extra_request, preferences.trip_days).values())
-    target_count = min(max(base_target + enrichment_target, preferences.trip_days * 3), 18)
+    # Raise the per-trip cap (was 18) so longer trips don't exhaust candidates early.
+    target_count = min(max(base_target + enrichment_target, preferences.trip_days * 3), max(24, preferences.trip_days * 4))
 
     for poi in scored:
         name_key = poi.name.lower()
@@ -188,6 +189,9 @@ def _allocate_days(
         remaining_unused = [poi for poi in selected_pois if poi.name not in used]
         remaining_days = preferences.trip_days - day_index
         if not remaining_unused:
+            # Recycle POIs with lowest scores rather than leaving the day blank.
+            # This ensures multi-day itineraries always have content on every day.
+            recycled = selected_pois[:preferred_slots] if selected_pois else []
             plans.append(
                 DayPlan(
                     day_index=day_index + 1,
@@ -197,8 +201,23 @@ def _allocate_days(
                     weather_summary=weather_day.summary if weather_day else "",
                     inter_stop_distance_m=0,
                     inter_stop_duration_min=0,
-                    items=[],
-                    notes=["Candidate POIs were exhausted early, so this day is left open for rest, food, or flexible local exploration."],
+                    items=[
+                        DayPlanItem(
+                            time_slot=["morning", "afternoon", "evening"][i % 3],
+                            poi_name=poi.name,
+                            category=poi.category,
+                            district=poi.district,
+                            est_cost=poi.ticket_price or 0.0,
+                            transport_hint="Revisit or explore nearby options.",
+                            arrival_mode="walk",
+                            distance_m=0,
+                            duration_min=int(poi.duration_hours * 60),
+                            reasoning="Suggested as a revisit option — original candidate pool was exhausted.",
+                            weather_fit="flexible mixed-environment stop.",
+                        )
+                        for i, poi in enumerate(recycled)
+                    ],
+                    notes=["All unique candidates covered; this day suggests revisiting highlights or exploring nearby spots."],
                 )
             )
             continue
@@ -534,6 +553,33 @@ def review_itinerary(plan: dict, user_profile: dict, weather: dict) -> dict:
     weather_days = _weather_lookup(weather)
     findings: list[ReviewFinding] = []
 
+    # Hard constraint 1: city must match.
+    if itinerary.city and preferences.city and itinerary.city.lower() != preferences.city.lower():
+        findings.append(
+            ReviewFinding(
+                level="error",
+                rule="city_mismatch",
+                message=(
+                    f"Itinerary city '{itinerary.city}' does not match requested city '{preferences.city}'. "
+                    "The plan must be regenerated for the correct destination."
+                ),
+            )
+        )
+
+    # Hard constraint 2: day count must match.
+    actual_days = len(itinerary.days)
+    if actual_days != preferences.trip_days:
+        findings.append(
+            ReviewFinding(
+                level="error",
+                rule="day_count_mismatch",
+                message=(
+                    f"Itinerary has {actual_days} day(s) but user requested {preferences.trip_days} day(s). "
+                    "The plan must be extended or regenerated to cover the full trip."
+                ),
+            )
+        )
+
     scheduled_names = [item.poi_name for day in itinerary.days for item in day.items]
     missing_must_visit = [
         place
@@ -787,88 +833,157 @@ def plan_itinerary(
     return plan.model_dump()
 
 
+def _is_chinese_input(user_profile: dict) -> bool:
+    """Return True when the user's request appears to be primarily Chinese."""
+    # Heuristic: check notes or extra_request for Chinese characters.
+    sample = " ".join(filter(None, [
+        user_profile.get("notes", ""),
+        user_profile.get("extra_request", ""),
+        user_profile.get("travelers", ""),
+    ]))
+    chinese_chars = sum(1 for ch in sample if "一" <= ch <= "鿿")
+    return chinese_chars >= 3
+
+
+_REPORT_LABELS_ZH = {
+    "title_suffix": "智能旅行规划",
+    "trip_style": "出行风格",
+    "travelers": "同行人员",
+    "budget": "预算等级",
+    "pace": "行程节奏",
+    "est_cost": "景点费用预估",
+    "planning_summary": "规划摘要",
+    "itinerary": "每日行程",
+    "day": "第 {n} 天",
+    "theme": "主题",
+    "weather": "天气",
+    "day_cost": "预计费用",
+    "transit": "路途时间",
+    "weather_outlook": "天气预报",
+    "city_logistics": "城市出行贴士",
+    "local_tips": "本地攻略",
+    "review_summary": "行程审查",
+    "replan_summary": "重规划说明",
+    "planner_notes": "规划说明",
+    "interests_used": "兴趣偏好",
+    "must_visit_inputs": "必去景点",
+    "imported_notes": "参考攻略已融入 POI 检索与优先级排序。",
+}
+
+_REPORT_LABELS_EN = {
+    "title_suffix": "Intelligent Travel Plan",
+    "trip_style": "Trip Style",
+    "travelers": "Travelers",
+    "budget": "Budget",
+    "pace": "Pace",
+    "est_cost": "Estimated Core Attraction Cost",
+    "planning_summary": "Planning Summary",
+    "itinerary": "Day-by-Day Itinerary",
+    "day": "Day {n}",
+    "theme": "Theme",
+    "weather": "Weather",
+    "day_cost": "Estimated cost",
+    "transit": "Inter-stop travel",
+    "weather_outlook": "Weather Outlook",
+    "city_logistics": "City Logistics",
+    "local_tips": "Local Tips",
+    "review_summary": "Review Summary",
+    "replan_summary": "Replan Summary",
+    "planner_notes": "Planner Notes",
+    "interests_used": "Interests Used",
+    "must_visit_inputs": "Must-Visit Inputs",
+    "imported_notes": "incorporated into POI lookup and itinerary prioritization.",
+}
+
+
 def render_markdown_report(plan: dict, user_profile: dict, city_context: dict, weather: dict) -> str:
     itinerary = ItineraryPlan.model_validate(plan)
     preferences = UserPreferences.model_validate(user_profile)
     weather_days = _weather_lookup(weather)
 
+    zh = _is_chinese_input(user_profile)
+    L = _REPORT_LABELS_ZH if zh else _REPORT_LABELS_EN
+
+    no_weather = "暂无天气数据" if zh else "No weather data"
+
     lines = [
-        f"# {itinerary.city} Intelligent Travel Plan",
+        f"# {itinerary.city} {L['title_suffix']}",
         "",
-        f"**Trip Style**: {preferences.travel_type.title()}",
-        f"**Travelers**: {preferences.travelers}",
-        f"**Budget**: {preferences.budget_level.title()}",
-        f"**Pace**: {preferences.pace.title()}",
-        f"**Estimated Core Attraction Cost**: {itinerary.total_estimated_cost:.2f}",
+        f"**{L['trip_style']}**: {preferences.travel_type.title()}",
+        f"**{L['travelers']}**: {preferences.travelers}",
+        f"**{L['budget']}**: {preferences.budget_level.title()}",
+        f"**{L['pace']}**: {preferences.pace.title()}",
+        f"**{L['est_cost']}**: {itinerary.total_estimated_cost:.2f}",
         "",
-        "## Planning Summary",
+        f"## {L['planning_summary']}",
         itinerary.overview,
         "",
     ]
 
     if preferences.interests:
-        lines.append(f"**Interests Used**: {', '.join(preferences.interests)}")
+        lines.append(f"**{L['interests_used']}**: {', '.join(preferences.interests)}")
     if preferences.must_visit:
-        lines.append(f"**Must-Visit Inputs**: {', '.join(preferences.must_visit)}")
+        lines.append(f"**{L['must_visit_inputs']}**: {', '.join(preferences.must_visit)}")
     if preferences.notes:
-        lines.append("**Imported Notes**: incorporated into POI lookup and itinerary prioritization.")
+        lines.append(f"**{'参考攻略' if zh else 'Imported Notes'}**: {L['imported_notes']}")
     lines.append("")
 
-    lines.append("## Day-by-Day Itinerary")
+    lines.append(f"## {L['itinerary']}")
     for day in itinerary.days:
+        day_label = L["day"].format(n=day.day_index)
         lines.extend(
             [
                 "",
-                f"### Day {day.day_index}: {day.area}",
-                f"- Theme: {day.theme}",
-                f"- Weather: {day.weather_summary or 'No weather data'}",
-                f"- Estimated cost: {day.estimated_cost:.2f}",
-                f"- Inter-stop travel: {day.inter_stop_duration_min} min across {day.inter_stop_distance_m / 1000:.1f} km",
+                f"### {day_label}: {day.area}",
+                f"- {L['theme']}: {day.theme}",
+                f"- {L['weather']}: {day.weather_summary or no_weather}",
+                f"- {L['day_cost']}: {day.estimated_cost:.2f}",
+                f"- {L['transit']}: {day.inter_stop_duration_min} min across {day.inter_stop_distance_m / 1000:.1f} km",
             ]
         )
         for item in day.items:
             lines.extend(
                 [
                     f"- {item.time_slot.title()}: **{item.poi_name}** ({item.category}, {item.district})",
-                    f"  Reason: {item.reasoning}.",
-                    f"  Weather fit: {item.weather_fit}",
-                    f"  Transport: {item.transport_hint}",
+                    f"  {'原因' if zh else 'Reason'}: {item.reasoning}.",
+                    f"  {'天气适配' if zh else 'Weather fit'}: {item.weather_fit}",
+                    f"  {'交通' if zh else 'Transport'}: {item.transport_hint}",
                 ]
             )
         for note in day.notes:
-            lines.append(f"- Day note: {note}")
+            lines.append(f"- {'备注' if zh else 'Day note'}: {note}")
 
     if weather_days:
-        lines.extend(["", "## Weather Outlook"])
+        lines.extend(["", f"## {L['weather_outlook']}"])
         for day in weather_days[: preferences.trip_days]:
             lines.append(
-                f"- {day.date}: {day.summary}, {day.temp_min:.0f}-{day.temp_max:.0f}C, precipitation risk {day.precipitation_probability}%."
+                f"- {day.date}: {day.summary}, {day.temp_min:.0f}-{day.temp_max:.0f}C, {'降水概率' if zh else 'precipitation risk'} {day.precipitation_probability}%."
             )
 
     if city_context.get("transport"):
-        lines.extend(["", "## City Logistics"])
+        lines.extend(["", f"## {L['city_logistics']}"])
         for tip in city_context["transport"][:4]:
             lines.append(f"- {tip}")
 
     if itinerary.local_tips:
-        lines.extend(["", "## Local Tips"])
+        lines.extend(["", f"## {L['local_tips']}"])
         for tip in itinerary.local_tips[:6]:
             lines.append(f"- {tip}")
 
     if itinerary.review_summary or itinerary.review_findings:
-        lines.extend(["", "## Review Summary"])
+        lines.extend(["", f"## {L['review_summary']}"])
         if itinerary.review_summary:
             lines.append(f"- {itinerary.review_summary}")
         for finding in itinerary.review_findings:
             lines.append(f"- [{finding.level.upper()}] {finding.rule}: {finding.message}")
 
     if itinerary.replan_summary:
-        lines.extend(["", "## Replan Summary", f"- {itinerary.replan_summary}"])
+        lines.extend(["", f"## {L['replan_summary']}", f"- {itinerary.replan_summary}"])
         trigger_rules = itinerary.replan_metadata.get("trigger_rules", [])
         if trigger_rules:
-            lines.append(f"- Trigger rules: {', '.join(trigger_rules)}")
+            lines.append(f"- {'触发规则' if zh else 'Trigger rules'}: {', '.join(trigger_rules)}")
 
-    lines.extend(["", "## Planner Notes"])
+    lines.extend(["", f"## {L['planner_notes']}"])
     for note in itinerary.planning_notes:
         lines.append(f"- {note}")
 
