@@ -1,3 +1,4 @@
+## author:SUN Bin
 from __future__ import annotations
 
 from copy import deepcopy
@@ -5,6 +6,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
+from .city_names import CITY_ALIASES, normalize_city_name, provider_city_name
 from .config import Settings
 from .llm import create_response_client
 from .planner import plan_itinerary, render_markdown_report
@@ -15,6 +17,16 @@ from .tools.strategy_rag_adapter import get_strategy_context
 from .tools.weather_adapter import get_group_c_weather_forecast
 from .tools.poi import search_batch_pois
 from .tools.tips import get_travel_tips
+
+"""Main orchestration agent for our travel planner.
+
+This module sits between user input and the deterministic planner. Its job is to:
+- understand what the user wants
+- keep multi-turn preference memory
+- split complex requests into smaller sub-queries
+- gather evidence from strategy / geo / conditions tools
+- call the planner only after the context is rich enough
+"""
 
 
 SYSTEM_PROMPT = """
@@ -29,6 +41,11 @@ Your job is not to free-write a generic travel plan. You must orchestrate tools 
 6. call the report generator to produce the final markdown report
 
 Rules:
+- Start with strategy retrieval for destination knowledge unless it is already available.
+- Treat retrieved guide knowledge as planning evidence, not as decoration.
+- When strategy retrieval suggests specific POIs or neighborhoods, prefer them unless they conflict with hard constraints, weather, or budget.
+- Use POI search to normalize and verify guide recommendations instead of replacing them with arbitrary map results.
+- If the user request is sparse, use city profile suggestions plus retrieved travel-guide signals to build a plausible first itinerary.
 - Prefer geographically coherent day plans.
 - Avoid jumping across distant districts on the same day unless the user explicitly requests it.
 - Use indoor or mixed venues on poor-weather days.
@@ -39,6 +56,7 @@ Rules:
 - If mobility constraints are missing, assume average adult walking tolerance.
 - If a skyline preference is missing, choose the option that best fits the must-visit list and routing logic.
 - If some tools return partial data, continue with the best available information instead of asking the user to fill the gap.
+- Do not invent a route that ignores retrieved guide clusters when those clusters are available.
 """
 
 
@@ -104,34 +122,6 @@ class TravelPlanningAgent:
     3) Produce final itinerary/report and optional orchestration handoff payload.
     """
 
-    # Alias tables make extraction robust to mixed English/Chinese wording.
-    CITY_ALIASES = {
-        "hong kong": "Hong Kong",
-        "香港": "Hong Kong",
-        "tokyo": "Tokyo",
-        "东京": "Tokyo",
-        "chengdu": "Chengdu",
-        "成都": "Chengdu",
-        "shanghai": "Shanghai",
-        "上海": "Shanghai",
-        "beijing": "Beijing",
-        "北京": "Beijing",
-        "xian": "Xian",
-        "xi'an": "Xian",
-        "西安": "Xian",
-        "guangzhou": "Guangzhou",
-        "广州": "Guangzhou",
-        "shenzhen": "Shenzhen",
-        "深圳": "Shenzhen",
-        "hangzhou": "Hangzhou",
-        "杭州": "Hangzhou",
-        "chongqing": "Chongqing",
-        "重庆": "Chongqing",
-        "xiamen": "Xiamen",
-        "厦门": "Xiamen",
-        "nanjing": "Nanjing",
-        "南京": "Nanjing",
-    }
     TRAVEL_TYPE_ALIASES = {
         "family": ["family", "亲子", "带娃", "kids", "children"],
         "food": ["food", "dining", "美食", "吃", "火锅", "小吃"],
@@ -157,6 +147,11 @@ class TravelPlanningAgent:
         "shopping": ["shopping", "mall", "逛街", "购物", "商场"],
         "hidden gems": ["hidden gem", "小众", "冷门"],
         "night views": ["night", "night view", "夜景"],
+    }
+    POI_NAME_ALIASES = {
+        "太古": "太古里",
+        "成都太古": "成都太古里",
+        "春熙": "春熙路",
     }
     INTEREST_QUERY_ALIASES = {
         "landmarks": "landmark",
@@ -186,6 +181,8 @@ class TravelPlanningAgent:
         self.client = bundle.client
         self.model = bundle.model
         # Tool implementations exposed to the model. Names must match schemas in build_tools().
+        # This indirection lets the LLM see a clean tool contract while we keep
+        # the real Python callables configurable on our side.
         self.tool_impls = {
             "get_city_context": get_city_context,
             "get_strategy_context": self._get_strategy_context,
@@ -252,6 +249,8 @@ class TravelPlanningAgent:
     @staticmethod
     def build_tools() -> list[dict]:
         # JSON schemas define the contract the model must follow when invoking tools.
+        # Keeping these schemas explicit helps the orchestration stay stable even
+        # when the user's request is vague or highly conversational.
         return [
             {
                 "type": "function",
@@ -263,7 +262,7 @@ class TravelPlanningAgent:
                         "city": {"type": "string"},
                         "queries": {"type": "array", "items": {"type": "string"}},
                         "travel_type": {"type": "string"},
-                        "top_k": {"type": "integer", "minimum": 1, "maximum": 8, "default": 5},
+                        "top_k": {"type": "integer", "minimum": 1, "maximum": 10, "default": 8},
                     },
                     "required": ["city", "queries", "travel_type"],
                     "additionalProperties": False,
@@ -358,7 +357,31 @@ class TravelPlanningAgent:
         # Split by both English and Chinese separators, then trim empties.
         if not raw:
             return []
-        return [part.strip() for part in re.split(r"[,;，；、\n]+", raw) if part.strip()]
+        return [part.strip() for part in re.split(r"[,;，；、\n]|(?:\s+(?:and|or)\s+)|(?:\s*[和及与]\s*)", raw) if part.strip()]
+
+    @classmethod
+    def _normalize_poi_name(cls, value: str) -> str:
+        # Users often mention POIs in a conversational way:
+        # "我想去太古", "然后去春熙", "成都玩三天必须去..."
+        # This helper strips those wrappers and keeps only the part we should
+        # use for POI search and must-visit matching.
+        normalized = value.strip()
+        if not normalized:
+            return ""
+        normalized = normalized.strip("，,；;、。.!？?：: ")
+        cleanup_patterns = [
+            r"^(?:我想去|想去|一定要去|必须去|安排去|要去|去|打卡|逛)\s*",
+            r"^(?:必须去|一定要去|安排去|要去)\s*",
+            r"^(?:再去|然后去|顺路去|以及去)\s*",
+            r"^(?:香港|东京|成都|上海|北京|广州|深圳|杭州|西安|重庆|厦门|南京)\s*(?:玩|逛|待)?\s*(?:\d+\s*天|[一二两三四五六七八九十]+\s*天)?\s*",
+            r"^(?:玩|逛)\s*(?:\d+\s*天|[一二两三四五六七八九十]+\s*天)\s*",
+        ]
+        previous = None
+        while normalized and normalized != previous:
+            previous = normalized
+            for pattern in cleanup_patterns:
+                normalized = re.sub(pattern, "", normalized).strip("，,；;、。.!？?：: ")
+        return cls.POI_NAME_ALIASES.get(normalized, normalized)
 
     @classmethod
     def _match_alias_group(cls, text: str, mapping: dict[str, list[str]], default: str) -> str:
@@ -379,28 +402,34 @@ class TravelPlanningAgent:
     @classmethod
     def _extract_explicit_city(cls, user_request: str) -> str | None:
         # 1) Try regex-based extraction from phrases like "trip in Tokyo".
-        lower = user_request.lower()
         city_match = re.search(
             r"(?:trip in|in|to|去|到)\s+([A-Z][A-Za-z\s\-]+?)(?:\.|,| for | with | budget| pace| must visit)",
             user_request,
         )
         if city_match:
-            return city_match.group(1).strip()
+            explicit = normalize_city_name(city_match.group(1).strip())
+            if explicit:
+                return explicit
 
-        # 2) Fall back to alias lookup for Chinese/English city mentions.
-        for alias, city in cls.CITY_ALIASES.items():
+        # 2) Fall back to unified city normalization for mixed Chinese/English mentions.
+        lower = user_request.lower()
+        for alias in CITY_ALIASES:
             if alias in lower or alias in user_request:
-                return city
+                return CITY_ALIASES[alias]
         return None
 
     @classmethod
     def _extract_city(cls, user_request: str, default_city: str) -> str:
         # Never return empty city; always enforce a deterministic fallback.
-        return cls._extract_explicit_city(user_request) or default_city
+        return cls._extract_explicit_city(user_request) or normalize_city_name(default_city) or default_city
 
     @classmethod
     def _extract_user_profile(cls, user_request: str, default_city: str = "Hong Kong") -> dict:
         # Build a normalized profile from noisy natural language input.
+        # This function is intentionally permissive because user input is often:
+        # - incomplete
+        # - partly Chinese, partly English
+        # - not written in explicit "field: value" form
         lower = user_request.lower()
         city = cls._extract_city(user_request, default_city)
 
@@ -435,13 +464,24 @@ class TravelPlanningAgent:
             "budget_level": budget_level,
             "pace": pace,
             "interests": cls._split_csv(interests_clause),
-            "must_visit": cls._split_csv(must_visit_clause),
+            "must_visit": [cls._normalize_poi_name(item) for item in cls._split_csv(must_visit_clause)],
             "avoid": cls._split_csv(avoid_clause),
             "notes": notes_clause,
             "extra_request": extra_clause,
         }
 
-        # Backfill obvious must-visit items if user mentions known places inline.
+        # Backfill obvious must-visit items if user mentions places inline instead
+        # of using an explicit "Must visit:" clause.
+        if not profile["must_visit"]:
+            implicit_items: list[str] = []
+            for pattern in [
+                r"(?:想去|一定要去|必须去|安排去|想逛|要去)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+            ]:
+                for match in re.finditer(pattern, user_request, flags=re.IGNORECASE):
+                    implicit_items.extend(cls._split_csv(match.group(1)))
+            profile["must_visit"] = cls._dedupe_items(
+                [cls._normalize_poi_name(item) for item in implicit_items if cls._normalize_poi_name(item)]
+            )
         if not profile["must_visit"]:
             known_places = [
                 "Peak Tram",
@@ -563,6 +603,11 @@ class TravelPlanningAgent:
         extra_clause = cls._extract_clause(user_request, "Extra request")
         if extra_clause:
             updates["append"]["extra_request"] = extra_clause
+        elif re.search(r"第\s*\d+\s*天", user_request) and re.search(
+            r"(简单|太少|不够|空|单薄|丰富|增加|加点|多安排|充实|more|denser|too simple|add)",
+            combined_text,
+        ):
+            updates["append"]["extra_request"] = user_request.strip()
 
         interests_clause = cls._extract_clause(user_request, "Interests")
         if interests_clause:
@@ -611,16 +656,34 @@ class TravelPlanningAgent:
         for field in ("interests", "must_visit", "avoid"):
             updates["add"][field] = cls._dedupe_items(updates["add"][field])
             updates["remove"][field] = cls._dedupe_items(updates["remove"][field])
+        updates["add"]["must_visit"] = [cls._normalize_poi_name(item) for item in updates["add"]["must_visit"]]
+        if "must_visit" in updates["replace"]:
+            updates["replace"]["must_visit"] = [
+                cls._normalize_poi_name(item) for item in updates["replace"]["must_visit"]
+            ]
         return updates
 
     @classmethod
     def _merge_preference_memory(cls, preference_memory: dict, user_request: str) -> dict:
         # Apply parsed updates on top of previous memory to get latest preference state.
+        # This is what makes "Refine Existing Plan" feel conversational instead
+        # of forcing the user to repeat the whole trip profile every time.
         merged = deepcopy(preference_memory)
         updates = cls._extract_profile_updates(user_request)
+        city_changed = False
+        previous_city = str(merged.get("city", "")).strip()
 
         for field, value in updates["replace"].items():
             merged[field] = value
+            if field == "city" and str(value).strip() and str(value).strip() != previous_city:
+                city_changed = True
+
+        if city_changed:
+            # City-specific memories should not bleed into a new destination.
+            merged["must_visit"] = []
+            merged["avoid"] = []
+            merged["notes"] = ""
+            merged["extra_request"] = ""
 
         for field in ("interests", "must_visit", "avoid"):
             current_values = cls._dedupe_items(list(merged.get(field, [])))
@@ -664,6 +727,8 @@ class TravelPlanningAgent:
     @classmethod
     def _build_strategy_queries(cls, user_profile: dict, city_context: dict | None = None) -> list[str]:
         # Build high-level discovery queries for POI/theme exploration.
+        # These queries are meant for the strategy/RAG side, so they can be
+        # broader and more thematic than map-search queries.
         queries: list[str] = []
         queries.extend(user_profile.get("must_visit", []))
         if user_profile.get("notes"):
@@ -680,6 +745,10 @@ class TravelPlanningAgent:
             else:
                 queries.append(alias)
 
+        if city_context:
+            recommended_areas = [item.get("name", "") for item in city_context.get("recommended_areas", []) if item.get("name")]
+            queries.extend(recommended_areas[:3])
+
         return cls._dedupe_queries(queries, limit=12)
 
     @classmethod
@@ -694,6 +763,9 @@ class TravelPlanningAgent:
         # - geo queries (routeable POIs)
         # - condition queries (weather + budget)
         # plus planning constraints for deterministic planner.
+        #
+        # This is the main "agentic workflow" step. Instead of throwing the
+        # entire user question at every tool, we decompose it into smaller asks.
         city = user_profile["city"]
         combined_text = " ".join(
             part for part in [user_request, user_profile.get("notes", ""), user_profile.get("extra_request", "")] if part
@@ -701,6 +773,12 @@ class TravelPlanningAgent:
 
         strategy_queries = cls._build_strategy_queries(user_profile, city_context)
         geo_queries = list(user_profile.get("must_visit", []))
+        provider_city = provider_city_name(city, "zh")
+        geo_queries.extend(
+            f"{provider_city} {poi_name}"
+            for poi_name in user_profile.get("must_visit", [])
+            if poi_name and provider_city and provider_city not in poi_name
+        )
         geo_queries.extend(
             part.strip()
             for part in re.split(r"[\n,，;；/|]+", user_profile.get("notes", ""))
@@ -716,6 +794,15 @@ class TravelPlanningAgent:
             strategy_queries.append(f"{city} local food route")
         if user_profile["trip_days"] > 1:
             strategy_queries.append(f"{city} {user_profile['trip_days']}-day itinerary")
+
+        if city_context:
+            fallback_geo = city_context.get("suggested_queries", [])[:4]
+            if geo_queries:
+                # Keep user-requested POIs first, but always blend in a few city defaults so sparse requests
+                # still have enough candidate places to fill multi-day itineraries.
+                geo_queries.extend(fallback_geo[: max(0, min(3, user_profile["trip_days"]))])
+            else:
+                geo_queries.extend(fallback_geo)
 
         rain_sensitive = any(
             term in combined_text
@@ -769,6 +856,8 @@ class TravelPlanningAgent:
     @staticmethod
     def _build_structured_agent_input(user_request: str, user_profile: dict, decomposition: dict) -> str:
         # Feed the model with explicit structured context to reduce hallucinated assumptions.
+        # The more we tell the model about already-resolved structure, the less
+        # likely it is to skip tools or make up missing details.
         return "\n".join(
             [
                 f"Original request: {user_request}",
@@ -783,6 +872,8 @@ class TravelPlanningAgent:
 
     @staticmethod
     def _merge_strategy_into_travel_tips(travel_tips: dict, strategy_context: dict | None) -> dict:
+        # Merge RAG snippets into the travel-tip pool so later reasoning and UI
+        # summaries can explicitly mention retrieved guide evidence.
         merged = deepcopy(travel_tips or {"tips": []})
         merged.setdefault("tips", [])
         if not strategy_context:
@@ -812,7 +903,9 @@ class TravelPlanningAgent:
         return merged
 
     def _augment_poi_results_with_strategy(self, user_profile: dict, poi_result: dict, strategy_context: dict | None) -> dict:
-        if not strategy_context or not hasattr(self, "settings"):
+        # RAG knows what people recommend; map search knows coordinates.
+        # This function makes sure those two worlds are connected.
+        if not hasattr(self, "settings"):
             return poi_result
 
         existing_names = {
@@ -820,11 +913,17 @@ class TravelPlanningAgent:
             for item in poi_result.get("results", [])
             if isinstance(item, dict)
         }
-        missing_queries = [
+        missing_must_visit = [
             poi_name
-            for poi_name in strategy_context.get("recommended_pois", [])
+            for poi_name in user_profile.get("must_visit", [])
+            if poi_name.strip().lower() not in existing_names
+        ]
+        missing_strategy_queries = [
+            poi_name
+            for poi_name in (strategy_context or {}).get("recommended_pois", [])
             if poi_name.strip().lower() not in existing_names
         ][:6]
+        missing_queries = self._dedupe_queries(missing_must_visit + missing_strategy_queries, limit=8)
         if not missing_queries:
             return poi_result
 
@@ -960,6 +1059,29 @@ class TravelPlanningAgent:
             lines.append(f"- Note: {note}")
         return "\n".join(lines)
 
+    @staticmethod
+    def _build_guide_references(strategy_context: dict | None) -> list[str]:
+        # Extract a few short guide references that can later be shown directly
+        # to the user as "why this route looks like this".
+        if not strategy_context:
+            return []
+        references: list[str] = []
+        for result in strategy_context.get("results", [])[:3]:
+            text = str(result.get("chunk_text", "")).strip()
+            if not text:
+                continue
+            snippet = re.split(r"[。！？!?;\n]", text, maxsplit=1)[0].strip()
+            if snippet:
+                references.append(snippet[:120])
+        for note in strategy_context.get("local_pitfalls", [])[:2]:
+            if note and note not in references:
+                references.append(str(note).strip()[:120])
+        for neighborhood in strategy_context.get("neighborhood_notes", [])[:2]:
+            district = str(neighborhood.get("district", "")).strip()
+            if district:
+                references.append(f"攻略里这个区域被反复提到：{district}")
+        return references[:4]
+
     def _build_orchestration_payload(
         self,
         *,
@@ -970,6 +1092,8 @@ class TravelPlanningAgent:
         report: str,
     ) -> AgentOrchestrationResult:
         # Build a rich handoff bundle for multi-group collaboration and debugging.
+        # This payload is more verbose than the user-facing answer because it is
+        # designed for team handoff and integration inspection.
         city_context = tool_results["get_city_context"]
         strategy_context = tool_results.get("get_strategy_context", {})
         poi_result = self._augment_poi_results_with_strategy(
@@ -1068,6 +1192,11 @@ class TravelPlanningAgent:
 
     def _auto_finish(self, user_profile: dict, tool_results: dict) -> AgentRunResult:
         # Deterministic finalization path once minimum required tool data is present.
+        # The planner is called only after we have enough:
+        # - city context
+        # - POIs
+        # - weather
+        # - travel tips / strategy context
         city_context = tool_results["get_city_context"]
         strategy_context = tool_results.get("get_strategy_context", {})
         poi_result = self._augment_poi_results_with_strategy(
@@ -1089,8 +1218,16 @@ class TravelPlanningAgent:
             weather=weather,
             city_context=city_context,
             travel_tips=tips,
+            strategy_context=strategy_context,
             settings=self.settings,
         )
+        plan["guide_references"] = self._build_guide_references(strategy_context)
+        plan["strategy_summary"] = {
+            "recommended_pois": strategy_context.get("recommended_pois", []),
+            "theme_suggestions": strategy_context.get("theme_suggestions", []),
+            "neighborhood_notes": strategy_context.get("neighborhood_notes", []),
+        }
+        plan["weather_payload"] = weather
         report = render_markdown_report(
             plan=plan,
             user_profile=user_profile,
@@ -1159,6 +1296,45 @@ class TravelPlanningAgent:
             ),
             "_decomposition": decomposition,
         }
+
+        # Pre-fill all required tools deterministically to skip LLM tool-calling loop.
+        city = user_profile["city"]
+        strategy_queries = decomposition.get("strategy_queries") or [f"{city} {user_profile['travel_type']} itinerary"]
+        geo_queries = decomposition.get("geo_queries") or [f"{city} landmark"]
+
+        tool_results["get_city_context"] = get_city_context(city, user_profile["travel_type"])
+        tool_results["get_strategy_context"] = self._get_strategy_context(
+            city=city,
+            queries=self._dedupe_queries(strategy_queries, limit=6),
+            travel_type=user_profile["travel_type"],
+            top_k=5,
+        )
+        tool_results["get_weather_forecast"] = self._get_weather_forecast(
+            city=city,
+            trip_days=user_profile["trip_days"],
+            start_date=user_profile.get("start_date", ""),
+        )
+        tool_results["search_batch_pois"] = self._search_batch_pois(
+            city=city,
+            queries=self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
+            limit_per_query=3,
+        )
+        tool_results["get_cost_summary"] = self._get_cost_summary(
+            city=city,
+            days=user_profile["trip_days"],
+            budget_level=user_profile["budget_level"],
+            user_budget=decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
+        )
+        poi_names = [item["name"] for item in tool_results["search_batch_pois"].get("results", [])[:8]]
+        tool_results["get_travel_tips"] = self._get_travel_tips(
+            city=city,
+            poi_names=poi_names,
+            travel_type=user_profile["travel_type"],
+            interests=user_profile.get("interests", []),
+        )
+        result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
+        return user_profile, tool_results, result.plan or {}, result.answer
+
         structured_request = self._build_structured_agent_input(user_request, user_profile, decomposition)
         response = self.client.responses.create(
             model=self.model,
@@ -1254,7 +1430,7 @@ class TravelPlanningAgent:
                     city=user_profile["city"],
                     queries=decomposition["strategy_queries"] or [f"{user_profile['city']} {user_profile['travel_type']} itinerary"],
                     travel_type=user_profile["travel_type"],
-                    top_k=5,
+                    top_k=8,
                 )
             if "get_city_context" in missing:
                 tool_results["get_city_context"] = get_city_context(user_profile["city"], user_profile["travel_type"])

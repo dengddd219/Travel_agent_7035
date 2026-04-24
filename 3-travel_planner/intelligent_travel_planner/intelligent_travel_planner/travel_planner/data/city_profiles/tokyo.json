@@ -1,0 +1,134 @@
+{
+  "city": "Tokyo",
+  "aliases": ["tokyo", "东京"],
+  "recommended_areas": [
+    {"name": "Asakusa", "why": "classic first-time highlights and easy cultural pacing"},
+    {"name": "Shibuya / Harajuku", "why": "good for design, shopping, and youth culture"},
+    {"name": "Ueno", "why": "strong museum cluster and flexible weather backup"},
+    {"name": "Shinjuku", "why": "strong nightlife and transport hub"}
+  ],
+  "transport": [
+    "Keep daily plans rail-line friendly and avoid stacking too many far-flung neighborhoods.",
+    "Use one east-side cluster or one west-side cluster per day when possible.",
+    "Reserve time for station transfers and exit walking in large hubs."
+  ],
+  "bad_weather_fallbacks": [
+    "Shift shrine walks to museums, department stores, food halls, or covered shopping streets.",
+    "Use observation decks and indoor culture venues as rain buffers."
+  ],
+  "signature_foods": ["sushi", "ramen", "tempura", "yakitori", "kissaten coffee"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["culture", "view", "local"],
+      "suggested_queries": ["Senso-ji", "Shibuya Sky", "Meiji Shrine", "Ameya-Yokocho"],
+      "pace_note": "Tokyo rewards neighborhood depth more than rushing through too many icons."
+    },
+    "family": {
+      "focus_tags": ["family", "park", "museum"],
+      "suggested_queries": ["Ueno Zoo", "teamLab Planets", "Tokyo Disneyland", "Sumida Aquarium"],
+      "pace_note": "Use one headline attraction plus nearby low-effort backups."
+    },
+    "food": {
+      "focus_tags": ["food", "market", "local"],
+      "suggested_queries": ["Tsukiji Outer Market", "Omoide Yokocho", "Kappabashi", "Depachika Tokyo"],
+      "pace_note": "Keep meals geographically tight and avoid crossing the city for each reservation."
+    },
+    "theme": {
+      "focus_tags": ["culture", "design", "local"],
+      "suggested_queries": ["21_21 DESIGN SIGHT", "Nezu Museum", "Daikanyama T-Site", "Yanaka Ginza"],
+      "pace_note": "Build narrative depth around design, history, or subculture instead of breadth."
+    }
+  },
+  "indoor_keywords": ["museum", "mall", "department", "aquarium", "teamlab", "gallery", "store"],
+  "outdoor_keywords": ["shrine", "park", "garden", "sky", "crossing", "market", "tower"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Partly cloudy",
+      "temp_min": 16,
+      "temp_max": 23,
+      "precipitation_probability": 25,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good day for shrine walks and outdoor neighborhoods."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Light rain",
+      "temp_min": 15,
+      "temp_max": 21,
+      "precipitation_probability": 55,
+      "outdoor_suitability": "mixed",
+      "suggestions": ["Use museums and department stores as backup anchors."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Senso-ji",
+      "category": "attraction",
+      "district": "Asakusa",
+      "lat": 35.7148,
+      "lon": 139.7967,
+      "duration_hours": 1.8,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "mixed",
+      "tags": ["culture", "landmark", "local"],
+      "source": ["profile_seed"],
+      "address": "2-3-1 Asakusa, Taito City",
+      "open_hours": "06:00-17:00",
+      "rating": 4.6,
+      "visit_reason": "Strong first-time Tokyo landmark with cultural depth."
+    },
+    {
+      "name": "Shibuya Sky",
+      "category": "attraction",
+      "district": "Shibuya",
+      "lat": 35.6595,
+      "lon": 139.7005,
+      "duration_hours": 1.5,
+      "ticket_price": 2200,
+      "price_level": 4,
+      "indoor_outdoor": "outdoor",
+      "tags": ["view", "landmark", "night views"],
+      "source": ["profile_seed"],
+      "address": "2-24-12 Shibuya",
+      "open_hours": "10:00-22:30",
+      "rating": 4.6,
+      "visit_reason": "Premium skyline anchor."
+    },
+    {
+      "name": "Tsukiji Outer Market",
+      "category": "food",
+      "district": "Tsukiji",
+      "lat": 35.6654,
+      "lon": 139.7707,
+      "duration_hours": 1.6,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["food", "market", "local"],
+      "source": ["profile_seed"],
+      "address": "Tsukiji, Chuo City",
+      "open_hours": "07:00-14:00",
+      "rating": 4.5,
+      "visit_reason": "Classic food anchor with strong local energy."
+    },
+    {
+      "name": "teamLab Planets",
+      "category": "attraction",
+      "district": "Toyosu",
+      "lat": 35.6491,
+      "lon": 139.7898,
+      "duration_hours": 2.0,
+      "ticket_price": 3800,
+      "price_level": 4,
+      "indoor_outdoor": "indoor",
+      "tags": ["museum", "family", "design"],
+      "source": ["profile_seed"],
+      "address": "6-1-16 Toyosu",
+      "open_hours": "09:00-21:00",
+      "rating": 4.7,
+      "visit_reason": "Strong immersive indoor anchor."
+    }
+  ]
+}

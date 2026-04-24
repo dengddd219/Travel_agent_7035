@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel AI Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1a1a2e',
+            background: '#ffffff',
+            input: '#e2e8f0',
+            ring: '#a855f7',
+          },
+          borderRadius: {
+            '3xl': '1.5rem',
+            '4xl': '2rem',
+          },
+          maxWidth: {
+            '3xs': '12rem',
+          },
+          gap: {
+            '13': '3.25rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --color-primary: #1a1a2e;
+      --color-background: #f0f4ff;
+      --color-input: #e2e8f0;
+    }
+
+    body {
+      background: #F7F6F3;
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .hero-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .prompt-box {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      overflow: hidden;
+      max-width: 48rem;
+      width: 100%;
+    }
+
+    textarea {
+      resize: none;
+      outline: none;
+      border: none;
+      background: transparent;
+      width: 100%;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #1a1a2e;
+      overflow-y: auto;
+      max-height: 200px;
+    }
+
+    textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    .pill-btn {
+      background: #e9d5ff;
+      color: #1a1a2e;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .pill-btn:hover {
+      background: #d8b4fe;
+      transform: scale(1.03);
+    }
+
+    .send-btn {
+      background: #7c3aed;
+      color: white;
+      border-radius: 9999px;
+      width: 2.25rem;
+      height: 2.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s, transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      background: #6d28d9;
+      transform: scale(1.05);
+    }
+
+    .send-btn:disabled {
+      background: #c4b5fd;
+      cursor: not-allowed;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: #f1f5f9;
+      color: #1a1a2e;
+    }
+
+    .video-mask {
+      position: absolute;
+      top: -24%; left: -24%; right: -24%; bottom: -24%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='55%25' stop-color='black'/%3E%3Cstop offset='100%25' stop-color='transparent'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='100' cy='100' rx='80' ry='80' fill='url(%23g)'/%3E%3C/svg%3E");
+      background-size: 90%;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 10;
+      pointer-events: none;
+      mix-blend-mode: normal;
+    }
+
+    .response-area {
+      display: none;
+      margin-top: 1.5rem;
+      background: white;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      max-width: 48rem;
+      width: 100%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .typing-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #7c3aed;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    .see-more-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #7c3aed;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      transition: text-decoration 0.2s;
+    }
+
+    .see-more-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* Scrollbar */
+    textarea::-webkit-scrollbar { width: 4px; }
+    textarea::-webkit-scrollbar-track { background: transparent; }
+    textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<section class="hero-section">
+  <div style="width:100%; max-width:80rem; margin:0 auto; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:3rem; padding:0 1rem;">
+
+    <!-- Left: Text + Input -->
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:720px;">
+
+      <h1 style="color:#1a1a2e; font-size:clamp(1.8rem,4vw,3.2rem); font-weight:700; margin-bottom:0.75rem; line-height:1.2;">
+        Hey there, where are we going today?
+      </h1>
+      <p style="color:#1a1a2e; opacity:0.85; font-size:clamp(0.9rem,1.5vw,1.1rem); font-weight:600; margin-bottom:1.5rem;">
+        Live prices, all in one place, and a human expert when you need one.
+      </p>
+
+      <!-- Prompt Box -->
+      <div class="prompt-box" style="margin-bottom:1rem;">
+        <!-- Textarea -->
+        <div style="padding:1rem 1.5rem 0.5rem 0.5rem;">
+          <textarea
+            id="promptInput"
+            rows="1"
+            id="promptInput"
+            oninput="autoResize(this); toggleSend(this)"
+            onkeydown="handleKey(event)"
+            style="min-height:4rem;"
+          ></textarea>
+        </div>
+
+        <!-- Toolbar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem 0.75rem 1rem;">
+          <!-- Left icons -->
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <!-- Attach -->
+            <button class="icon-btn" title="Attach file">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Right: mic + send -->
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <!-- Mic -->
+            <button class="icon-btn" title="Voice input">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+            </button>
+
+            <!-- Send -->
+            <button class="send-btn" id="sendBtn" disabled title="Send" onclick="sendMessage()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/>
+                <path d="m21.854 2.147-10.94 10.939"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick prompt buttons -->
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+        <button class="pill-btn" onclick="setPrompt('Create a new trip')">Create a new trip</button>
+        <button class="pill-btn" onclick="setPrompt('Inspire me where to go')">Inspire me where to go</button>
+        <button class="pill-btn" onclick="setPrompt('Plan a road trip')">Plan a road trip</button>
+        <button class="pill-btn" onclick="setPrompt('Plan a last-minute escape')">Plan a last-minute escape</button>
+      </div>
+
+      <!-- See how I can help -->
+      <div>
+        <button class="see-more-btn" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+          See how I can help you
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right: Circular video -->
+    <div style="width:clamp(300px,42vw,600px); height:clamp(300px,42vw,600px); flex-shrink:0; position:relative; overflow:hidden; border-radius:9999px; box-shadow:0 8px 40px rgba(124,58,237,0.15); margin-right:-4vw;">
+      <video autoplay loop muted playsinline disablepictureinpicture
+        style="width:100%; height:100%; object-fit:cover; pointer-events:none;">
+        <source src="/static/hero_video.mp4" type="video/mp4">
+      </video>
+    </div>
+
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" style="padding:4rem 2rem; max-width:72rem; margin:0 auto;">
+  <h2 style="text-align:center; font-size:2rem; font-weight:700; color:#1a1a2e; margin-bottom:2rem;">How I can help you</h2>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem;">
+    <div style="background:white; border-radius:1.25rem; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.07);">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">🗺️</div>
+      <h3 style="font-weight:600; margin-bottom:0.4rem; color:#1a1a2e;">Itinerary Planning</h3>
+      <p style="color:#64748b; font-size:0.875rem;">Day-by-day plans tailored to your budget and travel style.</p>
+    </div>
+    <div style="background:white; border-radius:1.25rem; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.07);">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">🏨</div>
+      <h3 style="font-weight:600; margin-bottom:0.4rem; color:#1a1a2e;">Hotel & Flight Prices</h3>
+      <p style="color:#64748b; font-size:0.875rem;">Live price comparisons so you always get the best deal.</p>
+    </div>
+    <div style="background:white; border-radius:1.25rem; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.07);">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">☀️</div>
+      <h3 style="font-weight:600; margin-bottom:0.4rem; color:#1a1a2e;">Weather Forecasts</h3>
+      <p style="color:#64748b; font-size:0.875rem;">Know what to pack before you even leave home.</p>
+    </div>
+    <div style="background:white; border-radius:1.25rem; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.07);">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">📍</div>
+      <h3 style="font-weight:600; margin-bottom:0.4rem; color:#1a1a2e;">Local Recommendations</h3>
+      <p style="color:#64748b; font-size:0.875rem;">Hidden gems and top spots from thousands of traveller notes.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Auto resize textarea
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+  }
+
+  // ── Typewriter placeholder ────────────────────────────────────────────────
+  const PROMPTS = [
+    "Me and my bf are going to Chengdu for 4 days, we love spicy food and pandas...give us a perfect itinerary!!!plz",
+    "First time in Beijing! I want to see the Great Wall, any tips for 3 days?",
+    "Solo trip to Xi'an next month, history nerd here, 4 days what should I do",
+    "Honeymoon in Shanghai, 5 days, rooftop dinners and river views please",
+    "Taking my parents to Hong Kong, they're in their 60s, easy walking 4 days",
+    "Just want to chill in Hangzhou for a weekend, tea, lakes, no rush",
+    "3 days in Chongqing with friends, we want the vibes, street food everything",
+    "Heard Xiamen is underrated, 4 days solo, beaches and good coffee?",
+    "Foodie trip to Guangzhou 4 days, I eat literally everything",
+    "Work trip to Shenzhen but I have 2 free days, what's worth seeing?",
+    "Nanjing for 3 days, I studied the history, want to see it all in person",
+    "Girls trip to Chengdu 5 days, pandas, hot pot, cute cafes, low budget pls",
+    "48 hours in Shanghai, business layover, what's the best I can do?",
+    "Taking my 8 year old son to Hong Kong, want fun for both of us, 4 days",
+    "Long weekend in Hangzhou, partner loves photography, where should we go",
+    "Budget backpacker in Chongqing 3 nights, under ¥500/day is that doable?",
+    "Beijing in January, I know it's cold, still worth it? plan me 4 days",
+    "Retirement trip with my husband to Xi'an, slow pace, good food, 5 days",
+    "Last minute Xiamen trip this weekend, 2 days what can I realistically do",
+  ];
+
+  let _twIndex = 0;
+  let _twCharIndex = 0;
+  let _twTimer = null;
+
+  function _twTick() {
+    const ta = document.getElementById('promptInput');
+    if (document.activeElement === ta || ta.value !== '') return;
+    const text = PROMPTS[_twIndex];
+    if (_twCharIndex <= text.length) {
+      ta.placeholder = text.slice(0, _twCharIndex) + (_twCharIndex < text.length ? '|' : '');
+      _twCharIndex++;
+      _twTimer = setTimeout(_twTick, 38);
+    } else {
+      _twTimer = setTimeout(() => {
+        _twCharIndex = 0;
+        _twIndex = (_twIndex + 1) % PROMPTS.length;
+        ta.placeholder = '';
+        _twTimer = setTimeout(_twTick, 400);
+      }, 2800);
+    }
+  }
+
+  function _startTypewriter() {
+    const ta = document.getElementById('promptInput');
+    if (document.activeElement === ta || ta.value !== '') return;
+    clearTimeout(_twTimer);
+    _twCharIndex = 0;
+    _twTick();
+  }
+
+  document.getElementById('promptInput').addEventListener('focus', () => {
+    clearTimeout(_twTimer);
+    document.getElementById('promptInput').placeholder = '';
+  });
+
+  document.getElementById('promptInput').addEventListener('blur', () => {
+    if (document.getElementById('promptInput').value === '') {
+      _twCharIndex = 0;
+      setTimeout(_startTypewriter, 600);
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => setTimeout(_startTypewriter, 800));
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Enable / disable send button
+  function toggleSend(el) {
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = el.value.trim() === '';
+  }
+
+  // Cmd/Ctrl+Enter or Enter (without Shift) to send
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!document.getElementById('sendBtn').disabled) sendMessage();
+    }
+  }
+
+  // Fill textarea with quick prompt and jump
+  function setPrompt(text) {
+    window.location.href = '/chat?q=' + encodeURIComponent(text);
+  }
+
+  function sendMessage() {
+    const ta = document.getElementById('promptInput');
+    const query = ta.value.trim();
+    if (!query) return;
+    // Jump to chat page with the first message as a URL param
+    window.location.href = '/chat?q=' + encodeURIComponent(query);
+  }
+</script>
+
+</body>
+</html>

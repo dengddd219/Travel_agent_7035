@@ -1,0 +1,133 @@
+{
+  "city": "Xiamen",
+  "aliases": ["xiamen", "厦门"],
+  "recommended_areas": [
+    {"name": "Siming", "why": "best for city core, seaside leisure, and food"},
+    {"name": "Gulangyu vicinity", "why": "best for classic island atmosphere and slow travel"},
+    {"name": "Huandao Road", "why": "good for coastal leisure and relaxed couple/family pacing"}
+  ],
+  "transport": [
+    "Keep coastal leisure and old-town food in one broad Siming cluster when possible.",
+    "Use one island-themed segment at a time instead of overpacking crossings.",
+    "Heat and humidity can reduce walking tolerance, so leave midday buffer time."
+  ],
+  "bad_weather_fallbacks": [
+    "Swap beach and coastal promenades for malls, museums, cafés, or indoor cultural venues.",
+    "Use covered food streets and shopping complexes to keep the day flexible."
+  ],
+  "signature_foods": ["shacha noodles", "peanut soup", "oyster omelette", "seafood", "local desserts"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["coast", "local", "view"],
+      "suggested_queries": ["Gulangyu", "Huandao Road", "Zhongshan Road Xiamen", "Shapowei"],
+      "pace_note": "Xiamen works best with a slow coastal rhythm instead of dense landmark-hopping."
+    },
+    "family": {
+      "focus_tags": ["family", "coast", "park"],
+      "suggested_queries": ["Xiamen Science and Technology Museum", "Xiamen Botanical Garden", "beach Xiamen", "Zengcuoan"],
+      "pace_note": "Use one scenic anchor and keep a low-effort indoor backup for heat or rain."
+    },
+    "food": {
+      "focus_tags": ["food", "local", "market"],
+      "suggested_queries": ["Zhongshan Road food", "shacha noodles Xiamen", "Shapowei cafes", "seafood Xiamen"],
+      "pace_note": "Group meals by neighborhood and leave enough time for seaside pauses."
+    },
+    "theme": {
+      "focus_tags": ["coast", "design", "local"],
+      "suggested_queries": ["Shapowei", "Jimei School Village", "Gulangyu piano museum", "Xiamen art spaces"],
+      "pace_note": "Lean into coastal city-walk and island atmosphere rather than breadth."
+    }
+  },
+  "indoor_keywords": ["museum", "mall", "cafe", "aquarium", "gallery", "indoor"],
+  "outdoor_keywords": ["beach", "coast", "road", "island", "garden", "harbour", "walk"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Partly cloudy",
+      "temp_min": 22,
+      "temp_max": 29,
+      "precipitation_probability": 25,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good day for coastal walks and island-facing highlights."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Heavy rain",
+      "temp_min": 21,
+      "temp_max": 25,
+      "precipitation_probability": 75,
+      "outdoor_suitability": "poor",
+      "suggestions": ["Use indoor dining, museums, and malls as the main anchors."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Gulangyu",
+      "category": "attraction",
+      "district": "Siming",
+      "lat": 24.4460,
+      "lon": 118.0640,
+      "duration_hours": 3.0,
+      "ticket_price": 35,
+      "price_level": 2,
+      "indoor_outdoor": "outdoor",
+      "tags": ["coast", "landmark", "city walk"],
+      "source": ["profile_seed"],
+      "address": "Gulangyu Island, Xiamen",
+      "open_hours": "Open 24 hours",
+      "rating": 4.7,
+      "visit_reason": "The city's defining island-leisure anchor."
+    },
+    {
+      "name": "Huandao Road",
+      "category": "attraction",
+      "district": "Siming",
+      "lat": 24.4354,
+      "lon": 118.1662,
+      "duration_hours": 1.8,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "outdoor",
+      "tags": ["coast", "view", "leisure"],
+      "source": ["profile_seed"],
+      "address": "Huandao South Road, Siming District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.6,
+      "visit_reason": "Best coastal leisure route."
+    },
+    {
+      "name": "Zhongshan Road Pedestrian Street",
+      "category": "food",
+      "district": "Siming",
+      "lat": 24.4545,
+      "lon": 118.0818,
+      "duration_hours": 1.5,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["food", "shopping", "local"],
+      "source": ["profile_seed"],
+      "address": "Zhongshan Road, Siming District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.5,
+      "visit_reason": "Best food-and-shopping core for easy pacing."
+    },
+    {
+      "name": "Shapowei",
+      "category": "attraction",
+      "district": "Siming",
+      "lat": 24.4375,
+      "lon": 118.0931,
+      "duration_hours": 1.4,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["design", "local", "cafe"],
+      "source": ["profile_seed"],
+      "address": "Shapowei, Siming District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.4,
+      "visit_reason": "Good lifestyle and design-oriented extension."
+    }
+  ]
+}

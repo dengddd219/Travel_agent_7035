@@ -1,0 +1,42 @@
+# ============================================================
+# Travel Agent 7035 — Full Project Requirements
+# ============================================================
+# Install: pip install -r requirements.txt
+# Python:  >= 3.10
+# ============================================================
+
+# --- Core LLM / AI ---
+openai>=1.0.0
+
+# --- Environment & Config ---
+python-dotenv>=1.0.0
+
+# --- RAG Pipeline (module 1) ---
+chromadb>=0.4.0
+python-frontmatter>=1.0.0
+rank-bm25>=0.2.2
+jieba>=0.42.1
+
+# --- Web / API ---
+fastapi>=0.100.0
+pydantic>=2.0.0
+requests>=2.31.0
+uvicorn>=0.23.0          # ASGI server for FastAPI
+
+# --- UI (reference / demo) ---
+streamlit>=1.30.0
+tiktoken>=0.5.0
+
+# --- Azure SDK (reference examples) ---
+azure-ai-projects>=1.0.0
+azure-identity>=1.15.0
+
+# --- Data / ML (reference fine-tuning examples) ---
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# --- Optional: Local BGE Embedding (module 1, EMBEDDING_PROVIDER=bge) ---
+# Uncomment if you are running the BGE local embedding model instead of OpenAI.
+# sentence-transformers>=2.2.0
+# torch>=2.0.0

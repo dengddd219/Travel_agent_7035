@@ -1,0 +1,10 @@
+"""
+RAG pipeline configuration.
+"""
+
+CHUNK_SIZE = 260
+CHUNK_OVERLAP = 40
+MIN_CHUNK_LENGTH = 40
+SHORT_DOC_THRESHOLD = 220
+
+TOP_K = 8

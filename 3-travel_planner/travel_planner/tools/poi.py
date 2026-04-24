@@ -1,3 +1,4 @@
+## author:SUN Bin
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -5,11 +6,35 @@ from collections import OrderedDict
 import requests
 
 from ..config import Settings
+from ..city_names import city_name_bundle, provider_city_name
 from ..data_store import load_city_profile
 
 
 AMAP_PLACE_TEXT_URL = "https://restapi.amap.com/v3/place/text"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+MAX_CITY_RADIUS_DEGREES = 1.5
+ITINERARY_EXCLUDE_KEYWORDS = {
+    "酒店",
+    "宾馆",
+    "民宿",
+    "公寓",
+    "停车场",
+    "停车",
+    "地铁站",
+    "公交站",
+    "充电站",
+    "写字楼",
+    "宿舍",
+    "委员会",
+    "支行",
+    "亚朵",
+    "atour",
+    "hotel",
+    "hostel",
+    "inn",
+    "parking",
+    "station",
+}
 
 
 def _normalize_query_items(queries: list[str]) -> list[str]:
@@ -65,6 +90,52 @@ def _infer_tags(name: str, raw_type: str, category: str) -> list[str]:
     return list(tags.keys()) or [category]
 
 
+def _city_match_tokens(city: str, profile: dict) -> set[str]:
+    bundle = city_name_bundle(city)
+    tokens = {
+        bundle["canonical"].strip().lower(),
+        bundle["city_en"].strip().lower(),
+        bundle["city_zh"].strip().lower(),
+        provider_city_name(city, provider="zh").strip().lower(),
+    }
+    for alias in profile.get("aliases", []):
+        alias_text = str(alias).strip().lower()
+        if alias_text:
+            tokens.add(alias_text)
+    return {token for token in tokens if token}
+
+
+def _matches_requested_city(item: dict, city: str, profile: dict) -> bool:
+    city_tokens = _city_match_tokens(city, profile)
+    # Use only the city-level fields for matching; address alone is too ambiguous
+    city_fields = [
+        item.get("cityname", ""),
+        item.get("pname", ""),
+        item.get("adname", ""),
+    ]
+    haystack = " ".join(str(field).strip().lower() for field in city_fields if field)
+    if not haystack:
+        return True
+    return any(token in haystack for token in city_tokens)
+
+
+def _profile_city_center(profile: dict) -> tuple[float, float] | None:
+    seeds = [item for item in profile.get("seed_pois", []) if item.get("lat") is not None and item.get("lon") is not None]
+    if not seeds:
+        return None
+    lat = sum(float(item["lat"]) for item in seeds) / len(seeds)
+    lon = sum(float(item["lon"]) for item in seeds) / len(seeds)
+    return lat, lon
+
+
+def _within_city_radius(lat: float, lon: float, profile: dict) -> bool:
+    center = _profile_city_center(profile)
+    if not center:
+        return True
+    center_lat, center_lon = center
+    return abs(lat - center_lat) <= MAX_CITY_RADIUS_DEGREES and abs(lon - center_lon) <= MAX_CITY_RADIUS_DEGREES
+
+
 def _amap_search(city: str, query: str, limit: int, settings: Settings, profile: dict) -> list[dict]:
     params = {
         "key": settings.amap_api_key,
@@ -80,8 +151,12 @@ def _amap_search(city: str, query: str, limit: int, settings: Settings, profile:
     payload = response.json()
     pois = payload.get("pois", [])
 
+    filtered_pois = [item for item in pois if _matches_requested_city(item, city, profile)]
+    if not filtered_pois:
+        filtered_pois = pois
+
     results = []
-    for item in pois[:limit]:
+    for item in filtered_pois:
         lng, lat = 0.0, 0.0
         location = item.get("location", "")
         if "," in location:
@@ -91,6 +166,8 @@ def _amap_search(city: str, query: str, limit: int, settings: Settings, profile:
                 lat = float(parts[1])
             except ValueError:
                 lng, lat = 0.0, 0.0
+        if lat and lng and not _within_city_radius(lat, lng, profile):
+            continue
 
         biz_ext = item.get("biz_ext") or {}
         ticket_price = 0.0
@@ -121,6 +198,8 @@ def _amap_search(city: str, query: str, limit: int, settings: Settings, profile:
                 "visit_reason": f"Matched from POI search for '{query}'.",
             }
         )
+        if len(results) >= limit:
+            break
     return results
 
 
@@ -183,6 +262,53 @@ def _profile_seed_results(query: str, profile: dict, limit: int) -> list[dict]:
     return [item for _, item in ranked[:limit]]
 
 
+def _is_strong_seed_match(query: str, candidate: dict) -> bool:
+    query_lower = query.strip().lower()
+    if not query_lower:
+        return False
+    haystack = " ".join(
+        [
+            candidate.get("name", ""),
+            candidate.get("district", ""),
+            " ".join(candidate.get("tags", [])),
+            candidate.get("category", ""),
+        ]
+    ).lower()
+    query_tokens = [token for token in query_lower.replace("/", " ").split() if token]
+    return query_lower in haystack or (query_tokens and all(token in haystack for token in query_tokens))
+
+
+def _is_itinerary_worthy(candidate: dict) -> bool:
+    if candidate.get("category") == "hotel":
+        return False
+    searchable = " ".join(
+        [
+            candidate.get("name", ""),
+            candidate.get("address", ""),
+            candidate.get("district", ""),
+            " ".join(candidate.get("tags", [])),
+            candidate.get("visit_reason", ""),
+        ]
+    ).lower()
+    return not any(keyword in searchable for keyword in ITINERARY_EXCLUDE_KEYWORDS)
+
+
+def _merge_candidates(primary: list[dict], secondary: list[dict], limit: int) -> list[dict]:
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for candidate in primary + secondary:
+        if not _is_itinerary_worthy(candidate):
+            continue
+        dedupe_key = f"{candidate.get('name', '').strip().lower()}|{candidate.get('district', '').strip().lower()}"
+        if not dedupe_key or dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        merged.append(candidate)
+        if len(merged) >= limit:
+            break
+    return merged
+
+
 def search_batch_pois(city: str, queries: list[str], limit_per_query: int = 3, settings: Settings | None = None) -> dict:
     settings = settings or Settings.from_env()
     profile = load_city_profile(city)
@@ -195,24 +321,35 @@ def search_batch_pois(city: str, queries: list[str], limit_per_query: int = 3, s
 
     for query in normalized_queries:
         candidates: list[dict] = []
+        seed_candidates = _profile_seed_results(query, profile, limit_per_query)
+        strong_seed_candidates = [candidate for candidate in seed_candidates if _is_strong_seed_match(query, candidate)]
+
         if not settings.has_amap_key:
-            candidates = _profile_seed_results(query, profile, limit_per_query)
+            candidates = strong_seed_candidates or seed_candidates
             if candidates:
                 provider = "profile_seed"
 
         if not candidates:
             try:
-                candidates = (
-                    _amap_search(city, query, limit_per_query, settings, profile)
-                    if settings.has_amap_key
-                    else _nominatim_search(city, query, limit_per_query, profile)
-                )
+                if strong_seed_candidates:
+                    candidates = _merge_candidates(strong_seed_candidates, [], limit_per_query)
+                    provider = "profile_seed"
+                else:
+                    live_candidates = (
+                        _amap_search(city, query, limit_per_query, settings, profile)
+                        if settings.has_amap_key
+                        else _nominatim_search(city, query, limit_per_query, profile)
+                    )
+                    candidates = _merge_candidates(seed_candidates, live_candidates, limit_per_query)
+                    if seed_candidates and candidates and candidates[0] in seed_candidates:
+                        provider = "profile_seed+amap" if settings.has_amap_key else "profile_seed+nominatim"
             except Exception:
                 try:
-                    candidates = _nominatim_search(city, query, limit_per_query, profile)
+                    live_candidates = _nominatim_search(city, query, limit_per_query, profile)
+                    candidates = _merge_candidates(seed_candidates, live_candidates, limit_per_query)
                     provider = "mixed"
                 except Exception:
-                    candidates = _profile_seed_results(query, profile, limit_per_query)
+                    candidates = seed_candidates
                     provider = "profile_seed"
 
         if not candidates:

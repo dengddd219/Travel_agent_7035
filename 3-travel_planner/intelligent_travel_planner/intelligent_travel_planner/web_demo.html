@@ -1,0 +1,506 @@
+<!-- ## author:SUN Bin -->
+<!--
+  Local demo page for our own backend.
+  Layout:
+  - left: user input + conversation summary
+  - middle: map and route-mode controls
+  - right: human-readable planning output
+-->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Travel Planner Demo</title>
+    <link rel="stylesheet" href="/demo/amap/map.css" />
+    <style>
+      :root {
+        /* Shared visual tokens used by the whole demo shell. */
+        color-scheme: light;
+        --bg: #f3f6f8;
+        --panel: rgba(255, 255, 255, 0.92);
+        --line: rgba(15, 23, 42, 0.08);
+        --text: #102033;
+        --muted: #667085;
+        --accent: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+        background: linear-gradient(180deg, #eef7f5 0%, var(--bg) 55%);
+        color: var(--text);
+      }
+
+      .shell {
+        /* Three-column layout for request / map / explanation. */
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 360px minmax(560px, 1.1fr) minmax(380px, 0.9fr);
+      }
+
+      .panel {
+        padding: 20px;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+        backdrop-filter: blur(12px);
+      }
+
+      .panel:last-child {
+        border-right: 0;
+        border-left: 1px solid var(--line);
+      }
+
+      h1, h2, h3, p {
+        margin-top: 0;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      textarea,
+      input {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        border-radius: 14px;
+        padding: 12px 14px;
+        background: #fff;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 170px;
+        resize: vertical;
+      }
+
+      textarea::placeholder {
+        color: #98a2b3;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 11px 16px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      .map-shell {
+        /* Middle column: day controls, route controls, and the map itself. */
+        position: relative;
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        min-width: 0;
+      }
+
+      .toolbar {
+        padding: 14px 18px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      #map-toggles,
+      #route-mode-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      #map-container {
+        width: 100%;
+        height: calc(100vh - 150px);
+        min-height: 620px;
+      }
+
+      #map-status {
+        margin: 0 18px 12px;
+      }
+
+      .section {
+        margin-bottom: 22px;
+      }
+
+      .card {
+        padding: 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .hero-card {
+        /* Primary user-facing report card. */
+        padding: 18px 18px 16px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(15, 118, 110, 0.08), rgba(255, 255, 255, 0.98));
+        border: 1px solid rgba(15, 118, 110, 0.12);
+      }
+
+      .hero-card h3 {
+        margin-bottom: 10px;
+      }
+
+      .hero-text {
+        font-size: 15px;
+        line-height: 1.7;
+        color: #15314b;
+        white-space: pre-wrap;
+      }
+
+      .pill-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        margin: 0;
+      }
+
+      .report-raw {
+        max-height: 260px;
+        overflow: auto;
+      }
+
+      .status-text {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .chat-history {
+        /* Lightweight chat-style history panel for the last user turns. */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .chat-bubble {
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(15, 118, 110, 0.08);
+        color: #15314b;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 1400px) {
+        .shell {
+          grid-template-columns: 320px 1fr 320px;
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .panel:last-child {
+          border-left: 0;
+        }
+
+        #map-container {
+          height: 60vh;
+          min-height: 420px;
+        }
+      }
+    </style>
+    <script src="/demo/amap/amap-env.js"></script>
+    <script>
+      window._amapBootError = "";
+      (function loadAmapSdk() {
+        var key = window.AMAP_JS_API_KEY;
+        if (!key || key === "YOUR_AMAP_JS_API_KEY") {
+          window._amapBootError = "未读取到高德 JS API Key。";
+          return;
+        }
+        var script = document.createElement("script");
+        script.src =
+          "https://webapi.amap.com/maps?v=2.0&key=" +
+          encodeURIComponent(key) +
+          "&plugin=AMap.Scale,AMap.ToolBar,AMap.Walking,AMap.Driving,AMap.Transfer";
+        script.async = true;
+        script.onerror = function () {
+          window._amapBootError = "高德 JS SDK 加载失败，请检查 JS Key、securityJsCode 或域名白名单。";
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="panel">
+        <div class="section">
+          <h1>Agent Demo</h1>
+          <p class="hint">这里直接连你们当前 backend。第一次点 `Generate Plan`，后续点 `Refine Existing Plan`。</p>
+        </div>
+
+        <div class="section">
+          <label for="prompt"><strong>Trip Request</strong></label>
+          <textarea id="prompt" placeholder="告诉我你想去哪里、玩几天、想玩什么、预算和必须去的点。"></textarea>
+          <div class="row">
+            <button class="primary" id="plan-btn">Generate Plan</button>
+            <button class="secondary" id="refine-btn">Refine Existing Plan</button>
+          </div>
+        </div>
+
+        <div class="section card">
+          <h3>Conversation</h3>
+          <div class="status-text" id="conversation-meta">尚未生成。</div>
+          <div id="profile-box" class="status-text">系统理解到的旅行偏好会显示在这里。</div>
+          <div id="chat-history" class="chat-history"></div>
+        </div>
+      </aside>
+
+      <section class="map-shell">
+        <div class="toolbar">
+          <div id="map-toggles"></div>
+          <div id="route-mode-controls"></div>
+        </div>
+        <div id="map-status" class="card status-text">地图准备中。</div>
+        <section id="map-container"></section>
+      </section>
+
+      <aside class="panel">
+        <div class="section hero-card">
+          <h3>给用户看的版本</h3>
+          <div id="friendly-report-box" class="hero-text">系统会把这份行程翻成更好理解的大白话版本。</div>
+        </div>
+
+        <div class="section card">
+          <h3>Guide Signals</h3>
+          <div id="guide-box" class="status-text">攻略参考会显示在这里。</div>
+        </div>
+
+        <div class="section card">
+          <h3>Weather Outlook</h3>
+          <div id="weather-box" class="status-text">天气信息会显示在这里。</div>
+        </div>
+
+        <div class="section card">
+          <h3>Review & Replan</h3>
+          <div id="review-box" class="status-text">review summary will appear here</div>
+          <div class="pill-list" id="replan-rules" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="section card">
+          <h3>Hotel Suggestions</h3>
+          <div id="hotel-box" class="status-text">住宿建议会显示在这里。</div>
+        </div>
+
+      </aside>
+    </main>
+
+    <script src="/demo/amap/map.js"></script>
+    <script src="/demo/bridge.js"></script>
+    <script>
+      var latestConversationId = null;
+
+      function setStatus(text) {
+        document.getElementById("map-status").textContent = text;
+      }
+
+      function renderSidePanels(data) {
+        var profile = data.user_profile || {};
+        var labelMap = {
+          leisure: "轻松逛逛",
+          family: "亲子友好",
+          food: "美食导向",
+          theme: "主题体验",
+          low: "低预算",
+          medium: "中等预算",
+          high: "高预算",
+          slow: "慢节奏",
+          balanced: "适中",
+          packed: "紧凑"
+        };
+        document.getElementById("conversation-meta").textContent =
+          "conversation_id: " + (data.conversation_id || "n/a");
+        var profileLines = [];
+        if (profile.city) profileLines.push("这轮我理解你的目的地是：" + profile.city);
+        if (profile.trip_days) profileLines.push("计划时长：" + profile.trip_days + " 天");
+        if (profile.travel_type) profileLines.push("旅行风格：" + (labelMap[profile.travel_type] || profile.travel_type));
+        if (profile.budget_level) profileLines.push("预算档位：" + (labelMap[profile.budget_level] || profile.budget_level));
+        if (profile.pace) profileLines.push("节奏偏好：" + (labelMap[profile.pace] || profile.pace));
+        if ((profile.interests || []).length) profileLines.push("关注重点：" + profile.interests.join("、"));
+        if ((profile.must_visit || []).length) profileLines.push("必去清单：" + profile.must_visit.join("、"));
+        if ((profile.avoid || []).length) profileLines.push("尽量避开：" + profile.avoid.join("、"));
+        document.getElementById("profile-box").textContent =
+          profileLines.length ? profileLines.join("\n") : "系统理解到的旅行偏好会显示在这里。";
+
+        var hotel = data.hotel_recommendations || {};
+        var hotelLines = [];
+        ((hotel.recommended_areas) || []).slice(0, 3).forEach(function (item) {
+          if (item && item.district) {
+            hotelLines.push("推荐住在 " + item.district + "：" + (item.reason || "和路线更顺。"));
+          }
+        });
+        ((hotel.hotel_candidates) || []).slice(0, 3).forEach(function (item) {
+          var line = item.name || "";
+          if (item.district) line += "｜" + item.district;
+          if (item.min_price) line += "｜约 CNY " + item.min_price + " 起";
+          hotelLines.push(line);
+        });
+        ((hotel.selection_notes) || []).slice(0, 2).forEach(function (item) {
+          hotelLines.push("说明：" + item);
+        });
+        document.getElementById("hotel-box").textContent =
+          hotelLines.length ? hotelLines.join("\n\n") : "住宿建议会显示在这里。";
+        document.getElementById("friendly-report-box").textContent =
+          data.user_friendly_report || "暂时还没有口语化说明。";
+        var strategySummary = data.strategy_summary || {};
+        var guideReferences = data.guide_references || [];
+        var guideLines = [];
+        if ((strategySummary.recommended_pois || []).length) {
+          guideLines.push("高频推荐点：" + strategySummary.recommended_pois.slice(0, 5).join("、"));
+        }
+        if ((strategySummary.theme_suggestions || []).length) {
+          guideLines.push("攻略主题：" + strategySummary.theme_suggestions.slice(0, 5).join("、"));
+        }
+        ((strategySummary.neighborhood_notes) || []).slice(0, 3).forEach(function (item) {
+          if (item && item.district && item.note) {
+            guideLines.push("片区依据：" + item.district + "｜" + item.note);
+          }
+        });
+        guideReferences.slice(0, 3).forEach(function (item) {
+          guideLines.push("引用：" + item);
+        });
+        document.getElementById("guide-box").textContent =
+          guideLines.length ? guideLines.join("\n\n") : "这一版没有拿到足够明显的攻略信号。";
+
+        var weatherPayload = data.weather_payload || {};
+        var weatherLines = [];
+        ((weatherPayload.forecast) || []).forEach(function (day) {
+          weatherLines.push(
+            [
+              day.date || "",
+              (day.summary || "未知天气") + "，" + (day.temp_min ?? "-") + "°C ~ " + (day.temp_max ?? "-") + "°C",
+              "降水风险 " + (day.precipitation_probability ?? 0) + "%",
+              ((day.suggestions || [])[0] || "")
+            ].filter(Boolean).join("｜")
+          );
+        });
+        if (weatherPayload.window_note) {
+          weatherLines.push("说明：" + weatherPayload.window_note);
+        }
+        document.getElementById("weather-box").textContent =
+          weatherLines.length ? weatherLines.join("\n\n") : "暂时还没有天气数据。";
+        document.getElementById("review-box").textContent =
+          (data.review_summary || "No review summary.") +
+          "\n\n" +
+          (data.replan_summary || "No replan summary.");
+
+        var rulesTarget = document.getElementById("replan-rules");
+        rulesTarget.innerHTML = "";
+        ((data.replan_metadata && data.replan_metadata.trigger_rules) || []).forEach(function (rule) {
+          var pill = document.createElement("span");
+          pill.className = "pill";
+          pill.textContent = rule;
+          rulesTarget.appendChild(pill);
+        });
+
+        var chatHistory = document.getElementById("chat-history");
+        chatHistory.innerHTML = "";
+        (((data.conversation_state || {}).turn_history) || []).forEach(function (turn) {
+          var bubble = document.createElement("div");
+          bubble.className = "chat-bubble";
+          bubble.textContent = turn.user_message || "";
+          chatHistory.appendChild(bubble);
+        });
+      }
+
+      async function runPlanner(url, body) {
+        if (window._amapBootError) {
+          setStatus(window._amapBootError);
+          return;
+        }
+
+        setStatus("正在生成路线，请稍等...");
+        document.getElementById("prompt").value = "";
+        try {
+          var data = await window.fetchAndRenderTravelPlan(url, body, {
+            containerId: "map-container",
+            togglesSelector: "#map-toggles",
+            modeSelector: "#route-mode-controls",
+            statusSelector: "#map-status"
+          });
+          latestConversationId = data.conversation_id || latestConversationId;
+          renderSidePanels(data);
+          setStatus("路线生成完成。");
+        } catch (error) {
+          setStatus("生成失败: " + error.message);
+        }
+      }
+
+      document.getElementById("plan-btn").addEventListener("click", function () {
+        var message = document.getElementById("prompt").value.trim();
+        if (!message) {
+          setStatus("先输入你的旅行需求。");
+          return;
+        }
+        latestConversationId = null;
+        runPlanner("/api/plan", { user_message: message });
+      });
+
+      document.getElementById("refine-btn").addEventListener("click", function () {
+        var message = document.getElementById("prompt").value.trim();
+        if (!latestConversationId) {
+          setStatus("请先生成第一版 itinerary。");
+          return;
+        }
+        if (!message) {
+          setStatus("输入这一次想改什么。");
+          return;
+        }
+        runPlanner("/api/refine", {
+          conversation_id: latestConversationId,
+          user_message: message
+        });
+      });
+    </script>
+  </body>
+</html>

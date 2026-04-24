@@ -1,0 +1,133 @@
+{
+  "city": "Nanjing",
+  "aliases": ["nanjing", "南京"],
+  "recommended_areas": [
+    {"name": "Xuanwu", "why": "best for major history museums, city wall, and lake access"},
+    {"name": "Qinhuai", "why": "best for old-city atmosphere, food, and night river flow"},
+    {"name": "Jianye", "why": "good for modern skyline and museum extensions"}
+  ],
+  "transport": [
+    "Keep republican-history sites and Qinhuai old-city walking in one central cluster when possible.",
+    "Use metro for cross-city movement and avoid stacking too many hill or mausoleum climbs on one day.",
+    "Night views around Qinhuai work best as the final anchor of the day."
+  ],
+  "bad_weather_fallbacks": [
+    "Swap lake walks and mausoleum-heavy outdoor plans for museums, memorial halls, or malls.",
+    "Use major museums and indoor heritage venues as weather-safe anchors."
+  ],
+  "signature_foods": ["salted duck", "duck blood vermicelli soup", "sesame buns", "jinling snacks", "soup dumplings"],
+  "travel_type_guidance": {
+    "leisure": {
+      "focus_tags": ["history", "culture", "city walk"],
+      "suggested_queries": ["Nanjing Museum", "Confucius Temple Nanjing", "Laomendong", "Presidential Palace"],
+      "pace_note": "Nanjing works best when you pair one major history anchor with one atmospheric walking district."
+    },
+    "family": {
+      "focus_tags": ["family", "museum", "park"],
+      "suggested_queries": ["Nanjing Museum", "Nanjing Underwater World", "Xuanwu Lake", "Nanjing Hongshan Forest Zoo"],
+      "pace_note": "Use one marquee attraction and one nearby flexible backup."
+    },
+    "food": {
+      "focus_tags": ["food", "local", "night"],
+      "suggested_queries": ["Confucius Temple snacks", "Laomendong food", "duck blood vermicelli Nanjing", "Jinling cuisine"],
+      "pace_note": "Keep food planning close to the Qinhuai old-city cluster to minimize transfers."
+    },
+    "theme": {
+      "focus_tags": ["history", "culture", "theme"],
+      "suggested_queries": ["Sun Yat-sen Mausoleum", "Presidential Palace", "Memorial Hall of the Victims in Nanjing Massacre", "Ming Xiaoling"],
+      "pace_note": "Build around one strong historical narrative instead of mixing too many eras in one day."
+    }
+  },
+  "indoor_keywords": ["museum", "memorial", "mall", "gallery", "indoor", "palace"],
+  "outdoor_keywords": ["lake", "temple", "mausoleum", "wall", "garden", "street", "river"],
+  "fallback_weather": [
+    {
+      "date": "Day 1",
+      "summary": "Cloudy",
+      "temp_min": 18,
+      "temp_max": 26,
+      "precipitation_probability": 30,
+      "outdoor_suitability": "good",
+      "suggestions": ["Good day for old-city walking and lake-adjacent highlights."]
+    },
+    {
+      "date": "Day 2",
+      "summary": "Moderate rain",
+      "temp_min": 17,
+      "temp_max": 23,
+      "precipitation_probability": 65,
+      "outdoor_suitability": "mixed",
+      "suggestions": ["Use museums and memorial halls as the main anchors."]
+    }
+  ],
+  "seed_pois": [
+    {
+      "name": "Nanjing Museum",
+      "category": "attraction",
+      "district": "Xuanwu",
+      "lat": 32.0392,
+      "lon": 118.8430,
+      "duration_hours": 2.5,
+      "ticket_price": 0,
+      "price_level": 1,
+      "indoor_outdoor": "indoor",
+      "tags": ["museum", "history", "culture"],
+      "source": ["profile_seed"],
+      "address": "321 Zhongshan East Road, Xuanwu District",
+      "open_hours": "09:00-17:00",
+      "rating": 4.8,
+      "visit_reason": "Best weather-safe history and culture anchor."
+    },
+    {
+      "name": "Confucius Temple Nanjing",
+      "category": "attraction",
+      "district": "Qinhuai",
+      "lat": 32.0227,
+      "lon": 118.7890,
+      "duration_hours": 1.6,
+      "ticket_price": 30,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["history", "food", "night views"],
+      "source": ["profile_seed"],
+      "address": "Qinhuai District",
+      "open_hours": "08:30-21:00",
+      "rating": 4.5,
+      "visit_reason": "Best old-city night-flow and local-food anchor."
+    },
+    {
+      "name": "Laomendong",
+      "category": "food",
+      "district": "Qinhuai",
+      "lat": 32.0158,
+      "lon": 118.7862,
+      "duration_hours": 1.5,
+      "ticket_price": 0,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["food", "city walk", "local"],
+      "source": ["profile_seed"],
+      "address": "South Zhonghua Gate Area, Qinhuai District",
+      "open_hours": "Open 24 hours",
+      "rating": 4.6,
+      "visit_reason": "Strong city-walk and snack extension near Qinhuai."
+    },
+    {
+      "name": "Presidential Palace",
+      "category": "attraction",
+      "district": "Xuanwu",
+      "lat": 32.0438,
+      "lon": 118.7927,
+      "duration_hours": 2.0,
+      "ticket_price": 35,
+      "price_level": 2,
+      "indoor_outdoor": "mixed",
+      "tags": ["history", "culture", "theme"],
+      "source": ["profile_seed"],
+      "address": "292 Changjiang Road, Xuanwu District",
+      "open_hours": "08:30-17:00",
+      "rating": 4.7,
+      "visit_reason": "Strong republican-history anchor."
+    }
+  ]
+}

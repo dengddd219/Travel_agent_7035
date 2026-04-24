@@ -1,0 +1,32 @@
+4/24 中午
+为了确保全流程可行，进行BUG修复
+代码审查结果：修复了 4 个 Bug
+Bug 1（致命）— strategy_rag_adapter.py 路径错误
+文件: strategy_rag_adapter.py:21
+
+RAG_DELIVERY_ROOT 用了 parents[2] 指向 3-travel_planner/rag_pipeline_delivery（不存在），应该是 parents[3] / "1-rag_pipeline_delivery"（正确路径）。这会导致 RAG 知识库完全无法加载，A 组数据全部失效。
+
+修复: parents[2] / "rag_pipeline_delivery" → parents[3] / "1-rag_pipeline_delivery"
+
+Bug 2（致命）— config.py LLM 端点 URL 构造错误
+文件: config.py:41
+
+原来 azure_base_url 只用 FOUNDRY_PROJECT_RESOURCE 构建 https://{resource}.openai.azure.com/openai/v1/，但 .env 里实际配置的是 Foundry Project Endpoint（services.ai.azure.com/api/projects/…）。LLM 所有调用都会打到错误的 URL。
+
+修复: 优先使用 FOUNDRY_PROJECT_ENDPOINT，在其后追加 /openai/v1/。测试输出：
+
+
+https://applied-llm-resource.services.ai.azure.com/api/projects/xuejun-deng-project/openai/v1/
+Bug 3（崩溃）— InMemoryConversationStore 的 @dataclass(slots=True) 冲突
+文件: ui_backend.py:19
+
+@dataclass(slots=True) 会根据字段注解自动生成 __slots__，同时又定义了自定义 __init__。两者共存时，_lock 字段会触发 AttributeError: '_lock' attribute conflicts with the descriptor '…'，服务器启动即崩溃。
+
+修复: 去掉 @dataclass(slots=True)，保留普通类定义。
+
+Bug 4（静默错误）— city_cost_reference.json 使用相对路径
+文件: c_group_weather_cost_api.py:1138
+
+open('city_cost_reference.json', ...) 依赖 CWD，从 travel_agent_7035/ 启动时找不到文件，静默 fallback 到只有成都/北京/上海的 _get_default_cost_data()，其余城市费用估算全部用成都数据替代。
+
+修复: 改为 os.path.join(os.path.dirname(os.path.abspath(__file__)), 'city_cost_reference.json')，与文件同目录绝对路径加载。

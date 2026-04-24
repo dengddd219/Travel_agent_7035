@@ -1,90 +1,222 @@
-# CLAUDE.md
+# CLAUDE.md — Travel_agent_7035 快速参考
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> 本文件是给 Claude Code 的项目手册，目的是让新对话无需重读源码即可上手。
+> 仅记录"看代码猜不到"的内容；代码本身是最终权威。
 
-## Project Context
+---
 
-MSBA 7035 "AI Engineering Practice" course project at HKU. The repo has two parts:
-- `参考/` — Completed reference implementations of LLM techniques (prompt engineering, chatbots, function calling, agents, fine-tuning)
-- `docs/` — Planning documents for the active group project: an AI Travel Planning Agent (deadline: April 25, 2026)
+## 1. 项目一句话
 
-## Environment Setup
+HKU MSBA 7035 课程作业。AI 旅行规划 Agent：用户输入自然语言需求 → 多工具编排 → 结构化多日行程 + Markdown 报告 + 高德地图可视化。Deadline: 2026-04-25。
 
-All modules use Azure OpenAI. Copy `参考/2.prompt engineering homework/.env.example` to `.env` and fill in:
+---
+
+## 2. 目录结构
 
 ```
-AZURE_OPENAI_ENDPOINT=...
-AZURE_OPENAI_API_KEY=...
-AZURE_OPENAI_API_VERSION=2025-01-01-preview
-AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini
-FOUNDRY_PROJECT_ENDPOINT=...
-FOUNDRY_PROJECT_API_KEY=...
-FOUNDRY_PROJECT_DEPLOYMENT=...
+Travel_agent_7035/
+├── 0-data/              原始小红书旅行笔记（MD，按城市子目录）
+├── 1-rag_pipeline_delivery/   离线 RAG 入库流水线
+├── 2-rag-retrival/      在线 RAG 检索 API（search_notes.py）
+├── 3-travel_planner/    核心 Agent 包（agent.py 是大脑）
+├── 4-cost/              C 组子仓库：天气/酒店/费用 API
+├── 5-evaluate/          评估目录（当前为空）
+├── 6-UI/                前端（chat UI + 高德地图）
+└── backend/             FastAPI 入口（server.py）
 ```
 
-## Running Reference Code
+---
 
-No top-level build system. Each sub-module is run directly:
+## 3. 启动方式
 
 ```bash
-# Prompt engineering
-python "参考/2.prompt engineering homework/resume_editor.py"
+# 主入口（前端 + API 一体）
+uvicorn backend.server:app --reload
+# → http://localhost:8000/
 
-# Chatbot (console)
-python 参考/3.chatbot/chatbot.py
+# 地图单独 Demo
+python 6-UI/map_UI/serve_demo.py   # → http://127.0.0.1:8126/map_demo.html
 
-# Chatbot (Streamlit UI)
-streamlit run 参考/3.chatbot/chatbot2_streamlit.py
-
-# Function calling
-python "参考/4.function calling/function_call.py"
-
-# Agents
-python 参考/5.agents/agent_function_calling.py
-
-# Fine-tuning
-python 参考/7.fine-tuning/ft.py
+# RAG 离线入库（首次 or 数据更新后运行）
+cd 1-rag_pipeline_delivery
+python -m rag.ingest                   # 全城市
+python -m rag.ingest --city chengdu   # 单城市
+python -m rag.ingest --reset          # 清空重建
+python -m rag.evaluate                # HR + MRR 指标（当前 HR=84%, MRR=1.00）
 ```
 
-## Architecture: Active Group Project (Travel Agent)
+---
 
-The travel agent (`docs/superpowers/specs/2026-04-20-travel-agent-prd.md`) is a 6-module Streamlit app:
+## 4. 环境变量
 
+**`3-travel_planner/travel_planner/config.py` (Settings dataclass):**
 ```
-User Input (Streamlit)
-      ↓
-ReAct Agent (LangChain or OpenAI Function Calling)
-  ├── M1: RAG — ChromaDB + text-embedding-3-small, ~700 Xiaohongshu travel notes, 10 Chinese cities
-  ├── M2: Gaode Maps API — POI search, route planning, polyline geometry
-  ├── M4: Weather API (Hefeng/OpenWeatherMap) + static cost estimator
-  └── M6: LLM-as-Judge evaluation (5-dimension scoring, radar chart)
-      ↓
-Pydantic TripPlan (structured JSON via OpenAI response_format)
-      ↓
-Streamlit UI
-  ├── Tab 1: Chat + Folium map (per-day colored routes + POI popups) + cost table
-  └── Tab 2: Evaluation radar chart + 5 test cases (TC-01 to TC-05)
+FOUNDRY_PROJECT_RESOURCE=...    # Azure 资源名（必填）
+FOUNDRY_PROJECT_API_KEY=...
+FOUNDRY_PROJECT_DEPLOYMENT=...  # 模型 deployment 名
+FOUNDRY_PROJECT_ENDPOINT=...
+AMAP_API_KEY=...                # 可选；缺失时降级 Nominatim → seed_pois
+TAVILY_API_KEY=...              # 可选；缺失时用启发式 tips
+DEFAULT_CITY=Hong Kong
 ```
 
-**Key constraints:** Single destination only, 2–5 day trips, 10 supported Chinese cities, no persistence beyond session.
+**`4-cost/Group_C/Group_C/.env.example`:**
+```
+AMAP_WEB_SERVICE_KEY=...
+USE_PLAYWRIGHT_SCRAPER=true
+PLAYWRIGHT_HEADLESS=true
+ALLOW_MOCK_DATA=true    # 本地调试时跳过 Playwright 爬虫
+```
 
-**Pydantic data model:**
+---
+
+## 5. 调用链（最重要）
+
+```
+用户 POST /api/chat
+  └─ backend/server.py
+       ├─ 新会话 → agent.start_conversation(user_request)
+       └─ 续会话 → agent.continue_conversation(state, user_request)
+
+TravelPlanningAgent (agent.py)
+  ├─ _extract_user_profile()        正则+别名表 → {city,trip_days,travel_type,budget_level,pace,interests,must_visit,avoid}
+  ├─ _decompose_request()           生成 strategy_queries / geo_queries / condition_queries
+  ├─ OpenAI Responses API 工具调用循环（≤8轮）
+  │    ├─ get_city_context()        读 data/city_profiles/{city}.json
+  │    ├─ get_strategy_context()    → search_notes.py (ChromaDB+BM25 hybrid)
+  │    ├─ search_batch_pois()       高德 → Nominatim → seed_pois 三级降级
+  │    ├─ get_weather_forecast()    → C组 get_weather_api() → 高德天气 REST
+  │    ├─ get_cost_summary()        → C组 estimate_cost_api() → 静态费用表
+  │    └─ get_travel_tips()         → Tavily → 启发式 fallback
+  ├─ plan_itinerary()               纯 Python 确定性规划（无 LLM）
+  │    ├─ _select_pois()            评分+去重+must_visit 保证
+  │    ├─ _allocate_days()          按区域聚类 → TSP 暴力（≤4站）
+  │    └─ review_itinerary()        must_visit/pace/budget/weather 审查
+  ├─ get_hotel_candidates()         → C组 search_hotels_api() → Playwright/携程
+  ├─ render_markdown_report()
+  └─ build_frontend_response() → build_map_payload()
+
+ChatResponse → {report, itinerary_json, map_payload, hotel_recommendations, tool_logs}
+```
+
+---
+
+## 6. 多轮对话机制
+
+| 字段 | 位置 | 说明 |
+|---|---|---|
+| `ConversationState` | agent.py:77 | 跨轮持久状态：`preference_memory`, `latest_user_profile`, `latest_plan`, `latest_report`, `turn_history` |
+| `_extract_profile_updates()` | agent.py:514 | 解析"加上/去掉/换成"等增量指令，返回 `{replace, add, remove, append}` |
+| `_merge_preference_memory()` | agent.py:617 | 把 updates 合并到 memory；**avoid 列表优先级高于 must_visit** |
+| `InMemoryConversationStore` | ui_backend.py | `threading.Lock` 保护的 dict，重启即清空 |
+| `serialize/deserialize_conversation_state` | ui_backend.py | 让前端可以 stateless 方式传递 state |
+
+**注意**：`continue_conversation()` 只用最新的 `user_request` 做增量更新，不会重新读取全部历史原话。历史原话存在 `turn_history` 但当前未用于 RAG 查询。
+
+---
+
+## 7. RAG 层细节
+
+### 离线入库（`1-rag_pipeline_delivery/`）
+- 数据：`0-data/{city}/*.md`，YAML frontmatter + 正文
+- 清洗 → 按 `📍` 切块（再 recursive char split，`CHUNK_SIZE=300`）
+- 向量：OpenAI `text-embedding-3-small` 或本地 `BAAI/bge-small-zh-v1.5`
+- 存储：ChromaDB（余弦距离）+ BM25Okapi pickle（jieba 分词）
+
+### 在线检索（`2-rag-retrival/search_notes.py`）
+
 ```python
-class POI(BaseModel): name, category, lat, lng, description, duration_min, cost_cny
-class DayItinerary(BaseModel): day, date, theme, pois: list[POI], route_polyline, daily_cost_cny
-class TripPlan(BaseModel): destination, start_date, days, total_budget_cny, itinerary: list[DayItinerary], rag_sources: list[str]
+search_notes(query, city="", category="", strategy="hybrid", top_k=5)
+# 返回 list[dict]，每条含 chunk_id / score / chunk_text / metadata
 ```
 
-## Architecture: Reference Code
+- `"hybrid"`（默认）：ChromaDB dense + BM25 → RRF 融合（dense_weight=0.6, bm25_weight=0.4）
+- `"dense"`：纯向量
+- `"filter"`：先 metadata 过滤再向量检索
+- ChromaDB 不可用时自动退化为纯 BM25
 
-The shared Azure OpenAI client is `参考/2.prompt engineering homework/azure_openai_client.py` — it wraps chat completions, vision, embeddings, token counting, and cost calculation. All other reference modules import or replicate this pattern.
+### Agent 侧适配器（`3-travel_planner/.../strategy_rag_adapter.py`）
+- 调用 `search_notes()` 后提取 `recommended_pois / theme_suggestions / local_pitfalls / neighborhood_notes`
+- ChromaDB 不可用时回退本地 BM25
 
-Reference modules demonstrate the full course curriculum: prompt engineering → chatbot memory/summarization → function calling with DB/MCP → Azure AI Foundry agents (file search, code interpreter, web search) → fine-tuning with JSONL datasets.
+---
 
-## Key Technical Choices
+## 8. 关键数据模型（`models.py`）
 
-- **LLM calls**: Use `AzureOpenAI` client (`openai` package) or `azure.ai.projects` (AI Foundry) with `DefaultAzureCredential`
-- **Structured output**: `client.beta.chat.completions.parse()` with Pydantic models for guaranteed schema compliance
-- **RAG**: ChromaDB vector store, `text-embedding-3-small` embeddings
-- **UI**: Streamlit + Folium maps via `st.components.v1.html()`
-- **Evaluation**: Separate GPT-4o call with JSON scoring rubric — never mix judge and planner in the same call
+```python
+UserPreferences:  city, start_date, trip_days(1-14), travel_type, budget_level, pace, interests, must_visit, avoid
+POI:              name, category, district, lat, lon, duration_hours, ticket_price, price_level, indoor_outdoor, tags, source
+DayPlanItem:      time_slot, poi_name, category, district, est_cost, transport_hint, arrival_mode, distance_m, duration_min
+DayPlan:          day_index, area, theme, estimated_cost, weather_summary, items, notes
+ItineraryPlan:    selected_pois, days, planning_notes, local_tips, review_summary, review_findings
+```
+
+---
+
+## 9. 城市支持
+
+12 座城市（`data/city_profiles/` 各有 JSON）：
+Beijing / Chengdu / Chongqing / Guangzhou / Hangzhou / Hong Kong / Nanjing / Shanghai / Shenzhen / Tokyo / Xiamen / Xian
+
+中英文别名表在 `agent.py:CITY_ALIASES`（共 24 条映射）。
+
+---
+
+## 10. C 组接口（`4-cost/`）
+
+| 函数 | 来源 | 说明 |
+|---|---|---|
+| `get_weather_api(city, dates)` | 高德天气 REST | |
+| `estimate_cost_api(city, days, budget_level, user_budget)` | 静态 city×budget 费用表 | |
+| `search_hotels_api(city, check_in, check_out, keyword, star_rate)` | Playwright 携程爬虫 | `ALLOW_MOCK_DATA=true` 可跳过 |
+
+Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim 只做 `sys.path` 注入，不修改 C 组代码。
+
+---
+
+## 11. 前端（`6-UI/`）
+
+- `UI/index.html`：主聊天界面，渲染 Markdown 报告 + 高德地图 + 日程卡片
+- `map_UI/map.js`：高德 JS SDK，按天着色路线/POI 标记/折线
+- `backend/server.py` 把 `6-UI/UI/` 挂载为 `/static`，`6-UI/map_UI/` 挂载为 `/static/map_UI`
+
+---
+
+## 12. 关键设计决策（不看代码猜不到）
+
+| 决策 | 原因 |
+|---|---|
+| 不用 LangChain | 直接用 OpenAI Responses API function-calling，减少依赖 |
+| 规划器是纯 Python 确定性代码 | 可复现、可审计，不依赖 LLM |
+| 对话 state 只存内存 | 简化部署，重启清零是可接受的 trade-off |
+| avoid 列表优先级高于 must_visit | 防止生成不安全/用户明确排斥的行程 |
+| C 组代码用 shim 隔离 | 不改 C 组文件，靠 sys.path 注入集成 |
+| 每个外部 API 都有本地 fallback | 支持完全离线运行（Amap/Nominatim/Tavily/ChromaDB/Playwright 全有降级） |
+| `turn_history` 有但当前未用于 RAG | 历史原话的 RAG 拼接是待优化点（见下方待办） |
+
+---
+
+## 13. 待实现优化（来自讨论）
+
+1. **Few-shot 样例 RAG**：在知识库里增加意图样例文档（`category="intent_example"`），检索后动态注入 prompt，一次 LLM 调用同时完成意图识别+槽位提取。
+2. **多轮 query 拼接**：`continue_conversation()` 里把 `turn_history` 中的历史原话 + 最新 query 拼接后再做 RAG 检索，提升"上下文相关意图"的召回准确率。
+3. **知识库 tag=direct_answer**：对 FAQ 类文档打 tag，命中后直接返回知识库内容，跳过 LLM 工具调用循环，提升响应速度。
+4. **意图切换检测**：在 `continue_conversation()` 里检测城市/travel_type 是否发生根本性变化，变化时主动清空 `preference_memory` 和 `turn_history`，避免旧意图污染新检索。
+
+---
+
+## 14. 文件速查
+
+| 要改什么 | 去哪个文件 |
+|---|---|
+| 意图提取/槽位识别逻辑 | `3-travel_planner/travel_planner/agent.py` → `_extract_user_profile()` / `_extract_profile_updates()` |
+| 多轮对话合并逻辑 | `agent.py` → `_merge_preference_memory()` / `continue_conversation()` |
+| RAG 检索策略 | `2-rag-retrival/search_notes.py` |
+| RAG 结果→Agent 适配 | `3-travel_planner/travel_planner/tools/strategy_rag_adapter.py` |
+| 行程规划算法 | `3-travel_planner/travel_planner/planner.py` |
+| API 路由 | `backend/server.py` |
+| 前端聊天界面 | `6-UI/UI/index.html` |
+| 地图渲染 | `6-UI/map_UI/map.js` |
+| RAG 离线入库配置 | `1-rag_pipeline_delivery/rag/config.py` |
+| 城市数据 | `3-travel_planner/travel_planner/data/city_profiles/{city}.json` |
+| C组天气/费用/酒店 | `4-cost/Group_C/Group_C/c_group_weather_cost_api.py` |
