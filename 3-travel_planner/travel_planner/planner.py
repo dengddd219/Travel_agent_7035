@@ -192,31 +192,33 @@ def _allocate_days(
             # Recycle POIs with lowest scores rather than leaving the day blank.
             # This ensures multi-day itineraries always have content on every day.
             recycled = selected_pois[:preferred_slots] if selected_pois else []
+            recycled_items = [
+                DayPlanItem(
+                    time_slot=["morning", "afternoon", "evening"][i % 3],
+                    poi_name=poi.name,
+                    category=poi.category,
+                    district=poi.district,
+                    duration_hours=poi.duration_hours,
+                    est_cost=poi.ticket_price or 0.0,
+                    transport_hint="Revisit or explore nearby options.",
+                    arrival_mode="start" if i == 0 else "walk",
+                    arrival_distance_m=0,
+                    arrival_duration_min=0,
+                    reasoning="Suggested as a revisit option — original candidate pool was exhausted.",
+                    weather_fit="flexible mixed-environment stop.",
+                )
+                for i, poi in enumerate(recycled)
+            ]
             plans.append(
                 DayPlan(
                     day_index=day_index + 1,
                     area=districts[min(day_index, len(districts) - 1)] if districts else preferences.city,
                     theme=_empty_day_theme(preferences.travel_type),
-                    estimated_cost=0.0,
+                    estimated_cost=round(sum(item.est_cost for item in recycled_items), 2),
                     weather_summary=weather_day.summary if weather_day else "",
                     inter_stop_distance_m=0,
                     inter_stop_duration_min=0,
-                    items=[
-                        DayPlanItem(
-                            time_slot=["morning", "afternoon", "evening"][i % 3],
-                            poi_name=poi.name,
-                            category=poi.category,
-                            district=poi.district,
-                            est_cost=poi.ticket_price or 0.0,
-                            transport_hint="Revisit or explore nearby options.",
-                            arrival_mode="walk",
-                            distance_m=0,
-                            duration_min=int(poi.duration_hours * 60),
-                            reasoning="Suggested as a revisit option — original candidate pool was exhausted.",
-                            weather_fit="flexible mixed-environment stop.",
-                        )
-                        for i, poi in enumerate(recycled)
-                    ],
+                    items=recycled_items,
                     notes=["All unique candidates covered; this day suggests revisiting highlights or exploring nearby spots."],
                 )
             )

@@ -135,7 +135,7 @@ class TravelPlanningAgent:
     }
     BUDGET_ALIASES = {
         "low": ["low budget", "budget low", "低预算", "省钱", "economy"],
-        "medium": ["medium budget", "budget medium", "中等预算", "适中预算"],
+        "medium": ["medium budget", "budget medium", "中等预算", "适中预算", "中等", "中档"],
         "high": ["high budget", "budget high", "高预算", "luxury", "豪华", "不限预算", "预算不是问题"],
     }
     PACE_ALIASES = {
@@ -170,13 +170,14 @@ class TravelPlanningAgent:
         "hidden gems": "hidden gem",
     }
     GEO_QUERY_ALIASES = {
-        "local food": "food district",
-        "viewpoints": "viewpoint",
-        "culture": "museum",
-        "family friendly": "family attraction",
-        "museums": "museum",
-        "shopping": "shopping mall",
-        "night views": "night view",
+        "local food": "美食街",
+        "viewpoints": "观景台",
+        "culture": "博物馆",
+        "family friendly": "亲子景区",
+        "museums": "博物馆",
+        "shopping": "购物中心",
+        "night views": "夜景",
+        "hidden gems": "小众景点",
     }
     PROFILE_SLOT_ORDER = ("city", "trip_days", "travel_style", "budget_level", "pace", "constraints")
     PROFILE_FLEXIBLE_REPLIES = (
@@ -249,11 +250,12 @@ class TravelPlanningAgent:
     }
 
     def __init__(self, settings: Settings | None = None) -> None:
-        # Load settings and build an LLM client once for reuse across runs.
+        # Load settings once for reuse across runs.
+        # The runtime is mostly deterministic today, so we only initialize the
+        # LLM client when a code path actually needs it.
         self.settings = settings or Settings.from_env()
-        bundle = create_response_client(self.settings)
-        self.client = bundle.client
-        self.model = bundle.model
+        self.client = None
+        self.model = self.settings.foundry_deployment
         # Tool implementations exposed to the model. Names must match schemas in build_tools().
         # This indirection lets the LLM see a clean tool contract while we keep
         # the real Python callables configurable on our side.
@@ -265,6 +267,13 @@ class TravelPlanningAgent:
             "get_cost_summary": self._get_cost_summary,
             "get_travel_tips": self._get_travel_tips,
         }
+
+    def _ensure_response_client(self):
+        if self.client is None:
+            bundle = create_response_client(self.settings)
+            self.client = bundle.client
+            self.model = bundle.model
+        return self.client
 
     def _search_batch_pois(self, city: str, queries: list[str], limit_per_query: int = 3) -> dict:
         # Adapter wrapper so all tools share agent-level settings.
@@ -319,6 +328,31 @@ class TravelPlanningAgent:
     def _extract_function_calls(response) -> list:
         # Responses API may contain multiple output item types; keep only tool calls.
         return [item for item in response.output if getattr(item, "type", None) == "function_call"]
+
+    @staticmethod
+    def _preview_tool_result(result: object, limit: int = 500) -> str:
+        try:
+            preview = json.dumps(result, ensure_ascii=False)
+        except Exception:
+            preview = str(result)
+        return preview[:limit]
+
+    @classmethod
+    def _append_tool_log(
+        cls,
+        tool_results: dict[str, object],
+        *,
+        tool_name: str,
+        arguments: dict,
+        result: object,
+    ) -> None:
+        tool_results.setdefault("_logs", []).append(
+            {
+                "tool_name": tool_name,
+                "arguments": arguments,
+                "result_preview": cls._preview_tool_result(result),
+            }
+        )
 
     @staticmethod
     def build_tools() -> list[dict]:
@@ -442,6 +476,59 @@ class TravelPlanningAgent:
         r"^[一二两三四五六七八九十]+\s*天$",
         r"^(?:路线|行程|计划|攻略|安排)$",
     ]
+    _POI_REMOVE_PREFIX_CUES: tuple[str, ...] = (
+        "不去",
+        "不想去",
+        "先不去",
+        "不打算去",
+        "不考虑去",
+        "取消去",
+        "别去",
+        "不要去",
+        "不用去",
+        "不安排",
+        "先不安排",
+        "别安排",
+        "不要安排",
+        "去掉",
+        "删掉",
+        "移除",
+        "拿掉",
+        "撤掉",
+        "取消",
+        "remove",
+        "drop",
+        "delete",
+        "skip",
+        "cancel",
+    )
+    _POI_REMOVE_SUFFIX_CUES: tuple[str, ...] = (
+        "不去了",
+        "先不去了",
+        "不想去了",
+        "不要了",
+        "先不要了",
+        "不用去了",
+        "别安排了",
+        "不安排了",
+        "先不安排了",
+        "不考虑了",
+        "先不考虑了",
+        "取消了",
+        "取消",
+        "去掉",
+        "去掉了",
+        "删掉",
+        "删掉了",
+        "移除",
+        "拿掉",
+        "撤掉",
+        "remove",
+        "drop",
+        "deleted",
+        "skip",
+        "cancel",
+    )
 
     @classmethod
     def _is_noise_poi(cls, value: str) -> bool:
@@ -472,6 +559,7 @@ class TravelPlanningAgent:
             previous = normalized
             for pattern in cleanup_patterns:
                 normalized = re.sub(pattern, "", normalized).strip("，,；;、。.!？?：: ")
+        normalized = re.sub(r"(?:了|啦|呀|啊|呢|吧)$", "", normalized).strip("，,；;、。.!？?：: ")
         if cls._is_noise_poi(normalized):
             return ""
         return cls.POI_NAME_ALIASES.get(normalized, normalized)
@@ -744,6 +832,28 @@ class TravelPlanningAgent:
         return cls._dedupe_items(items)
 
     @classmethod
+    def _extract_negated_memory_items(cls, user_request: str, existing_items: list[str]) -> list[str]:
+        removals: list[str] = []
+        if not existing_items:
+            return removals
+
+        for item in existing_items:
+            normalized_item = cls._normalize_poi_name(item)
+            if not normalized_item:
+                continue
+            for match in re.finditer(re.escape(normalized_item), user_request, flags=re.IGNORECASE):
+                before = user_request[max(0, match.start() - 12):match.start()]
+                after = user_request[match.end():match.end() + 12]
+                before_text = before.lower() + before
+                after_text = after.lower() + after
+                if any(cue in before_text for cue in cls._POI_REMOVE_PREFIX_CUES) or any(
+                    cue in after_text for cue in cls._POI_REMOVE_SUFFIX_CUES
+                ):
+                    removals.append(normalized_item)
+                    break
+        return cls._dedupe_items(removals)
+
+    @classmethod
     def _merge_text_field(cls, existing: str, addition: str) -> str:
         # Merge note fields as unique snippets joined by a stable delimiter.
         snippets = [snippet.strip() for snippet in [existing, addition] if snippet and snippet.strip()]
@@ -1003,6 +1113,7 @@ class TravelPlanningAgent:
                 user_request,
                 [
                     r"(?:remove|drop|delete|删掉|去掉)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+                    r"(?:不去|不想去|先不去|不考虑|取消去)\s*[:：]?\s*(.+?)(?:了)?(?:[，,；;。.!?\n]|$)",
                 ],
             )
         )
@@ -1019,9 +1130,16 @@ class TravelPlanningAgent:
             updates["add"][field] = cls._dedupe_items(updates["add"][field])
             updates["remove"][field] = cls._dedupe_items(updates["remove"][field])
         updates["add"]["must_visit"] = [cls._normalize_poi_name(item) for item in updates["add"]["must_visit"]]
+        updates["remove"]["must_visit"] = [
+            normalized
+            for normalized in (cls._normalize_poi_name(item) for item in updates["remove"]["must_visit"])
+            if normalized
+        ]
         if "must_visit" in updates["replace"]:
             updates["replace"]["must_visit"] = [
-                cls._normalize_poi_name(item) for item in updates["replace"]["must_visit"]
+                normalized
+                for normalized in (cls._normalize_poi_name(item) for item in updates["replace"]["must_visit"])
+                if normalized
             ]
         return updates
 
@@ -1032,6 +1150,10 @@ class TravelPlanningAgent:
         # of forcing the user to repeat the whole trip profile every time.
         merged = deepcopy(preference_memory)
         updates = cls._extract_profile_updates(user_request)
+        updates["remove"]["must_visit"] = cls._dedupe_items(
+            updates["remove"]["must_visit"]
+            + cls._extract_negated_memory_items(user_request, list(merged.get("must_visit", [])))
+        )
         city_changed = False
         previous_city = str(merged.get("city", "")).strip()
 
@@ -1092,18 +1214,24 @@ class TravelPlanningAgent:
         # These queries are meant for the strategy/RAG side, so they can be
         # broader and more thematic than map-search queries.
         queries: list[str] = []
-        queries.extend(user_profile.get("must_visit", []))
+        city = user_profile.get("city", "")
+        rag_city = provider_city_name(city, "zh") or city
+        for poi_name in user_profile.get("must_visit", []):
+            if not poi_name:
+                continue
+            queries.append(poi_name)
+            if rag_city and rag_city not in poi_name:
+                queries.append(f"{rag_city} {poi_name}")
         if user_profile.get("notes"):
             note_parts = [part.strip() for part in re.split(r"[\n,，;；/|]+", user_profile["notes"]) if part.strip()]
             queries.extend(note_parts[:6])
         if city_context:
             queries.extend(city_context.get("suggested_queries", [])[:4])
 
-        city = user_profile.get("city", "")
         for interest in user_profile.get("interests", []):
             alias = cls.INTEREST_QUERY_ALIASES.get(interest, interest)
-            if city:
-                queries.append(f"{city} {alias}")
+            if rag_city:
+                queries.append(f"{rag_city} {alias}")
             else:
                 queries.append(alias)
 
@@ -1129,6 +1257,7 @@ class TravelPlanningAgent:
         # This is the main "agentic workflow" step. Instead of throwing the
         # entire user question at every tool, we decompose it into smaller asks.
         city = user_profile["city"]
+        rag_city = provider_city_name(city, "zh") or city
         combined_text = " ".join(
             part for part in [user_request, user_profile.get("notes", ""), user_profile.get("extra_request", "")] if part
         ).lower()
@@ -1151,11 +1280,11 @@ class TravelPlanningAgent:
             geo_queries.append(f"{city} {alias}")
 
         if user_profile["travel_type"] == "family":
-            strategy_queries.append(f"{city} family itinerary")
+            strategy_queries.append(f"{rag_city} 亲子游")
         if user_profile["travel_type"] == "food":
-            strategy_queries.append(f"{city} local food route")
+            strategy_queries.append(f"{rag_city} 美食路线")
         if user_profile["trip_days"] > 1:
-            strategy_queries.append(f"{city} {user_profile['trip_days']}-day itinerary")
+            strategy_queries.append(f"{rag_city} {user_profile['trip_days']}天 行程")
 
         if city_context:
             fallback_geo = city_context.get("suggested_queries", [])[:4]
@@ -1171,10 +1300,11 @@ class TravelPlanningAgent:
             for term in ["rain", "rainy", "umbrella", "indoor", "下雨", "雨天", "室内"]
         )
         if rain_sensitive:
-            strategy_queries.append(f"{city} rainy day indoor alternatives")
+            strategy_queries.append(f"{rag_city} 雨天 室内")
 
         if user_profile["budget_level"] != "medium":
-            strategy_queries.append(f"{city} {user_profile['budget_level']} budget ideas")
+            budget_label = cls.BUDGET_LEVEL_LABELS.get(user_profile["budget_level"], user_profile["budget_level"])
+            strategy_queries.append(f"{rag_city} {budget_label} 玩法")
 
         planning_constraints = [
             f"Pace target: {user_profile['pace']}",
@@ -1665,27 +1795,75 @@ class TravelPlanningAgent:
         geo_queries = decomposition.get("geo_queries") or [f"{city} landmark"]
 
         tool_results["get_city_context"] = get_city_context(city, user_profile["travel_type"])
+        self._append_tool_log(
+            tool_results,
+            tool_name="get_city_context",
+            arguments={"city": city, "travel_type": user_profile["travel_type"]},
+            result=tool_results["get_city_context"],
+        )
         tool_results["get_strategy_context"] = self._get_strategy_context(
             city=city,
             queries=self._dedupe_queries(strategy_queries, limit=6),
             travel_type=user_profile["travel_type"],
             top_k=5,
         )
+        self._append_tool_log(
+            tool_results,
+            tool_name="get_strategy_context",
+            arguments={
+                "city": city,
+                "queries": self._dedupe_queries(strategy_queries, limit=6),
+                "travel_type": user_profile["travel_type"],
+                "top_k": 5,
+            },
+            result=tool_results["get_strategy_context"],
+        )
         tool_results["get_weather_forecast"] = self._get_weather_forecast(
             city=city,
             trip_days=user_profile["trip_days"],
             start_date=user_profile.get("start_date", ""),
+        )
+        self._append_tool_log(
+            tool_results,
+            tool_name="get_weather_forecast",
+            arguments={
+                "city": city,
+                "trip_days": user_profile["trip_days"],
+                "start_date": user_profile.get("start_date", ""),
+            },
+            result=tool_results["get_weather_forecast"],
         )
         tool_results["search_batch_pois"] = self._search_batch_pois(
             city=city,
             queries=self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
             limit_per_query=3,
         )
+        self._append_tool_log(
+            tool_results,
+            tool_name="search_batch_pois",
+            arguments={
+                "city": city,
+                "queries": self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
+                "limit_per_query": 3,
+            },
+            result=tool_results["search_batch_pois"],
+        )
         tool_results["get_cost_summary"] = self._get_cost_summary(
             city=city,
             days=user_profile["trip_days"],
             budget_level=user_profile["budget_level"],
             user_budget=decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
+        )
+        self._append_tool_log(
+            tool_results,
+            tool_name="get_cost_summary",
+            arguments={
+                "city": city,
+                "days": user_profile["trip_days"],
+                "budget_level": user_profile["budget_level"],
+                "user_budget": decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
+            },
+            result=tool_results["get_cost_summary"],
         )
         poi_names = [item["name"] for item in tool_results["search_batch_pois"].get("results", [])[:8]]
         tool_results["get_travel_tips"] = self._get_travel_tips(
@@ -1694,11 +1872,23 @@ class TravelPlanningAgent:
             travel_type=user_profile["travel_type"],
             interests=user_profile.get("interests", []),
         )
+        self._append_tool_log(
+            tool_results,
+            tool_name="get_travel_tips",
+            arguments={
+                "city": city,
+                "poi_names": poi_names,
+                "travel_type": user_profile["travel_type"],
+                "interests": user_profile.get("interests", []),
+            },
+            result=tool_results["get_travel_tips"],
+        )
         result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
         return user_profile, tool_results, result.plan or {}, result.answer
 
         structured_request = self._build_structured_agent_input(user_request, user_profile, decomposition)
-        response = self.client.responses.create(
+        client = self._ensure_response_client()
+        response = client.responses.create(
             model=self.model,
             instructions=SYSTEM_PROMPT,
             input=structured_request,
@@ -1742,7 +1932,7 @@ class TravelPlanningAgent:
                     {
                         "tool_name": function_name,
                         "arguments": function_args,
-                        "result_preview": str(function_result)[:500],
+                        "result_preview": self._preview_tool_result(function_result),
                     }
                 )
                 tool_results["_logs"].append(tool_logs[-1])
@@ -1769,7 +1959,7 @@ class TravelPlanningAgent:
                 result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
                 return user_profile, tool_results, result.plan or {}, result.answer
 
-            response = self.client.responses.create(
+            response = client.responses.create(
                 model=self.model,
                 instructions=SYSTEM_PROMPT,
                 input=tool_outputs,

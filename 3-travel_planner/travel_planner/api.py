@@ -47,19 +47,32 @@ app = FastAPI(
     description="Backend endpoints for the B-group travel planning orchestrator.",
 )
 conversation_store = InMemoryConversationStore()
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIR = REPO_ROOT / "6-UI" / "UI"
+MAP_UI_DIR = REPO_ROOT / "6-UI" / "map_UI"
+DEMO_PAGE = REPO_ROOT / "6-UI" / "travel_chat.html"
+DEMO_BRIDGE = MAP_UI_DIR / "amap-env.js"
 
-app.mount("/demo/amap", StaticFiles(directory=PROJECT_ROOT / "amap_ui_delivery"), name="demo_amap")
+if MAP_UI_DIR.exists():
+    app.mount("/demo/amap", StaticFiles(directory=MAP_UI_DIR), name="demo_amap")
+    app.mount("/static/map_UI", StaticFiles(directory=MAP_UI_DIR), name="map_ui")
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
 @app.get("/demo", response_class=FileResponse)
 def demo_page() -> FileResponse:
-    return FileResponse(PROJECT_ROOT / "web_demo.html")
+    target = DEMO_PAGE if DEMO_PAGE.exists() else FRONTEND_DIR / "index.html"
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="Demo page not found.")
+    return FileResponse(target)
 
 
 @app.get("/demo/bridge.js", response_class=FileResponse)
 def demo_bridge() -> FileResponse:
-    return FileResponse(PROJECT_ROOT / "amap_ui_bridge.js")
+    if not DEMO_BRIDGE.exists():
+        raise HTTPException(status_code=404, detail="Demo bridge not found.")
+    return FileResponse(DEMO_BRIDGE)
 
 
 @lru_cache(maxsize=1)

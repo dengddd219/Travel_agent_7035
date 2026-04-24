@@ -52,6 +52,19 @@ def _normalize_query_items(queries: list[str]) -> list[str]:
     return cleaned
 
 
+def _search_query_variants(query: str, city: str) -> list[str]:
+    variants: list[str] = []
+    seen: set[str] = set()
+    normalized_city = provider_city_name(city, provider="zh").strip() or city.strip()
+    for item in [query.strip(), f"{normalized_city} {query.strip()}"]:
+        key = item.lower()
+        if not item or key in seen:
+            continue
+        seen.add(key)
+        variants.append(item)
+    return variants
+
+
 def _infer_indoor_outdoor(name: str, raw_type: str, profile: dict) -> str:
     text = f"{name} {raw_type}".lower()
     if any(keyword.lower() in text for keyword in profile.get("indoor_keywords", [])):
@@ -240,7 +253,9 @@ def _nominatim_search(city: str, query: str, limit: int, profile: dict) -> list[
 def _profile_seed_results(query: str, profile: dict, limit: int) -> list[dict]:
     seeds = profile.get("seed_pois", [])
     query_lower = query.strip().lower()
-    query_tokens = {token for token in query_lower.replace("/", " ").split() if token}
+    # Filter out common English stop words that cause false matches
+    stop_words = {'a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'be', 'been', 'we', 'you', 'he', 'she', 'it', 'they'}
+    query_tokens = {token for token in query_lower.replace("/", " ").split() if token and token not in stop_words and len(token) > 1}
 
     ranked: list[tuple[int, dict]] = []
     for item in seeds:
@@ -274,7 +289,9 @@ def _is_strong_seed_match(query: str, candidate: dict) -> bool:
             candidate.get("category", ""),
         ]
     ).lower()
-    query_tokens = [token for token in query_lower.replace("/", " ").split() if token]
+    # Filter out common English stop words that cause false matches
+    stop_words = {'a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'be', 'been', 'we', 'you', 'he', 'she', 'it', 'they'}
+    query_tokens = [token for token in query_lower.replace("/", " ").split() if token and token not in stop_words and len(token) > 1]
     return query_lower in haystack or (query_tokens and all(token in haystack for token in query_tokens))
 
 
@@ -313,6 +330,7 @@ def search_batch_pois(city: str, queries: list[str], limit_per_query: int = 3, s
     settings = settings or Settings.from_env()
     profile = load_city_profile(city)
     normalized_queries = _normalize_query_items(queries)
+    live_search_city = provider_city_name(city, provider="zh") or city
 
     results: list[dict] = []
     missing_queries: list[str] = []
@@ -335,17 +353,25 @@ def search_batch_pois(city: str, queries: list[str], limit_per_query: int = 3, s
                     candidates = _merge_candidates(strong_seed_candidates, [], limit_per_query)
                     provider = "profile_seed"
                 else:
-                    live_candidates = (
-                        _amap_search(city, query, limit_per_query, settings, profile)
-                        if settings.has_amap_key
-                        else _nominatim_search(city, query, limit_per_query, profile)
-                    )
+                    live_candidates: list[dict] = []
+                    for variant in _search_query_variants(query, city):
+                        live_candidates = (
+                            _amap_search(live_search_city, variant, limit_per_query, settings, profile)
+                            if settings.has_amap_key
+                            else _nominatim_search(live_search_city, variant, limit_per_query, profile)
+                        )
+                        if live_candidates:
+                            break
                     candidates = _merge_candidates(seed_candidates, live_candidates, limit_per_query)
                     if seed_candidates and candidates and candidates[0] in seed_candidates:
                         provider = "profile_seed+amap" if settings.has_amap_key else "profile_seed+nominatim"
             except Exception:
                 try:
-                    live_candidates = _nominatim_search(city, query, limit_per_query, profile)
+                    live_candidates = []
+                    for variant in _search_query_variants(query, city):
+                        live_candidates = _nominatim_search(live_search_city, variant, limit_per_query, profile)
+                        if live_candidates:
+                            break
                     candidates = _merge_candidates(seed_candidates, live_candidates, limit_per_query)
                     provider = "mixed"
                 except Exception:

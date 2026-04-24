@@ -58,9 +58,6 @@ def _load_bm25():
     if not _BM25_PKL.exists():
         return None, [], []
 
-    import jieba
-    from rank_bm25 import BM25Okapi
-
     with open(_BM25_PKL, "rb") as f:
         data = pickle.load(f)
 
@@ -69,6 +66,11 @@ def _load_bm25():
 
     # pkl 里的 tokenized_corpus 直接复用，无需重新分词
     tokenized_corpus: list[list[str]] = data["tokenized_corpus"]
+    try:
+        from rank_bm25 import BM25Okapi
+    except ImportError:
+        return None, chunk_ids, chunk_texts
+
     bm25 = BM25Okapi(tokenized_corpus)
 
     return bm25, chunk_ids, chunk_texts
@@ -106,6 +108,14 @@ def _tokenize(text: str) -> list[str]:
         import re
         return [w for w in re.findall(r"[一-鿿A-Za-z0-9]+", text.lower())
                 if w not in _STOPWORDS]
+
+
+def _fallback_keyword_score(query: str, chunk_text: str) -> float:
+    query_tokens = set(_tokenize(query))
+    chunk_tokens = set(_tokenize(chunk_text))
+    if not query_tokens or not chunk_tokens:
+        return 0.0
+    return len(query_tokens & chunk_tokens) / max(len(query_tokens), 1)
 
 
 # ── 元数据还原（ChromaDB 把 list 存成逗号字符串）────────────────────────
@@ -209,17 +219,23 @@ def _search_dense(query: str, city: str, top_k: int) -> list[dict]:
 def _search_bm25(query: str, city: str, top_k: int) -> list[dict]:
     """BM25 关键词检索。"""
     bm25, chunk_ids, chunk_texts = _load_bm25()
-    if bm25 is None:
+    if not chunk_ids or not chunk_texts:
         return []
 
     filt_ids, filt_texts = _bm25_city_filter(chunk_ids, chunk_texts, city)
+    if bm25 is not None and len(filt_texts) == len(chunk_texts):
+        query_tokens = _tokenize(query)
+        scores = bm25.get_scores(query_tokens)
+    else:
+        try:
+            from rank_bm25 import BM25Okapi
 
-    from rank_bm25 import BM25Okapi
-    tokenized_corpus = [_tokenize(t) for t in filt_texts]
-    local_bm25 = BM25Okapi(tokenized_corpus)
-
-    query_tokens = _tokenize(query)
-    scores = local_bm25.get_scores(query_tokens)
+            tokenized_corpus = [_tokenize(t) for t in filt_texts]
+            local_bm25 = BM25Okapi(tokenized_corpus)
+            query_tokens = _tokenize(query)
+            scores = local_bm25.get_scores(query_tokens)
+        except ImportError:
+            scores = [_fallback_keyword_score(query, text) for text in filt_texts]
     top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
 
     hits = []
