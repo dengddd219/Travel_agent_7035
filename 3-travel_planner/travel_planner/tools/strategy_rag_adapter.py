@@ -349,15 +349,25 @@ def _search_via_group_a(
     return _dedupe_results(all_results, top_k=top_k), per_query
 
 
-def _summarize_strategy(results: list[dict], travel_type: str) -> dict:
+def _summarize_strategy(results: list[dict], travel_type: str, city: str = "") -> dict:
     recommended_pois: list[str] = []
     poi_seen: set[str] = set()
     theme_counter: Counter[str] = Counter()
     pitfall_notes: list[str] = []
     district_counter: Counter[str] = Counter()
 
+    # Build a set of city name variants to cross-check chunk metadata
+    city_variants: set[str] = set()
+    if city:
+        bundle = city_name_bundle(city)
+        city_variants = {bundle["canonical"].lower(), bundle["city_zh"], bundle["city_en"].lower()}
+
     for result in results:
         metadata = result.get("metadata", {})
+        # Skip chunks whose city metadata doesn't match the requested city
+        chunk_city = str(metadata.get("city", "")).strip()
+        if city_variants and chunk_city and chunk_city.lower() not in city_variants:
+            continue
         for poi_name in metadata.get("poi_names", []) or []:
             key = poi_name.strip().lower()
             if key and key not in poi_seen:
@@ -433,7 +443,7 @@ def get_strategy_context(
         retrieval_mode = "local_bm25_rag_adapter"
         source = "strategy_rag_adapter"
 
-    strategy_summary = _summarize_strategy(final_results, travel_type=travel_type)
+    strategy_summary = _summarize_strategy(final_results, travel_type=travel_type, city=city)
     return {
         "city": city_info["canonical"],
         "provider_city": city_info["city_zh"],

@@ -386,13 +386,15 @@ class HotelAPI:
 
     def _build_ctrip_hotel_result_urls(self, city: str, check_in_date: str,
                                        check_out_date: str, keyword_value: str) -> List[str]:
-        return [
-            (
-                "https://hotels.ctrip.com/hotels/list"
-                f"?cityName={quote(city)}&checkin={check_in_date}&checkout={check_out_date}"
-                f"&keyword={quote(keyword_value)}"
-            )
-        ]
+        city_code = CITY_TO_CTRIP_CODE.get(city, "")
+        base = (
+            "https://hotels.ctrip.com/hotels/list"
+            f"?cityName={quote(city)}&checkin={check_in_date}&checkout={check_out_date}"
+            f"&keyword={quote(keyword_value)}"
+        )
+        if city_code:
+            base += f"&cityCode={city_code}"
+        return [base]
 
     def _warm_ctrip_hotel_session(self) -> None:
         try:
