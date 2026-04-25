@@ -495,16 +495,9 @@ class HotelAPI:
                     "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
                 )
                 page = context.new_page()
-                page.goto(self.hotel_entry_url, wait_until="domcontentloaded", timeout=30000)
-                page.wait_for_timeout(1500)
-                if self.ctrip_manual_login_on_start and not self.playwright_headless:
-                    print("Confirm the Ctrip account is logged in within the opened browser, then press Enter to continue...")
-                    input()
-                self._prepare_ctrip_hotel_search_context(
-                    page,
-                    city,
-                    allow_failure=self.use_persistent_login_context
-                )
+                # Go directly to the result URL (which embeds cityCode) instead of the
+                # entry page first. The entry page sets a city cookie from the previous
+                # session that overrides the URL's cityName parameter.
                 page.goto(result_url, wait_until="domcontentloaded", timeout=30000)
                 page.wait_for_timeout(6000)
                 page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.4)")
