@@ -22,6 +22,7 @@ fastapi>=0.100.0
 pydantic>=2.0.0
 requests>=2.31.0
 uvicorn>=0.23.0          # ASGI server for FastAPI
+playwright>=1.40.0       # Hotel scraping (run: playwright install chromium)
 
 # --- UI (reference / demo) ---
 streamlit>=1.30.0

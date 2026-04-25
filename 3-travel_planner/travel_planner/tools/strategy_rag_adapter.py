@@ -368,11 +368,18 @@ def _summarize_strategy(results: list[dict], travel_type: str, city: str = "") -
         chunk_city = str(metadata.get("city", "")).strip()
         if city_variants and chunk_city and chunk_city.lower() not in city_variants:
             continue
+        chunk_text = result.get("chunk_text", "")
         for poi_name in metadata.get("poi_names", []) or []:
             key = poi_name.strip().lower()
-            if key and key not in poi_seen:
-                poi_seen.add(key)
-                recommended_pois.append(poi_name.strip())
+            if not key or key in poi_seen:
+                continue
+            # Only accept POI if its name actually appears in this chunk's text.
+            # This blocks poi_names that were copied from the document-level frontmatter
+            # of multi-city guides (e.g. a Chengdu-tagged post that lists Xi'an POIs).
+            if poi_name.strip() not in chunk_text:
+                continue
+            poi_seen.add(key)
+            recommended_pois.append(poi_name.strip())
         for tag in (metadata.get("travel_type_tags", []) or []) + (metadata.get("tags", []) or []):
             tag_text = str(tag).strip()
             if tag_text:

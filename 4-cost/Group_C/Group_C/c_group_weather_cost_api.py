@@ -43,6 +43,19 @@ except Exception:
     PlaywrightTimeoutError = Exception
     PLAYWRIGHT_AVAILABLE = False
 
+# 携程内部数字城市 ID，用于酒店搜索 URL 的 cityId 参数
+CITY_TO_CTRIP_HOTEL_ID = {
+    '北京': '2', '上海': '1', '广州': '22', '深圳': '21', '成都': '28',
+    '杭州': '14', '武汉': '57', '西安': '60', '重庆': '7', '青岛': '36',
+    '长沙': '58', '南京': '11', '厦门': '25', '昆明': '72', '大连': '37',
+    '天津': '3', '郑州': '45', '三亚': '231', '济南': '35', '福州': '23',
+    '南宁': '76', '贵阳': '75', '桂林': '78', '海口': '230', '哈尔滨': '31',
+    '沈阳': '30', '长春': '32', '石家庄': '43', '兰州': '65', '乌鲁木齐': '67',
+    '呼和浩特': '62', '银川': '64', '拉萨': '73', '西宁': '66', '南昌': '53',
+    '香港': '10', '澳门': '169', '东京': '3803',
+}
+
+# IATA 机场三字码，用于机票搜索
 CITY_TO_CTRIP_CODE = {
     '北京': 'BJS', '上海': 'SHA', '广州': 'CAN', '深圳': 'SZX', '成都': 'CTU',
     '杭州': 'HGH', '武汉': 'WUH', '西安': 'SIA', '重庆': 'CKG', '青岛': 'TAO',
@@ -51,25 +64,7 @@ CITY_TO_CTRIP_CODE = {
     '南宁': 'NNG', '贵阳': 'KWE', '桂林': 'KWL', '海口': 'HAK', '哈尔滨': 'HRB',
     '沈阳': 'SHE', '长春': 'CGQ', '石家庄': 'SJW', '兰州': 'LHW', '乌鲁木齐': 'URC',
     '呼和浩特': 'HET', '银川': 'INC', '拉萨': 'LXA', '西宁': 'XNN', '南昌': 'KHN',
-    '惠州': 'HUZ', '烟台': 'YNT', '威海': 'WEH', '无锡': 'WUX', '苏州': 'WUX',
-    '常州': 'CZX', '南通': 'NTG', '扬州': 'YTY', '镇江': 'ZHA', '徐州': 'XUZ',
-    '连云港': 'LYG', '盐城': 'YNZ', '淮安': 'HIA', '宿迁': 'XUZ', '泰州': 'YTY',
-    '合肥': 'HFE', '芜湖': 'WUH', '蚌埠': 'HFE', '安庆': 'AQG', '黄山': 'TXN',
-    '阜阳': 'FUG', '淮南': 'HFE', '滁州': 'HFE', '马鞍山': 'HFE', '六安': 'TXN',
-    '宣城': 'TXN', '铜陵': 'HFE', '池州': 'JUH', '亳州': 'BGS', '宿州': 'SYS',
-    '绵阳': 'MIG', '德阳': 'DAX', '南充': 'NAO', '宜宾': 'YBP', '泸州': 'LZO',
-    '达州': 'DAX', '雅安': 'YAC', '眉山': 'MIG', '资阳': 'CIF', '广元': 'GYS',
-    '攀枝花': 'PZI', '巴中': 'BZX', '凉山': 'LJG', '阿坝': 'NGQ', '甘孜': 'DAX',
-    '哈密': 'HMI', '吐鲁番': 'TLQ', '伊宁': 'YIN', '兰州': 'LHW', '嘉峪关': 'JGN',
-    '敦煌': 'DNH', '临沧': 'LNJ', '丽江': 'LJG', '西双版纳': 'JHG', '保山': 'BSD',
-    '曲靖': 'KMG', '文山': 'WNH', '昭通': 'ZAT', '玉树': 'YUS', '阿勒泰': 'AAT',
-    '额济纳旗': 'EJN', '喀什': 'KHG', '库尔勒': 'KRL', '阿克苏': 'AKU', '库车': 'KCA',
-    '乌拉特中旗': 'WZQ', '西昌': 'XIC', '海拉尔': 'HLD', '锦州': 'JNZ', '营口': 'YKH',
-    '大庆': 'DQA', '牡丹江': 'MDG', '佳木斯': 'JMU', '鹤岗': 'HGH', '双鸭山': 'SYA',
-    '大同': 'DAT', '晋中': 'JIC', '临汾': 'LFQ', '运城': 'YCU', '朔州': 'SZH',
-    '忻州': 'WUT', '吕梁': 'LLV', '阳泉': 'YIQ', '长治': 'CIH', '晋城': 'JNG',
-    '十堰': 'WDS', '宜昌': 'YIH', '襄阳': 'XFN', '荆州': 'SHS', '荆门': 'JM1',
-    '恩施': 'ENH', '潜江': 'HJJ', '天门': 'WUT', '仙桃': 'WUT', '随州': 'WUT'
+    '南宁': 'NNG',
 }
 
 DEFAULT_HTTP_HEADERS = {
@@ -411,14 +406,14 @@ class HotelAPI:
 
     def _build_ctrip_hotel_result_urls(self, city: str, check_in_date: str,
                                        check_out_date: str, keyword_value: str) -> List[str]:
-        city_code = CITY_TO_CTRIP_CODE.get(city, "")
+        city_id = CITY_TO_CTRIP_HOTEL_ID.get(city, "")
         base = (
             "https://hotels.ctrip.com/hotels/list"
             f"?cityName={quote(city)}&checkin={check_in_date}&checkout={check_out_date}"
             f"&keyword={quote(keyword_value)}"
         )
-        if city_code:
-            base += f"&cityCode={city_code}"
+        if city_id:
+            base += f"&cityId={city_id}"
         return [base]
 
     def _warm_ctrip_hotel_session(self) -> None:
@@ -495,20 +490,68 @@ class HotelAPI:
                     "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
                 )
                 page = context.new_page()
+                # Step 1: Open the hotel entry page (search homepage)
                 page.goto(self.hotel_entry_url, wait_until="domcontentloaded", timeout=30000)
-                page.wait_for_timeout(1500)
-                if self.ctrip_manual_login_on_start and not self.playwright_headless:
-                    print("Confirm the Ctrip account is logged in within the opened browser, then press Enter to continue...")
-                    input()
-                self._prepare_ctrip_hotel_search_context(
-                    page,
-                    city,
-                    allow_failure=self.use_persistent_login_context
-                )
-                page.goto(result_url, wait_until="domcontentloaded", timeout=30000)
-                page.wait_for_timeout(6000)
+                page.wait_for_timeout(3000)
+
+                # Step 2: Fill in the destination city
+                dest_filled = False
+                for selector in ['#destinationInput', 'input[placeholder="目的地"]', 'input[placeholder*="城市"]']:
+                    loc = page.locator(selector)
+                    if loc.count() > 0:
+                        loc.first.click(timeout=5000)
+                        page.wait_for_timeout(300)
+                        loc.first.fill("")
+                        loc.first.type(city, delay=80)
+                        page.wait_for_timeout(1500)
+                        # Click the first suggestion that contains the city name
+                        for sug_sel in [
+                            f'[role="option"]:has-text("{city}")',
+                            f'li:has-text("{city}")',
+                            f'[class*="suggest"]:has-text("{city}")',
+                        ]:
+                            sug = page.locator(sug_sel)
+                            if sug.count() > 0:
+                                sug.first.click(timeout=3000)
+                                dest_filled = True
+                                break
+                        if not dest_filled:
+                            loc.first.press("Enter")
+                            dest_filled = True
+                        break
+
+                page.wait_for_timeout(1000)
+
+                # Step 3: Fill check-in / check-out dates if inputs exist
+                for date_sel, date_val in [
+                    ('[placeholder*="入住"], [id*="checkin"], [class*="checkIn"] input', check_in_date),
+                    ('[placeholder*="退房"], [id*="checkout"], [class*="checkOut"] input', check_out_date),
+                ]:
+                    try:
+                        d = page.locator(date_sel).first
+                        if d.count() > 0:
+                            d.fill(date_val)
+                    except Exception:
+                        pass
+
+                page.wait_for_timeout(500)
+
+                # Step 4: Click the search button
+                for btn_sel in [
+                    'button:has-text("搜索")',
+                    '[class*="search-btn"]',
+                    '[class*="searchBtn"]',
+                    'button[type="submit"]',
+                ]:
+                    btn = page.locator(btn_sel)
+                    if btn.count() > 0:
+                        btn.first.click(timeout=5000)
+                        break
+
+                # Step 5: Wait for results page to load
+                page.wait_for_timeout(8000)
                 page.evaluate("window.scrollTo(0, document.body.scrollHeight * 0.4)")
-                page.wait_for_timeout(1500)
+                page.wait_for_timeout(2000)
                 content = page.content()
                 context.close()
                 if browser is not None:
@@ -579,7 +622,12 @@ class HotelAPI:
                                   star_rate: Optional[int] = None,
                                   source_url: Optional[str] = None) -> List[Dict]:
         result_city = self._extract_result_city_from_html(html)
-        if result_city and city not in result_city and result_city not in city:
+        city_mismatch = (
+            result_city
+            and city not in result_city
+            and result_city not in city
+        )
+        if city_mismatch:
             print(f"携程酒店页面返回城市为 {result_city}，与请求城市 {city} 不一致，已放弃本次结果")
             return []
 
@@ -650,7 +698,8 @@ class HotelAPI:
         return hotels
 
     def _extract_result_city_from_html(self, html_text: str) -> Optional[str]:
-        # 属性顺序不固定，先整体匹配 input 标签，再从中提取 value
+        # 只从 destinationInput 的 value 属性取（SSR 渲染后存在，最可靠）
+        # 不用 cityName JSON 字段兜底，因为该字段在 JS bundle 里大量出现易误判
         tag_match = re.search(r'<input[^>]*id="destinationInput"[^>]*/?>',  html_text)
         if tag_match:
             value_match = re.search(r'value="([^"]+)"', tag_match.group(0))
