@@ -17,6 +17,17 @@ from .tools.strategy_rag_adapter import get_strategy_context
 from .tools.weather_adapter import get_group_c_weather_forecast
 from .tools.poi import search_batch_pois
 from .tools.tips import get_travel_tips
+from .debug_tracer import (
+    trace_session_start,
+    trace_profile,
+    trace_decomposition,
+    trace_rag_input,
+    trace_rag_output,
+    trace_tool_call,
+    trace_planner_input,
+    trace_plan_output,
+    trace_step_timer,
+)
 
 """Main orchestration agent for our travel planner.
 
@@ -1430,6 +1441,16 @@ class TravelPlanningAgent:
             name_key = str(item.get("name", "")).strip().lower()
             if not name_key or name_key in seen:
                 continue
+            # Verify the returned POI name meaningfully matches the query that produced it.
+            # Amap fuzzy-matches "黄鹤楼" in Chengdu and returns "新场黄鹤楼" — we keep it
+            # only if at least 2 characters from the original query appear in the result name.
+            query_for_item = next(
+                (q for q in missing_queries if q.strip().lower() == name_key or
+                 sum(1 for ch in q if ch in item.get("name", "")) >= 2),
+                None,
+            )
+            if query_for_item is None:
+                continue
             merged_results.append(item)
             seen.add(name_key)
 
@@ -1697,6 +1718,7 @@ class TravelPlanningAgent:
             strategy_context,
         )
         tool_results["search_batch_pois"] = poi_result
+        trace_planner_input(strategy_context, len(poi_result.get("results", [])))
         weather = tool_results["get_weather_forecast"]
         cost_summary = tool_results.get("get_cost_summary")
         tips = self._merge_strategy_into_travel_tips(
@@ -1720,6 +1742,7 @@ class TravelPlanningAgent:
             "neighborhood_notes": strategy_context.get("neighborhood_notes", []),
         }
         plan["weather_payload"] = weather
+        trace_plan_output(plan)
         report = render_markdown_report(
             plan=plan,
             user_profile=user_profile,
@@ -1761,12 +1784,15 @@ class TravelPlanningAgent:
         # 4) auto-finish when required tool set is complete
         # 5) fallback-fill missing tools if model stops early
         default_city = stored_preferences.get("city", self.settings.default_city) if stored_preferences else self.settings.default_city
+        trace_session_start(user_request)
         user_profile = self._resolve_user_profile(
             user_request,
             default_city=default_city,
             stored_preferences=stored_preferences,
         )
+        trace_profile(user_profile)
         decomposition = self._decompose_request(user_request, user_profile)
+        trace_decomposition(decomposition)
         tool_results: dict[str, object] = {
             "_logs": [
                 {
@@ -1801,12 +1827,17 @@ class TravelPlanningAgent:
             arguments={"city": city, "travel_type": user_profile["travel_type"]},
             result=tool_results["get_city_context"],
         )
-        tool_results["get_strategy_context"] = self._get_strategy_context(
-            city=city,
-            queries=self._dedupe_queries(strategy_queries, limit=6),
-            travel_type=user_profile["travel_type"],
-            top_k=5,
-        )
+        trace_tool_call("get_city_context", {"city": city, "travel_type": user_profile["travel_type"]}, tool_results["get_city_context"])
+        _rag_queries = self._dedupe_queries(strategy_queries, limit=6)
+        trace_rag_input(queries=_rag_queries, city=city, travel_type=user_profile["travel_type"], top_k=5)
+        with trace_step_timer("RAG retrieval"):
+            tool_results["get_strategy_context"] = self._get_strategy_context(
+                city=city,
+                queries=_rag_queries,
+                travel_type=user_profile["travel_type"],
+                top_k=5,
+            )
+        trace_rag_output(tool_results["get_strategy_context"])
         self._append_tool_log(
             tool_results,
             tool_name="get_strategy_context",
@@ -1833,6 +1864,7 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_weather_forecast"],
         )
+        trace_tool_call("get_weather_forecast", {"city": city, "trip_days": user_profile["trip_days"]}, tool_results["get_weather_forecast"])
         tool_results["search_batch_pois"] = self._search_batch_pois(
             city=city,
             queries=self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
@@ -1848,6 +1880,7 @@ class TravelPlanningAgent:
             },
             result=tool_results["search_batch_pois"],
         )
+        trace_tool_call("search_batch_pois", {"city": city, "queries": self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10)}, tool_results["search_batch_pois"])
         tool_results["get_cost_summary"] = self._get_cost_summary(
             city=city,
             days=user_profile["trip_days"],
@@ -1865,6 +1898,7 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_cost_summary"],
         )
+        trace_tool_call("get_cost_summary", {"city": city, "days": user_profile["trip_days"], "budget_level": user_profile["budget_level"]}, tool_results["get_cost_summary"])
         poi_names = [item["name"] for item in tool_results["search_batch_pois"].get("results", [])[:8]]
         tool_results["get_travel_tips"] = self._get_travel_tips(
             city=city,
@@ -1883,6 +1917,7 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_travel_tips"],
         )
+        trace_tool_call("get_travel_tips", {"city": city, "poi_names": poi_names, "travel_type": user_profile["travel_type"]}, tool_results["get_travel_tips"])
         result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
         return user_profile, tool_results, result.plan or {}, result.answer
 

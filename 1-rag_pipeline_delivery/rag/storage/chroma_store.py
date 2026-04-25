@@ -32,16 +32,16 @@ class ChromaStore:
         如果 embeddings 为 None，ChromaDB 会用内置模型自动生成。
         """
         processed_metas = [self._flatten_metadata(m) for m in metadatas]
-
-        upsert_kwargs = {
-            "ids": chunk_ids,
-            "documents": texts,
-            "metadatas": processed_metas,
-        }
-        if embeddings is not None:
-            upsert_kwargs["embeddings"] = embeddings
-
-        self.collection.upsert(**upsert_kwargs)
+        batch_size = 5000
+        for i in range(0, len(chunk_ids), batch_size):
+            upsert_kwargs = {
+                "ids": chunk_ids[i:i+batch_size],
+                "documents": texts[i:i+batch_size],
+                "metadatas": processed_metas[i:i+batch_size],
+            }
+            if embeddings is not None:
+                upsert_kwargs["embeddings"] = embeddings[i:i+batch_size]
+            self.collection.upsert(**upsert_kwargs)
 
     def count(self) -> int:
         return self.collection.count()

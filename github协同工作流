@@ -1,0 +1,24 @@
+日常协作工作流
+每天开始工作前
+
+git checkout main
+git pull origin main          # 拉取最新代码
+git checkout feature/ui       # 切回自己的分支（对方是 feature/agent）
+git merge main                # 把最新的 main 合并进来
+
+
+改代码中
+
+git add .
+git commit -m "简单描述改了什么"
+推送 & 合并
+
+git push origin feature/ui
+# 然后去 GitHub 网页：Pull requests → New pull request → Create
+# 对方 Review 后点 Merge
+注意事项
+规则	原因
+永远不直接改 main	保证主分支稳定
+每天开始前先 git pull	减少冲突
+commit 信息写清楚	方便对方知道你改了什么
+merge 后对方要 git pull origin main	不然本地看不到新代码
