@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 # Allow importing travel_planner from the sibling directory
@@ -15,12 +16,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from travel_planner.agent import TravelPlanningAgent, ConversationState
+from travel_planner.agent import TravelPlanningAgent
 from travel_planner.ui_backend import (
     InMemoryConversationStore,
     build_frontend_response,
     deserialize_conversation_state,
-    serialize_conversation_state,
 )
 from travel_planner.config import Settings
 
@@ -44,6 +44,11 @@ app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 settings = Settings.from_env()
 store = InMemoryConversationStore()
+
+
+@lru_cache(maxsize=1)
+def get_agent() -> TravelPlanningAgent:
+    return TravelPlanningAgent(settings=settings)
 
 
 # ── Request / response models ─────────────────────────────────────────────────
@@ -89,7 +94,7 @@ def serve_chat():
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     import traceback
-    agent = TravelPlanningAgent(settings=settings)
+    agent = get_agent()
 
     try:
         if req.conversation_id and req.conversation_state:

@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import Counter
 from functools import lru_cache
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -25,10 +26,19 @@ from ..city_names import city_name_bundle, rag_city_folder
 RAG_DELIVERY_ROOT = (
     Path(__file__).resolve().parents[3] / "1-rag_pipeline_delivery"
 )
+GROUP_A_SEARCH_NOTES_PATH = (
+    Path(__file__).resolve().parents[3] / "2-rag-retrival" / "search_notes.py"
+)
 
 RAW_DATA_ROOT = RAG_DELIVERY_ROOT / "data" / "raw"
 DB_DATA_ROOT = RAG_DELIVERY_ROOT / "data" / "db"
 PITFALL_HINTS = ("避坑", "不要", "别去", "建议", "最好", "记得", "排队", "踩雷")
+TRAVEL_CATEGORY_HINTS = {
+    "family": "亲子",
+    "food": "美食",
+    "theme": "小众",
+    "leisure": "",
+}
 
 
 def _city_folder(city: str) -> str | None:
@@ -235,6 +245,24 @@ def _build_city_bm25(city: str):
     return BM25Okapi(corpus)
 
 
+@lru_cache(maxsize=1)
+def _load_group_a_search_notes():
+    if not GROUP_A_SEARCH_NOTES_PATH.exists():
+        raise FileNotFoundError(f"search_notes.py not found: {GROUP_A_SEARCH_NOTES_PATH}")
+
+    module_name = "travel_agent_group_a_search_notes"
+    spec = importlib.util.spec_from_file_location(module_name, GROUP_A_SEARCH_NOTES_PATH)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load module spec from {GROUP_A_SEARCH_NOTES_PATH}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    search_notes = getattr(module, "search_notes", None)
+    if search_notes is None:
+        raise AttributeError("search_notes.py does not expose `search_notes`.")
+    return search_notes
+
+
 def _fallback_score(query: str, chunk_text: str) -> float:
     query_tokens = set(_tokenize(query))
     chunk_tokens = set(_tokenize(chunk_text))
@@ -285,6 +313,40 @@ def _dedupe_results(results: list[dict], top_k: int) -> list[dict]:
         if len(deduped) >= top_k:
             break
     return deduped
+
+
+def _search_via_group_a(
+    city: str,
+    queries: list[str],
+    travel_type: str,
+    top_k: int,
+) -> tuple[list[dict], list[dict]]:
+    search_notes = _load_group_a_search_notes()
+    city_info = city_name_bundle(city)
+    provider_city = city_info["city_zh"] or city_info["canonical"]
+    category = TRAVEL_CATEGORY_HINTS.get(travel_type, "")
+
+    all_results: list[dict] = []
+    per_query: list[dict] = []
+    for query in queries:
+        query_results = search_notes(
+            query=query,
+            city=provider_city,
+            category=category,
+            strategy="hybrid",
+            top_k=top_k,
+        )
+        per_query.append(
+            {
+                "query": query,
+                "result_count": len(query_results),
+                "top_chunk_ids": [result.get("chunk_id", "") for result in query_results[:3] if result.get("chunk_id")],
+                "search_backend": "group_a_search_notes",
+            }
+        )
+        all_results.extend(query_results)
+
+    return _dedupe_results(all_results, top_k=top_k), per_query
 
 
 def _summarize_strategy(results: list[dict], travel_type: str) -> dict:
@@ -342,29 +404,45 @@ def get_strategy_context(
     top_k: int = 8,
 ) -> dict:
     city_info = city_name_bundle(city)
-    all_results: list[dict] = []
-    per_query: list[dict] = []
-    for query in queries:
-        query_results = _rank_city_chunks(city=city, query=query, top_k=top_k)
-        per_query.append(
-            {
-                "query": query,
-                "result_count": len(query_results),
-                "top_chunk_ids": [result["chunk_id"] for result in query_results[:3]],
-            }
+    diagnostics: dict[str, str] = {}
+    try:
+        final_results, per_query = _search_via_group_a(
+            city=city,
+            queries=queries,
+            travel_type=travel_type,
+            top_k=top_k,
         )
-        all_results.extend(query_results)
+        retrieval_mode = "group_a_search_notes_hybrid"
+        source = "search_notes"
+    except Exception as exc:
+        diagnostics["group_a_fallback_reason"] = f"{type(exc).__name__}: {exc}"
+        all_results: list[dict] = []
+        per_query = []
+        for query in queries:
+            query_results = _rank_city_chunks(city=city, query=query, top_k=top_k)
+            per_query.append(
+                {
+                    "query": query,
+                    "result_count": len(query_results),
+                    "top_chunk_ids": [result["chunk_id"] for result in query_results[:3]],
+                    "search_backend": "local_bm25_rag_adapter",
+                }
+            )
+            all_results.extend(query_results)
+        final_results = _dedupe_results(all_results, top_k=top_k)
+        retrieval_mode = "local_bm25_rag_adapter"
+        source = "strategy_rag_adapter"
 
-    final_results = _dedupe_results(all_results, top_k=top_k)
     strategy_summary = _summarize_strategy(final_results, travel_type=travel_type)
     return {
         "city": city_info["canonical"],
         "provider_city": city_info["city_zh"],
         "travel_type": travel_type,
-        "retrieval_mode": "local_bm25_rag_adapter",
+        "retrieval_mode": retrieval_mode,
         "query_bundle": queries,
         "queries": per_query,
         "results": final_results,
+        "adapter_diagnostics": diagnostics,
         **strategy_summary,
-        "source": "strategy_rag_adapter",
+        "source": source,
     }

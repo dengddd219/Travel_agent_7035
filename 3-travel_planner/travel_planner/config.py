@@ -29,7 +29,7 @@ class Settings:
     @classmethod
     def from_env(cls) -> "Settings":
         """Load all supported settings from environment variables."""
-        _root = Path(__file__).resolve().parents[3]
+        _root = Path(__file__).resolve().parents[2]
         load_dotenv(_root / ".env", override=False)
         load_dotenv(override=False)
         return cls(
@@ -45,7 +45,11 @@ class Settings:
     @property
     def has_llm_credentials(self) -> bool:
         """Whether the Azure / Foundry LLM connection can be used."""
-        return bool(self.foundry_api_key and self.foundry_deployment and self.foundry_resource)
+        return bool(
+            self.foundry_api_key
+            and self.foundry_deployment
+            and (self.foundry_project_endpoint or self.foundry_resource)
+        )
 
     @property
     def has_amap_key(self) -> bool:
@@ -55,6 +59,13 @@ class Settings:
     @property
     def azure_base_url(self) -> str:
         """Construct the Azure OpenAI compatible base URL from the resource name."""
+        if self.foundry_project_endpoint:
+            endpoint = self.foundry_project_endpoint.strip().rstrip("/")
+            if endpoint.endswith("/openai/v1"):
+                return f"{endpoint}/"
+            if endpoint.endswith(".openai.azure.com"):
+                return f"{endpoint}/openai/v1/"
+            return f"{endpoint}/"
         if not self.foundry_resource:
             return ""
         return f"https://{self.foundry_resource}.openai.azure.com/openai/v1/"
