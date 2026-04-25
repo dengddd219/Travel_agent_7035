@@ -34,9 +34,6 @@ Travel_agent_7035/
 uvicorn backend.server:app --reload
 # → http://localhost:8000/
 
-# 地图单独 Demo
-python 6-UI/map_UI/serve_demo.py   # → http://127.0.0.1:8126/map_demo.html
-
 # RAG 离线入库（首次 or 数据更新后运行）
 cd 1-rag_pipeline_delivery
 python -m rag.ingest                   # 全城市
@@ -176,7 +173,7 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 
 ## 11. 前端（`6-UI/`）
 
-- `UI/index.html`：主聊天界面，渲染 Markdown 报告 + 高德地图 + 日程卡片
+- `UI/chat.html`：主聊天界面，渲染 Markdown 报告 + 高德地图 + cost 卡片
 - `map_UI/map.js`：高德 JS SDK，按天着色路线/POI 标记/折线
 - `backend/server.py` 把 `6-UI/UI/` 挂载为 `/static`，`6-UI/map_UI/` 挂载为 `/static/map_UI`
 
@@ -215,7 +212,7 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 | RAG 结果→Agent 适配 | `3-travel_planner/travel_planner/tools/strategy_rag_adapter.py` |
 | 行程规划算法 | `3-travel_planner/travel_planner/planner.py` |
 | API 路由 | `backend/server.py` |
-| 前端聊天界面 | `6-UI/UI/index.html` |
+| 前端聊天界面 | `6-UI/UI/chat.html` |
 | 地图渲染 | `6-UI/map_UI/map.js` |
 | RAG 离线入库配置 | `1-rag_pipeline_delivery/rag/config.py` |
 | 城市数据 | `3-travel_planner/travel_planner/data/city_profiles/{city}.json` |

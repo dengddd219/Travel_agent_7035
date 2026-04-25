@@ -77,10 +77,10 @@ class ChatResponse(BaseModel):
 
 @app.get("/")
 def serve_index():
-    index = FRONTEND_DIR / "index.html"
-    if not index.exists():
-        raise HTTPException(status_code=404, detail="index.html not found")
-    return FileResponse(str(index))
+    chat = FRONTEND_DIR / "chat.html"
+    if not chat.exists():
+        raise HTTPException(status_code=404, detail="chat.html not found")
+    return FileResponse(str(chat))
 
 
 @app.get("/chat")
