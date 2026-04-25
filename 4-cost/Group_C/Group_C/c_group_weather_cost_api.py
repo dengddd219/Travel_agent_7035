@@ -365,6 +365,31 @@ class HotelAPI:
                             hotel["source"] = "hotel_playwright_scraper"
                         return hotels
 
+            # City mismatch likely caused by stale persistent session cookie.
+            # Retry once with a fresh non-persistent context to bypass the stale state.
+            if self.use_persistent_login_context:
+                print("携程持久化 session 城市不一致，尝试无持久化 context 重试…")
+                original_flag = self.use_persistent_login_context
+                self.use_persistent_login_context = False
+                try:
+                    for url in urls:
+                        html = self._fetch_ctrip_hotel_results_via_playwright(
+                            city=city,
+                            check_in_date=check_in_date,
+                            check_out_date=check_out_date,
+                            result_url=url
+                        )
+                        if html:
+                            hotels = self._extract_hotels_from_html(
+                                html, city, star_rate=star_rate, source_url=url
+                            )
+                            if hotels:
+                                for hotel in hotels:
+                                    hotel["source"] = "hotel_playwright_scraper"
+                                return hotels
+                finally:
+                    self.use_persistent_login_context = original_flag
+
         self._warm_ctrip_hotel_session()
         for url in urls:
             try:
