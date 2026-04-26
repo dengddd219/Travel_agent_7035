@@ -916,6 +916,34 @@ def _build_strategy_evidence(results: list[dict]) -> dict:
     }
 
 
+def _apply_content_type_quota(
+    results: list[dict],
+    min_route_plan: int = 2,
+    min_pitfall: int = 1,
+) -> list[dict]:
+    """Reorder *results* so route_plan and pitfall types appear early enough.
+
+    Does NOT drop any items – only adjusts order so downstream consumers
+    see at least *min_route_plan* route-type chunks and *min_pitfall*
+    pitfall-type chunks near the top.
+    """
+    PITFALL_TYPES = {"pitfall", "avoid_guide"}
+    ROUTE_TYPES = {"route_plan", "attraction_guide", "hidden_gem", "family_route"}
+
+    route_items = [r for r in results if str(r.get("metadata", {}).get("content_type", "")).lower() in ROUTE_TYPES]
+    pitfall_items = [r for r in results if str(r.get("metadata", {}).get("content_type", "")).lower() in PITFALL_TYPES]
+    other_items = [r for r in results if r not in route_items and r not in pitfall_items]
+
+    ordered = route_items[:min_route_plan] + pitfall_items[:min_pitfall]
+    seen_ids = {id(r) for r in ordered}
+    for r in route_items[min_route_plan:] + pitfall_items[min_pitfall:] + other_items:
+        if id(r) not in seen_ids:
+            ordered.append(r)
+            seen_ids.add(id(r))
+
+    return ordered
+
+
 def get_strategy_context(
     city: str,
     queries: list[str],
@@ -968,6 +996,8 @@ def get_strategy_context(
             per_query = local_queries + group_a_queries
     except Exception as exc:
         diagnostics["group_a_fallback_reason"] = f"{type(exc).__name__}: {exc}"
+
+    final_results = _apply_content_type_quota(final_results)
 
     evidence = _build_strategy_evidence(final_results)
 

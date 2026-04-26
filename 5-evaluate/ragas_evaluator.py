@@ -185,14 +185,36 @@ _JUDGE_PROMPT = """请对以下 RAG 系统输出进行评分：
 {{"faithfulness": 0.0, "answer_relevancy": 0.0, "context_precision": 0.0, "reasoning": "一句话说明主要扣分原因"}}"""
 
 
-def _retrieve_context(query: str, city: str, top_k: int = 5) -> list[str]:
-    """调用 search_notes 检索，返回 chunk 文本列表。"""
+def _retrieve_context(query: str, city: str, top_k: int = 5) -> tuple[list[str], list[dict]]:
+    """调用 search_notes 检索，返回 (chunk_texts, raw_results)。"""
     try:
         results = search_notes(query=query, city=city, strategy="hybrid", top_k=top_k)
-        return [r["chunk_text"] for r in results if r.get("chunk_text")]
+        texts = [r["chunk_text"] for r in results if r.get("chunk_text")]
+        return texts, results
     except Exception as e:
         print(f"  [WARN] 检索失败: {e}", flush=True)
-        return []
+        return [], []
+
+
+def _compute_route_quality(raw_results: list[dict]) -> dict:
+    """Compute route quality metrics from raw retrieval results."""
+    PITFALL_TYPES = {"pitfall", "avoid_guide"}
+    ROUTE_TYPES = {"route_plan", "attraction_guide", "hidden_gem", "family_route"}
+    route_plan_count = sum(
+        1 for r in raw_results
+        if str(r.get("metadata", {}).get("content_type", "")).lower() in ROUTE_TYPES
+    )
+    pitfall_count = sum(
+        1 for r in raw_results
+        if str(r.get("metadata", {}).get("content_type", "")).lower() in PITFALL_TYPES
+    )
+    return {
+        "evidence_chunk_count": len(raw_results),
+        "route_plan_chunk_count": route_plan_count,
+        "pitfall_chunk_count": pitfall_count,
+        "has_pitfall_coverage": pitfall_count >= 1,
+        "has_route_plan_coverage": route_plan_count >= 2,
+    }
 
 
 def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str, dict]:
@@ -275,7 +297,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
 
         # Step 1: Retrieve
         t0 = time.monotonic()
-        context_chunks = _retrieve_context(query, city, top_k=top_k)
+        context_chunks, raw_results = _retrieve_context(query, city, top_k=top_k)
         retrieve_ms = int((time.monotonic() - t0) * 1000)
         print(f"  检索: {len(context_chunks)} chunks ({retrieve_ms}ms)", flush=True)
 
@@ -334,6 +356,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
                 model=_DEPLOYMENT,
                 source="rag_case",
             ),
+            "route_quality": _compute_route_quality(raw_results),
         })
 
         if delay_s > 0 and i < len(cases) - 1:
@@ -378,6 +401,19 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
         },
         "details": results,
     }
+
+    # Route quality summary
+    cases_with_pitfall = sum(1 for r in results if r.get("route_quality", {}).get("has_pitfall_coverage"))
+    cases_with_route = sum(1 for r in results if r.get("route_quality", {}).get("has_route_plan_coverage"))
+    avg_evidence_chunks = sum(r.get("route_quality", {}).get("evidence_chunk_count", 0) for r in results) / max(n, 1)
+    summary["route_quality_summary"] = {
+        "avg_evidence_chunks": round(avg_evidence_chunks, 1),
+        "cases_with_pitfall_coverage": cases_with_pitfall,
+        "cases_with_route_plan_coverage": cases_with_route,
+        "pitfall_coverage_rate": round(cases_with_pitfall / max(n, 1), 3),
+        "route_plan_coverage_rate": round(cases_with_route / max(n, 1), 3),
+    }
+
     return summary
 
 
@@ -410,6 +446,13 @@ def print_report(summary: dict) -> None:
     cost = tok.get("estimated_cost", {})
     print(f"  Cost estimate: ${cost.get('total_usd', 0):.6f} / CNY {cost.get('total_cny', 0):.4f}")
     print(f"  Token 消耗: 输入 {tok['total_input_tokens']}  输出 {tok['total_output_tokens']}  合计 {tok['total_tokens']}")
+
+    rqs = summary.get("route_quality_summary", {})
+    if rqs:
+        print(f"\n  路线质量覆盖率:")
+        print(f"  {'Avg Evidence Chunks':<24} {rqs.get('avg_evidence_chunks', 0):>6.1f}")
+        print(f"  {'Route Plan Coverage':<24} {rqs.get('route_plan_coverage_rate', 0):>6.1%}  (≥2 route_plan chunks/case)")
+        print(f"  {'Pitfall Coverage':<24} {rqs.get('pitfall_coverage_rate', 0):>6.1%}  (≥1 pitfall chunk/case)")
 
     # 逐条明细
     print("\n  逐条明细:")

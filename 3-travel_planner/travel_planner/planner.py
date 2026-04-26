@@ -33,6 +33,8 @@ SUPPORT_ONLY_ROLES = {"food", "optional_shop", "optional", "transit", "pitfall"}
 ANCHOR_ROLES = {"anchor", "nearby_walk"}
 MAX_SUPPORT_STOPS_PER_DAY = 1
 NEARBY_CLUSTER_KM = 8.0
+MAX_DISTRICTS_PER_DAY = 3
+THIRD_DISTRICT_MAX_KM = 5.0
 GENERIC_ROUTING_TIP = "Keep this stop grouped with nearby places instead of crossing the city just for one check-in."
 GENERIC_RETRIEVAL_TIP = "Recommended by travel-guide retrieval."
 TRAVEL_TYPE_LABELS_ZH = {
@@ -364,19 +366,23 @@ def _poi_distance_km(left: POI, right: POI) -> float | None:
     return radius_km * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _related_to_chosen(poi: POI, chosen_pois: list[POI], strategy_signals: dict) -> bool:
+def _related_to_chosen(poi: POI, chosen_pois: list[POI], strategy_signals: dict) -> tuple[bool, float]:
+    """Return (is_related, km_to_nearest_chosen)."""
     if not chosen_pois:
-        return False
+        return False, float("inf")
     key = _strategy_key(poi.name)
     cooccurrence = strategy_signals.get("cooccurrence_map", {})
+    nearest_km = float("inf")
+    has_cooccurrence = False
     for chosen in chosen_pois:
         chosen_key = _strategy_key(chosen.name)
         if key in cooccurrence.get(chosen_key, set()) or chosen_key in cooccurrence.get(key, set()):
-            return True
+            has_cooccurrence = True
         distance = _poi_distance_km(poi, chosen)
-        if distance is not None and distance <= NEARBY_CLUSTER_KM:
-            return True
-    return False
+        if distance is not None:
+            nearest_km = min(nearest_km, distance)
+    is_related = has_cooccurrence or nearest_km <= NEARBY_CLUSTER_KM
+    return is_related, nearest_km
 
 
 def _score_poi(
@@ -591,6 +597,15 @@ def _allocate_days(
                 strategy_boost -= 2.0
             elif role in {"optional_shop", "optional", "transit", "pitfall"}:
                 strategy_boost -= 1.4
+            # cooccurrence_boost: reward POIs that share route_pair with top candidates
+            cooccurrence = strategy_signals.get("cooccurrence_map", {})
+            poi_key = _strategy_key(poi.name)
+            reference_names = [_strategy_key(p.name) for p in district_candidates[:2]]
+            if any(
+                poi_key in cooccurrence.get(ref, set()) or ref in cooccurrence.get(poi_key, set())
+                for ref in reference_names
+            ):
+                strategy_boost += 0.8
             strategy_boost += strategy_signals["district_priority"].get(poi.district, 0.0)
             return _weather_penalty(poi, weather_day) + strategy_boost
 
@@ -612,11 +627,29 @@ def _allocate_days(
                         continue
                     if support_only and support_count >= MAX_SUPPORT_STOPS_PER_DAY and not is_must:
                         continue
-                    if candidate.district in chosen_districts or is_must:
+                    if is_must:
                         filtered_backup.append(candidate)
                         continue
-                    if len(chosen_districts) < 2 and _related_to_chosen(candidate, chosen_pois, strategy_signals):
+                    if candidate.district in chosen_districts:
                         filtered_backup.append(candidate)
+                        continue
+                    new_district_count = len(chosen_districts) + (0 if candidate.district in chosen_districts else 1)
+                    if new_district_count > MAX_DISTRICTS_PER_DAY:
+                        continue
+                    is_related, nearest_km = _related_to_chosen(candidate, chosen_pois, strategy_signals)
+                    if not is_related:
+                        continue
+                    if new_district_count == MAX_DISTRICTS_PER_DAY:
+                        cooccurrence = strategy_signals.get("cooccurrence_map", {})
+                        poi_key = _strategy_key(candidate.name)
+                        has_cooccurrence = any(
+                            poi_key in cooccurrence.get(_strategy_key(chosen.name), set())
+                            or _strategy_key(chosen.name) in cooccurrence.get(poi_key, set())
+                            for chosen in chosen_pois
+                        )
+                        if nearest_km > THIRD_DISTRICT_MAX_KM or not has_cooccurrence:
+                            continue
+                    filtered_backup.append(candidate)
                 if filtered_backup:
                     backup = filtered_backup
                 backup.sort(key=weather_sort_key, reverse=True)

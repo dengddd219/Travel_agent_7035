@@ -2,12 +2,12 @@
 
 > 本文件是给 Claude Code 的项目手册，目的是让新对话无需重读源码即可上手。
 > 仅记录"看代码猜不到"的内容；代码本身是最终权威。
-testtest!!!!
+
 ---
 
 ## 1. 项目一句话
 
-HKU MSBA 7035 课程作业。AI 旅行规划 Agent：用户输入自然语言需求 → 多工具编排 → 结构化多日行程 + Markdown 报告 + 高德地图可视化。Deadline: 2026-04-25。
+HKU MSBA 7035 课程作业。AI 旅行规划 Agent：用户输入自然语言需求 → 多工具编排 → 结构化多日行程 + Markdown 报告 + 高德地图可视化。含陪伴 Agent（右侧面板）处理实时个性化请求。
 
 ---
 
@@ -18,11 +18,12 @@ Travel_agent_7035/
 ├── 0-data/              原始小红书旅行笔记（MD，按城市子目录）
 ├── 1-rag_pipeline_delivery/   离线 RAG 入库流水线
 ├── 2-rag-retrival/      在线 RAG 检索 API（search_notes.py）
-├── 3-travel_planner/    核心 Agent 包（agent.py 是大脑）
+├── 3-travel_planner/    核心规划 Agent 包（agent.py 是大脑）
 ├── 4-cost/              C 组子仓库：天气/酒店/费用 API
-├── 5-evaluate/          评估目录（当前为空）
-├── 6-UI/                前端（chat UI + 高德地图）
-└── backend/             FastAPI 入口（server.py）
+├── 5-evaluate/          评估目录（含 companion 测评流水线、RAGAS 评测、eval trace）
+├── 6-UI/                前端（chat UI + 高德地图，双面板：左规划 / 右陪伴）
+├── 7-companion-agent/   陪伴 Agent（附近搜索、行程重规划、应急处置）
+└── backend/             FastAPI 入口（server.py，含 /api/chat + /api/companion）
 ```
 
 ---
@@ -31,15 +32,21 @@ Travel_agent_7035/
 
 ```bash
 # 主入口（前端 + API 一体）
-uvicorn backend.server:app --reload
+cd Travel_agent_7035
+uvicorn backend.server:app --app-dir . --host 127.0.0.1 --port 8000
 # → http://localhost:8000/
+# 注意：必须 --app-dir 指向 Travel_agent_7035 根目录，否则 companion agent import 会失败
 
-# RAG 离线入库（首次 or 数据更新后运行）
-cd 1-rag_pipeline_delivery
-python -m rag.ingest                   # 全城市
-python -m rag.ingest --city chengdu   # 单城市
-python -m rag.ingest --reset          # 清空重建
-python -m rag.evaluate                # HR + MRR 指标（当前 HR=84%, MRR=1.00）
+# RAG 离线入库（在 1-rag_pipeline_delivery/ 的父目录运行）
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m rag.ingest   # 全城市
+python -m rag.ingest --city chengdu                            # 单城市
+python -m rag.ingest --reset                                   # 清空重建
+python -m rag.evaluate                                         # HR + MRR 指标
+# 当前 RAG V7: HR@5=93.5%, MRR=0.98（10城市, 930文档, 5948 chunks）
+
+# 陪伴 Agent 测评（在 Travel_agent_7035/ 下运行）
+python 5-evaluate/companion_eval_pipeline.py --num-trials 1 --simulator rule --evaluator rule --no-agent-llm
+# 30 任务无 LLM 确定性跑分：strict_success=23.3%, avg_rubric=50.1%
 ```
 
 ---
@@ -134,6 +141,12 @@ search_notes(query, city="", category="", strategy="hybrid", top_k=5)
 
 ### Agent 侧适配器（`3-travel_planner/.../strategy_rag_adapter.py`）
 - 调用 `search_notes()` 后提取 `recommended_pois / theme_suggestions / local_pitfalls / neighborhood_notes`
+- V7 新增：Evidence Layer（`_build_strategy_evidence()`）提取结构化证据：
+  - `evidence_chunks` / `strategy_evidence_by_poi` / `strategy_evidence_by_district`
+  - `poi_roles`（anchor/nearby_walk/food/optional_shop 等）
+  - `route_pair_hints`（攻略明确连线的 POI 对）
+  - `pitfall_evidence`（避坑证据）
+- `_apply_content_type_quota()`：确保 route_plan 类≥2条、pitfall 类≥1条排在前列
 - ChromaDB 不可用时回退本地 BM25
 
 ---
@@ -193,16 +206,51 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 
 ---
 
-## 13. 待实现优化（来自讨论）
+## 13. 评测体系现状
 
-1. **Few-shot 样例 RAG**：在知识库里增加意图样例文档（`category="intent_example"`），检索后动态注入 prompt，一次 LLM 调用同时完成意图识别+槽位提取。
-2. **多轮 query 拼接**：`continue_conversation()` 里把 `turn_history` 中的历史原话 + 最新 query 拼接后再做 RAG 检索，提升"上下文相关意图"的召回准确率。
-3. **知识库 tag=direct_answer**：对 FAQ 类文档打 tag，命中后直接返回知识库内容，跳过 LLM 工具调用循环，提升响应速度。
-4. **意图切换检测**：在 `continue_conversation()` 里检测城市/travel_type 是否发生根本性变化，变化时主动清空 `preference_memory` 和 `turn_history`，避免旧意图污染新检索。
+### 已完成
+| 项目 | 状态 | 位置 |
+|---|---|---|
+| RAG 检索层 HR/MRR（V7） | ✅ HR=93.5%, MRR=0.98 | `rag/evaluate.py` |
+| 在线 Tracing（Travel Planner） | ✅ eval_trace.jsonl | `backend/server.py` |
+| 在线 Tracing（Companion Agent） | ✅ 真实 Token 统计 | `7-companion-agent/api.py` |
+| Companion 测评流水线 | ✅ 30任务×rule模式已跑 | `5-evaluate/companion_eval_pipeline.py` |
+| Companion 无 LLM 跑分结果 | ✅ strict=23.3%, rubric=50.1% | `5-evaluate/companion_eval_runs/` |
+| RAGAS 评测代码 | ✅ 代码就绪 | `5-evaluate/ragas_evaluator.py` |
+| 路线质量指标 | ✅ route_quality 字段 | `5-evaluate/ragas_evaluator.py` |
+
+### 未完成
+| 项目 | 说明 |
+|---|---|
+| RAGAS 生成质量评测 | 代码就绪但未实际运行（需 LLM Judge） |
+| Golden Test Set | `golden_test_set.json` 未建 |
+| 主 Agent 离线测试集 | `test_intent.py` / `test_e2e_structure.py` 等未建 |
+| Companion LLM 全量跑分 | 30任务×4trials 未跑 |
+| 主 Agent 综合评测 | 未做 |
+
+### 主 Agent 迭代历史（6步优化）
+| 步骤 | 内容 | 状态 |
+|---|---|---|
+| 1. RAG Evidence Layer | 结构化证据提取 | ✅ 已完成 |
+| 2. POI 角色识别 | anchor/food/optional 分类 | ✅ 已完成 |
+| 3. 路线聚类+跨区硬约束 | MAX_DISTRICTS_PER_DAY=3 | ✅ 已完成 |
+| 4. 报告 evidence 输出 | guide_evidence/pitfall_note | ✅ 已完成 |
+| 5. 多意图 Query + content_type 配额 | 避坑/本地人 query + 配额 | ✅ 已完成 |
+| 6. ragas_evaluator 路线质量指标 | route_quality 字段 | ✅ 已完成 |
 
 ---
 
-## 14. 文件速查
+## 14. 待实现优化
+
+1. **Companion Agent /api/companion 路由 404**：后端 server.py 有路由定义但实际未注册，疑似 import 时 companion_agent 依赖问题导致静默跳过。需排查。
+2. **RAGAS 生成质量评测落地**：需构建 Golden Test Set 并实际运行 `ragas_evaluator.py`。
+3. **主 Agent 离线测试集**：`test_intent.py` / `test_tool_access.py` / `test_e2e_structure.py` / `test_e2e_judge.py`。
+4. **多轮 query 拼接**：`continue_conversation()` 里把 `turn_history` 拼接后再做 RAG 检索。
+5. **意图切换检测**：检测城市/travel_type 根本性变化时清空 `preference_memory`。
+
+---
+
+## 15. 文件速查
 
 | 要改什么 | 去哪个文件 |
 |---|---|
@@ -217,3 +265,9 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 | RAG 离线入库配置 | `1-rag_pipeline_delivery/rag/config.py` |
 | 城市数据 | `3-travel_planner/travel_planner/data/city_profiles/{city}.json` |
 | C组天气/费用/酒店 | `4-cost/Group_C/Group_C/c_group_weather_cost_api.py` |
+| 陪伴 Agent 核心 | `7-companion-agent/companion_agent.py` |
+| 陪伴 Agent 测评 | `5-evaluate/companion_eval_pipeline.py` |
+| RAGAS 生成质量评测 | `5-evaluate/ragas_evaluator.py` |
+| 评测设计文档 | `5-evaluate/eval_plan.md` |
+| 主 Agent 迭代日记 | `5-evaluate/主agent迭代日记.md` |
+| 步骤3/5/6实现规格 | `docs/superpowers/specs/2026-04-26-steps-3-5-6-design.md` |
