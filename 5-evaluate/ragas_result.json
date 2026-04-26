@@ -1,0 +1,710 @@
+{
+  "timestamp": "2026-04-26T11:20:49.435248Z",
+  "model": "gpt-5-mini",
+  "case_count": 12,
+  "top_k": 5,
+  "avg_scores": {
+    "faithfulness": 0.0,
+    "answer_relevancy": 0.0,
+    "context_precision": 0.0,
+    "overall": 0.0
+  },
+  "token_usage": {
+    "total_input_tokens": 35866,
+    "total_output_tokens": 7666,
+    "input_tokens": 35866,
+    "output_tokens": 7666,
+    "total_tokens": 43532,
+    "llm_call_count": 24,
+    "model": "gpt-5-mini",
+    "source": "ragas_evaluator",
+    "estimated_cost": {
+      "currency": "USD",
+      "model": "gpt-5-mini",
+      "priced_model": "gpt-5-mini",
+      "pricing_source": "default_pricing_table",
+      "input_usd_per_1m_tokens": 0.25,
+      "output_usd_per_1m_tokens": 2.0,
+      "input_usd": 0.0089665,
+      "output_usd": 0.015332,
+      "total_usd": 0.0242985,
+      "total_cny": 0.174949,
+      "cny_per_usd": 7.2
+    }
+  },
+  "thresholds": {
+    "faithfulness": {
+      "target": 0.7,
+      "pass": false
+    },
+    "answer_relevancy": {
+      "target": 0.7,
+      "pass": false
+    },
+    "context_precision": {
+      "target": 0.6,
+      "pass": false
+    },
+    "overall": {
+      "target": 0.67,
+      "pass": false
+    }
+  },
+  "details": [
+    {
+      "id": "rag_001",
+      "query": "成都熊猫基地怎么去，几点开门",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "熊猫基地正式名称是中国大熊猫保护研究中心成都基地，早上开门时间约为7:30-8:00，建议早上去看喂食，可乘坐地铁3号线或专线大巴前往。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 11214,
+        "generate": 13869,
+        "judge": 4235
+      },
+      "token_usage": {
+        "input_tokens": 3153,
+        "output_tokens": 640,
+        "total_tokens": 3793,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00078825,
+          "output_usd": 0.00128,
+          "total_usd": 0.00206825,
+          "total_cny": 0.014891,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_002",
+      "query": "北京故宫门票怎么买，需要提前预约吗",
+      "city": "北京",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "故宫门票需要在官方小程序或官网提前网上预约购票，不支持现场购票，旺季需提前数天甚至一周预约，门票价格60元（淡季40元）。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 451,
+        "generate": 8813,
+        "judge": 4609
+      },
+      "token_usage": {
+        "input_tokens": 3376,
+        "output_tokens": 640,
+        "total_tokens": 4016,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.000844,
+          "output_usd": 0.00128,
+          "total_usd": 0.002124,
+          "total_cny": 0.015293,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_003",
+      "query": "上海外滩夜景怎么看，最佳观景点在哪",
+      "city": "上海",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "上海外滩夜景可从外滩沿岸直接欣赏对岸陆家嘴夜景，也可去东方明珠观光层或上海中心观景台俯瞰，推荐傍晚6-9点，灯光最好。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 362,
+        "generate": 8254,
+        "judge": 7889
+      },
+      "token_usage": {
+        "input_tokens": 3828,
+        "output_tokens": 640,
+        "total_tokens": 4468,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.000957,
+          "output_usd": 0.00128,
+          "total_usd": 0.002237,
+          "total_cny": 0.016106,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_004",
+      "query": "西安回民街必吃什么",
+      "city": "西安",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "西安回民街必吃肉夹馍、biangbiang面、羊肉泡馍、凉皮、灌汤包，另外葫芦头也值得一试，街上小吃摊多，价格实惠。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 343,
+        "generate": 8263,
+        "judge": 4183
+      },
+      "token_usage": {
+        "input_tokens": 2975,
+        "output_tokens": 640,
+        "total_tokens": 3615,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00074375,
+          "output_usd": 0.00128,
+          "total_usd": 0.00202375,
+          "total_cny": 0.014571,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_005",
+      "query": "重庆洪崖洞适合几点去看夜景",
+      "city": "重庆",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "重庆洪崖洞看夜景建议晚上7点以后，灯光全开后配合嘉陵江倒影效果最佳，节假日人多，工作日较好，可从解放碑步行约10分钟到达。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 358,
+        "generate": 9490,
+        "judge": 4723
+      },
+      "token_usage": {
+        "input_tokens": 3328,
+        "output_tokens": 640,
+        "total_tokens": 3968,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.000832,
+          "output_usd": 0.00128,
+          "total_usd": 0.002112,
+          "total_cny": 0.015206,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_006",
+      "query": "杭州西湖免费吗，有哪些必逛景点",
+      "city": "杭州",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "西湖核心景区免费开放，苏堤、白堤、断桥、雷峰塔（雷峰塔内部收费）均可步行游览，推荐路线：断桥→白堤→平湖秋月→苏堤，绕湖一圈约15公里。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 385,
+        "generate": 8918,
+        "judge": 4670
+      },
+      "token_usage": {
+        "input_tokens": 3439,
+        "output_tokens": 640,
+        "total_tokens": 4079,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00085975,
+          "output_usd": 0.00128,
+          "total_usd": 0.00213975,
+          "total_cny": 0.015406,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_007",
+      "query": "香港维多利亚港夜景怎么看最好",
+      "city": "香港",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "香港维港夜景最佳观赏点是尖沙咀海滨长廊，每晚8点有幻彩咏香江灯光秀，也可乘坐天星小轮渡海欣赏两岸夜景，票价仅3-5港元。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 71,
+        "generate": 7459,
+        "judge": 4686
+      },
+      "token_usage": {
+        "input_tokens": 2011,
+        "output_tokens": 640,
+        "total_tokens": 2651,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00050275,
+          "output_usd": 0.00128,
+          "total_usd": 0.00178275,
+          "total_cny": 0.012836,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_008",
+      "query": "南京夫子庙秦淮河怎么玩",
+      "city": "南京",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "南京夫子庙秦淮河景区免费，可沿河散步欣赏古建筑，乘坐秦淮画舫游览（约80元），夜晚灯火通明最美，周边有桂花鸭、鸭血粉丝汤等特色美食。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 374,
+        "generate": 10327,
+        "judge": 4073
+      },
+      "token_usage": {
+        "input_tokens": 2621,
+        "output_tokens": 640,
+        "total_tokens": 3261,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00065525,
+          "output_usd": 0.00128,
+          "total_usd": 0.00193525,
+          "total_cny": 0.013934,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_009",
+      "query": "厦门鼓浪屿怎么去，值得住一晚吗",
+      "city": "厦门",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "从厦门轮渡码头乘船约10分钟可到鼓浪屿，船票约35元，岛上禁止机动车，适合步行游览日光岩、菽庄花园，住一晚可感受安静的小岛氛围，民宿价格偏高。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 438,
+        "generate": 9300,
+        "judge": 4504
+      },
+      "token_usage": {
+        "input_tokens": 2504,
+        "output_tokens": 640,
+        "total_tokens": 3144,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.000626,
+          "output_usd": 0.00128,
+          "total_usd": 0.001906,
+          "total_cny": 0.013723,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_010",
+      "query": "广州早茶推荐哪些茶楼，有什么必点",
+      "city": "广州",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "广州早茶推荐陶陶居、莲香楼、广州酒家等老字号，必点虾饺、烧卖、叉烧包、蛋挞、肠粉，广式早茶讲究一盅两件，人均约50-100元。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 500,
+        "generate": 12153,
+        "judge": 5044
+      },
+      "token_usage": {
+        "input_tokens": 3176,
+        "output_tokens": 640,
+        "total_tokens": 3816,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.000794,
+          "output_usd": 0.00128,
+          "total_usd": 0.002074,
+          "total_cny": 0.014933,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_011",
+      "query": "深圳有哪些适合周末一日游的地方",
+      "city": "深圳",
+      "context_chunk_count": 5,
+      "answer": "",
+      "ground_truth": "深圳周末一日游推荐大梅沙海滩（免费）、华侨城欢乐谷（需购票）、东部华侨城、南澳岛，深圳地铁发达，大部分景点交通便利。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 378,
+        "generate": 9101,
+        "judge": 4329
+      },
+      "token_usage": {
+        "input_tokens": 2602,
+        "output_tokens": 640,
+        "total_tokens": 3242,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.0006505,
+          "output_usd": 0.00128,
+          "total_usd": 0.0019305,
+          "total_cny": 0.0139,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    },
+    {
+      "id": "rag_012",
+      "query": "东京浅草寺附近怎么逛，有什么推荐",
+      "city": "东京",
+      "context_chunk_count": 5,
+      "answer": "抱歉——你给我的参考资料中没有关于东京浅草寺或其周边游览的具体信息。资料里只零星提到“东京”作为比较，但未包含浅草寺、雷门、仲见世商店街、浅草寺周边美食或路线等内容。\n\n我可以帮你做两件事（请选择其一）：\n1) 用更多来源检索并提供浅草寺附近的详细游览攻略与推荐；或\n2) 根据你现有的参考资料，推荐上海/中国境内风格或氛围类似的地方（例如资料中提到的淮海路、iapm 等）。\n\n你希望我哪种方式继续？",
+      "ground_truth": "浅草寺仲见世通商店街可购买和果子、人形烧等传统小吃，雷门是必拍打卡点，附近有浅草文化观光中心可俯瞰全景，步行可到押上晴空塔。",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0
+      },
+      "reasoning": "",
+      "latency_ms": {
+        "retrieve": 109,
+        "generate": 8047,
+        "judge": 4242
+      },
+      "token_usage": {
+        "input_tokens": 2853,
+        "output_tokens": 626,
+        "total_tokens": 3479,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": "gpt-5-mini",
+        "models": [
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": "gpt-5-mini",
+          "priced_model": "gpt-5-mini",
+          "pricing_source": "default_pricing_table",
+          "input_usd_per_1m_tokens": 0.25,
+          "output_usd_per_1m_tokens": 2.0,
+          "input_usd": 0.00071325,
+          "output_usd": 0.001252,
+          "total_usd": 0.00196525,
+          "total_cny": 0.01415,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 0,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": false
+      }
+    }
+  ],
+  "route_quality_summary": {
+    "avg_evidence_chunks": 5.0,
+    "cases_with_pitfall_coverage": 0,
+    "cases_with_route_plan_coverage": 0,
+    "pitfall_coverage_rate": 0.0,
+    "route_plan_coverage_rate": 0.0
+  }
+}

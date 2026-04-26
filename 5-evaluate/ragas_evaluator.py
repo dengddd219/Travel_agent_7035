@@ -36,9 +36,10 @@ from token_costing import aggregate_token_usage, token_usage_from_response_usage
 
 # ── Azure OpenAI 客户端 ───────────────────────────────────────────────────────
 try:
-    from openai import AzureOpenAI
+    from openai import AzureOpenAI, OpenAI
 except ImportError:
     AzureOpenAI = None  # type: ignore
+    OpenAI = None  # type: ignore
 
 from dotenv import load_dotenv
 load_dotenv(_ROOT / ".env", override=False)
@@ -47,16 +48,29 @@ load_dotenv(override=False)
 _ENDPOINT   = os.getenv("FOUNDRY_PROJECT_ENDPOINT", "").strip()
 _API_KEY    = os.getenv("FOUNDRY_PROJECT_API_KEY", "").strip()
 _DEPLOYMENT = os.getenv("FOUNDRY_PROJECT_DEPLOYMENT", "").strip()
-_API_VER    = os.getenv("FOUNDRY_API_VERSION", "2024-12-01-preview").strip()
+_API_VER    = os.getenv("FOUNDRY_API_VERSION", os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview")).strip()
 
 
 def _make_client():
-    if AzureOpenAI is None:
+    if OpenAI is None:
         raise RuntimeError("openai package not installed")
     if not (_ENDPOINT and _API_KEY and _DEPLOYMENT):
         raise RuntimeError(
             "Missing Azure OpenAI credentials. "
             "Set FOUNDRY_PROJECT_ENDPOINT / FOUNDRY_PROJECT_API_KEY / FOUNDRY_PROJECT_DEPLOYMENT in .env"
+        )
+    # gpt-5-mini on Azure AI Foundry only returns content via the Responses API;
+    # chat.completions returns empty strings. Use OpenAI client at the *resource*
+    # level with api-version as a default query parameter.
+    endpoint = _ENDPOINT.rstrip("/")
+    if "services.ai.azure.com" in endpoint:
+        import re as _re
+        m = _re.match(r"(https://[^/]+\.services\.ai\.azure\.com)", endpoint)
+        resource_base = m.group(1) if m else endpoint
+        return OpenAI(
+            base_url=resource_base + "/openai/",
+            api_key=_API_KEY,
+            default_query={"api-version": "2025-03-01-preview"},
         )
     return AzureOpenAI(
         azure_endpoint=_ENDPOINT,
@@ -233,13 +247,12 @@ def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str
             "content": f"参考资料：\n{context_text}\n\n问题：{query}",
         },
     ]
-    resp = client.chat.completions.create(
+    resp = client.responses.create(
         model=_DEPLOYMENT,
-        messages=messages,
-        temperature=0.1,
-        max_tokens=500,
+        input=messages,
+        max_output_tokens=500,
     )
-    answer = (resp.choices[0].message.content or "").strip()
+    answer = (resp.output_text or "").strip()
     usage = token_usage_from_response_usage(resp.usage, model=_DEPLOYMENT)
     return answer, usage
 
@@ -253,16 +266,15 @@ def _judge(client, query: str, context_chunks: list[str], answer: str, ground_tr
         answer=answer,
         ground_truth=ground_truth,
     )
-    resp = client.chat.completions.create(
+    resp = client.responses.create(
         model=_DEPLOYMENT,
-        messages=[
+        input=[
             {"role": "system", "content": _JUDGE_SYSTEM},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.0,
-        max_tokens=200,
+        max_output_tokens=200,
     )
-    raw = (resp.choices[0].message.content or "").strip()
+    raw = (resp.output_text or "").strip()
     try:
         scores = json.loads(raw)
     except json.JSONDecodeError:
