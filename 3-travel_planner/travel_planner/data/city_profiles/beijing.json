@@ -1,11 +1,26 @@
 {
   "city": "Beijing",
-  "aliases": ["beijing", "北京"],
+  "aliases": [
+    "beijing",
+    "北京"
+  ],
   "recommended_areas": [
-    {"name": "Dongcheng", "why": "best for imperial history and dense first-time highlights"},
-    {"name": "Chaoyang", "why": "good for modern museums, shopping, and dining"},
-    {"name": "Xicheng", "why": "strong cultural institutions and classic city texture"},
-    {"name": "Haidian", "why": "good for palace gardens and campus-adjacent museums"}
+    {
+      "name": "东城区",
+      "why": "best for imperial history and dense first-time highlights"
+    },
+    {
+      "name": "朝阳区",
+      "why": "good for modern museums, shopping, and dining"
+    },
+    {
+      "name": "西城区",
+      "why": "strong cultural institutions and classic city texture"
+    },
+    {
+      "name": "海淀区",
+      "why": "good for palace gardens and campus-adjacent museums"
+    }
   ],
   "transport": [
     "Keep major imperial sites and modern districts on separate days because the city is large.",
@@ -16,31 +31,89 @@
     "Swap palace courtyards and hutong walks for museums, temples, or major indoor cultural venues.",
     "Use shopping complexes and exhibition halls as weather buffers on heavy-rain days."
   ],
-  "signature_foods": ["Peking duck", "zhajiangmian", "jiaozi", "instant-boiled mutton", "douzhi snacks"],
+  "signature_foods": [
+    "Peking duck",
+    "zhajiangmian",
+    "jiaozi",
+    "instant-boiled mutton",
+    "douzhi snacks"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["history", "culture", "landmark"],
-      "suggested_queries": ["Forbidden City", "Temple of Heaven", "Jingshan Park", "Shichahai"],
+      "focus_tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "suggested_queries": [
+        "故宫",
+        "天坛",
+        "景山公园",
+        "什刹海"
+      ],
       "pace_note": "Beijing rewards one major historic anchor plus one nearby walking neighborhood."
     },
     "family": {
-      "focus_tags": ["family", "museum", "park"],
-      "suggested_queries": ["Universal Beijing Resort", "Beijing Zoo", "China Science and Technology Museum", "Summer Palace"],
+      "focus_tags": [
+        "family",
+        "museum",
+        "park"
+      ],
+      "suggested_queries": [
+        "北京环球影城",
+        "北京动物园",
+        "中国科学技术馆",
+        "颐和园"
+      ],
       "pace_note": "Avoid overly dense historic-site stacking and keep transit simple."
     },
     "food": {
-      "focus_tags": ["food", "local", "market"],
-      "suggested_queries": ["Wangfujing snacks", "Niujie food", "Beijing roast duck", "hutong dining"],
+      "focus_tags": [
+        "food",
+        "local",
+        "market"
+      ],
+      "suggested_queries": [
+        "王府井 小吃",
+        "牛街 美食",
+        "北京 烤鸭",
+        "胡同 美食"
+      ],
       "pace_note": "Plan meals by district and avoid long city crossings just for one reservation."
     },
     "theme": {
-      "focus_tags": ["history", "culture", "theme"],
-      "suggested_queries": ["National Museum of China", "Prince Gong's Mansion", "Capital Museum", "798 Art District"],
+      "focus_tags": [
+        "history",
+        "culture",
+        "theme"
+      ],
+      "suggested_queries": [
+        "中国国家博物馆",
+        "恭王府",
+        "首都博物馆",
+        "798艺术区"
+      ],
       "pace_note": "Choose one historical or modern culture narrative rather than chasing all icons."
     }
   },
-  "indoor_keywords": ["museum", "mall", "temple", "science", "gallery", "indoor", "exhibition"],
-  "outdoor_keywords": ["wall", "park", "palace", "hutong", "garden", "lake", "square"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "temple",
+    "science",
+    "gallery",
+    "indoor",
+    "exhibition"
+  ],
+  "outdoor_keywords": [
+    "wall",
+    "park",
+    "palace",
+    "hutong",
+    "garden",
+    "lake",
+    "square"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -49,7 +122,9 @@
       "temp_max": 27,
       "precipitation_probability": 15,
       "outdoor_suitability": "good",
-      "suggestions": ["Good window for major palace or park-based highlights."]
+      "suggestions": [
+        "Good window for major palace or park-based highlights."
+      ]
     },
     {
       "date": "Day 2",
@@ -58,226 +133,312 @@
       "temp_max": 22,
       "precipitation_probability": 70,
       "outdoor_suitability": "poor",
-      "suggestions": ["Shift to museums, temples, and indoor culture venues."]
+      "suggestions": [
+        "Shift to museums, temples, and indoor culture venues."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Forbidden City",
+      "name": "故宫",
       "category": "attraction",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.9163,
       "lon": 116.3972,
       "duration_hours": 3.0,
       "ticket_price": 60,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "4 Jingshan Front Street, Dongcheng District",
       "open_hours": "08:30-17:00",
       "rating": 4.8,
       "visit_reason": "The city's strongest imperial-history anchor."
     },
     {
-      "name": "Temple of Heaven",
+      "name": "天坛",
       "category": "attraction",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.8837,
-      "lon": 116.4120,
+      "lon": 116.412,
       "duration_hours": 2.0,
       "ticket_price": 34,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "park", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "park",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Tiantan East Road, Dongcheng District",
       "open_hours": "06:00-22:00",
       "rating": 4.7,
       "visit_reason": "Major historic landmark with easier pacing than the palace core."
     },
     {
-      "name": "Jingshan Park",
+      "name": "景山公园",
       "category": "attraction",
-      "district": "Xicheng",
+      "district": "西城区",
       "lat": 39.9254,
       "lon": 116.3962,
       "duration_hours": 1.2,
       "ticket_price": 2,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "park", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "park",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "44 Jingshan West Street, Xicheng District",
       "open_hours": "06:30-21:00",
       "rating": 4.6,
       "visit_reason": "Great skyline and palace-overlook anchor."
     },
     {
-      "name": "National Museum of China",
+      "name": "中国国家博物馆",
       "category": "attraction",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.9051,
       "lon": 116.4013,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "16 East Chang'an Avenue",
       "open_hours": "09:00-17:00",
       "rating": 4.7,
       "visit_reason": "High-value indoor history anchor for bad-weather days."
     },
     {
-      "name": "Summer Palace",
+      "name": "颐和园",
       "category": "attraction",
-      "district": "Haidian",
+      "district": "海淀区",
       "lat": 39.9999,
       "lon": 116.2755,
       "duration_hours": 3.0,
       "ticket_price": 30,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "garden", "lake", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "garden",
+        "lake",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "19 Xinjiangongmen Road, Haidian District",
       "open_hours": "06:30-20:00",
       "rating": 4.8,
       "visit_reason": "Best imperial garden and lakeside scenic anchor outside the city core."
     },
     {
-      "name": "798 Art District",
+      "name": "798艺术区",
       "category": "attraction",
-      "district": "Chaoyang",
+      "district": "朝阳区",
       "lat": 39.9837,
       "lon": 116.4967,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["art", "design", "culture", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "art",
+        "design",
+        "culture",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "4 Jiuxianqiao Road, Chaoyang District",
       "open_hours": "10:00-18:00",
       "rating": 4.5,
       "visit_reason": "Top contemporary art and gallery cluster for modern culture seekers."
     },
     {
-      "name": "Mutianyu Great Wall",
+      "name": "慕田峪长城",
       "category": "attraction",
-      "district": "Huairou",
+      "district": "怀柔区",
       "lat": 40.4329,
       "lon": 116.5649,
       "duration_hours": 4.0,
       "ticket_price": 65,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "nature", "hiking"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "nature",
+        "hiking"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Mutianyu Village, Huairou District",
       "open_hours": "07:30-17:30",
       "rating": 4.8,
       "visit_reason": "The best-preserved and least-crowded major Great Wall section near Beijing."
     },
     {
-      "name": "Shichahai (Houhai Lake)",
+      "name": "什刹海（后海）",
       "category": "attraction",
-      "district": "Xicheng",
-      "lat": 39.9380,
+      "district": "西城区",
+      "lat": 39.938,
       "lon": 116.3855,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["lake", "local", "night views", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "lake",
+        "local",
+        "night views",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Shichahai Scenic Area, Xicheng District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Charming hutong-framed lake district perfect for evening strolls and bar hopping."
     },
     {
-      "name": "Prince Gong's Mansion",
+      "name": "恭王府",
       "category": "attraction",
-      "district": "Xicheng",
+      "district": "西城区",
       "lat": 39.9393,
       "lon": 116.3864,
       "duration_hours": 1.5,
       "ticket_price": 40,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "culture", "garden"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "garden"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "17 Qianhai West Street, Xicheng District",
       "open_hours": "08:30-18:00",
       "rating": 4.5,
       "visit_reason": "Finest preserved Qing-dynasty prince residence with a beautiful garden."
     },
     {
-      "name": "Wangfujing Street",
+      "name": "王府井大街",
       "category": "food",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.9148,
       "lon": 116.4096,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "shopping", "local", "market"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "shopping",
+        "local",
+        "market"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Wangfujing Street, Dongcheng District",
       "open_hours": "09:00-22:00",
       "rating": 4.4,
       "visit_reason": "Iconic pedestrian shopping and snack street near the palace zone."
     },
     {
-      "name": "Capital Museum",
+      "name": "首都博物馆",
       "category": "attraction",
-      "district": "Xicheng",
+      "district": "西城区",
       "lat": 39.9057,
       "lon": 116.3462,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "16 Fuxingmenwai Street, Xicheng District",
       "open_hours": "09:00-17:00",
       "rating": 4.6,
       "visit_reason": "World-class Beijing city history museum, ideal indoor fallback."
     },
     {
-      "name": "Nanluoguxiang",
+      "name": "南锣鼓巷",
       "category": "food",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.9368,
       "lon": 116.4008,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "hutong", "local", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "hutong",
+        "local",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Nanluoguxiang, Dongcheng District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Most famous hutong lane for snacks, craft shops, and local atmosphere."
     },
     {
-      "name": "Yonghe Lama Temple",
+      "name": "雍和宫",
       "category": "attraction",
-      "district": "Dongcheng",
+      "district": "东城区",
       "lat": 39.9474,
       "lon": 116.4102,
       "duration_hours": 1.5,
       "ticket_price": 25,
       "price_level": 1,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "temple", "history"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "temple",
+        "history"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "12 Yonghegong Street, Dongcheng District",
       "open_hours": "09:00-16:30",
       "rating": 4.6,

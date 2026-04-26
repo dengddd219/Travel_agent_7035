@@ -20,6 +20,23 @@ class Settings:
     default_city: str = "北京"
     request_timeout_s: int = 20
 
+    @staticmethod
+    def _normalize_openai_base_url(raw_base_url: str) -> str:
+        base_url = raw_base_url.strip().rstrip("/")
+        if not base_url:
+            return ""
+
+        if base_url.endswith("/openai/v1"):
+            return f"{base_url}/"
+
+        if "/api/projects/" in base_url:
+            return f"{base_url}/openai/v1/"
+
+        if base_url.endswith(".openai.azure.com") or base_url.endswith(".services.ai.azure.com"):
+            return f"{base_url}/openai/v1/"
+
+        return f"{base_url}/" if base_url.endswith("/openai") else base_url
+
     @classmethod
     def from_env(cls) -> "Settings":
         root = Path(__file__).resolve().parent.parent
@@ -29,22 +46,23 @@ class Settings:
 
         api_key = (
             os.getenv("OPENAI_API_KEY", "").strip()
+            or os.getenv("AZURE_OPENAI_API_KEY", "").strip()
             or os.getenv("FOUNDRY_PROJECT_API_KEY", "").strip()
         )
-        base_url = (
+        base_url = cls._normalize_openai_base_url(
             os.getenv("OPENAI_BASE_URL", "").strip()
+            or os.getenv("AZURE_OPENAI_ENDPOINT", "").strip()
             or os.getenv("FOUNDRY_PROJECT_ENDPOINT", "").strip()
         )
         model = (
             os.getenv("OPENAI_MODEL", "").strip()
+            or os.getenv("AZURE_OPENAI_DEPLOYMENT", "").strip()
+            or os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "").strip()
+            or os.getenv("AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME", "").strip()
             or os.getenv("FOUNDRY_PROJECT_DEPLOYMENT", "").strip()
+            or os.getenv("FOUNDRY_MODEL", "").strip()
             or "gpt-4o-mini"
         )
-
-        if base_url.endswith("/openai/v1"):
-            base_url = f"{base_url}/"
-        elif base_url.endswith(".openai.azure.com"):
-            base_url = f"{base_url}/openai/v1/"
 
         return cls(
             openai_api_key=api_key,
@@ -71,7 +89,7 @@ class Settings:
     @property
     def is_azure_openai(self) -> bool:
         base = self.openai_base_url.lower()
-        return ".openai.azure.com" in base or "api-version" in base or "/openai/" in base
+        return ".openai.azure.com" in base or ".services.ai.azure.com" in base or "api-version" in base
 
     @property
     def azure_endpoint(self) -> str:

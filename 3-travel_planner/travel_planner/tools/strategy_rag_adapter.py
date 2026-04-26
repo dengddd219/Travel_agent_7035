@@ -33,6 +33,141 @@ GROUP_A_SEARCH_NOTES_PATH = (
 RAW_DATA_ROOT = RAG_DELIVERY_ROOT / "data" / "raw"
 DB_DATA_ROOT = RAG_DELIVERY_ROOT / "data" / "db"
 PITFALL_HINTS = ("避坑", "不要", "别去", "建议", "最好", "记得", "排队", "踩雷")
+ROUTE_HINTS = ("路线", "citywalk", "CityWalk", "连成", "串联", "顺路", "一条线", "半日", "一日游", "walk")
+FOOD_HINTS = (
+    "美食",
+    "小吃",
+    "餐厅",
+    "饭店",
+    "火锅",
+    "串串",
+    "烧烤",
+    "咖啡",
+    "茶",
+    "奶茶",
+    "甜品",
+    "融合菜",
+    "本帮菜",
+    "food",
+    "restaurant",
+    "cafe",
+)
+SHOP_HINTS = (
+    "商店",
+    "买手店",
+    "书店",
+    "集合店",
+    "百货",
+    "商场",
+    "店",
+    "market",
+    "mall",
+    "shop",
+    "store",
+)
+TRANSIT_HINTS = (
+    "地铁",
+    "车站",
+    "机场",
+    "码头",
+    "公交",
+    "高铁",
+    "火车站",
+    "高铁站",
+    "汽车站",
+    "出站口",
+    "航站楼",
+    "北站",
+    "南站",
+    "东站",
+    "西站",
+    "station",
+    "airport",
+)
+ANCHOR_TYPE_HINTS = {
+    "景点",
+    "街区",
+    "公园",
+    "博物馆",
+    "寺庙",
+    "古街",
+    "步行街",
+    "历史建筑",
+    "观景台",
+    "旧址",
+    "地标",
+    "attraction",
+    "museum",
+    "park",
+}
+FOOD_NAME_HINTS = tuple(hint for hint in FOOD_HINTS if hint != "饭店") + (
+    "酸奶",
+    "牛奶",
+    "饮品",
+    "冰激凌",
+    "冰淇淋",
+    "小面",
+    "抄手",
+    "砂锅",
+    "汤锅",
+    "江湖菜",
+    "串串",
+    "烧烤",
+    "糖水",
+    "豆花",
+    "汤圆",
+    "小笼",
+    "食品",
+    "甜品",
+    "茶饮",
+    "茶姬",
+    "夜市",
+    "星巴克",
+    "coffee",
+    "bistro",
+)
+FOOD_TYPE_HINTS = FOOD_HINTS + ("饮品", "奶茶店", "小吃店", "夜市", "老字号", "美食", "咖啡店")
+SHOP_NAME_HINTS = (
+    "商店",
+    "买手店",
+    "书店",
+    "书局",
+    "书院",
+    "书房",
+    "集合店",
+    "百货",
+    "百货公司",
+    "商场",
+    "旗舰店",
+    "文创店",
+    "中古",
+    "古着",
+    "潮牌",
+    "market",
+    "mall",
+    "shop",
+    "store",
+    "bookstore",
+)
+SHOP_TYPE_HINTS = (
+    "商店",
+    "买手店",
+    "书店",
+    "书局",
+    "集合店",
+    "百货",
+    "商场",
+    "购物街",
+    "商业区",
+    "market",
+    "mall",
+    "shop",
+    "store",
+    "bookstore",
+)
+FOOD_CONTEXT_MARKERS = ("🥣", "🍲", "🥤", "🍽", "🍜", "🍢", "🍛", "☕", "🍰", "🥟", "🧋")
+FOOD_CONTEXT_PHRASES = ("老字号美食", "本地美食", "美味担当", "最好吃的一顿", "好吃滴", "必点")
+SHOP_CONTEXT_MARKERS = ("🛍", "🛒")
 TRAVEL_CATEGORY_HINTS = {
     "family": "亲子",
     "food": "美食",
@@ -349,37 +484,61 @@ def _search_via_group_a(
     return _dedupe_results(all_results, top_k=top_k), per_query
 
 
-def _summarize_strategy(results: list[dict], travel_type: str, city: str = "") -> dict:
+def _search_via_local_city_rag(
+    city: str,
+    queries: list[str],
+    top_k: int,
+) -> tuple[list[dict], list[dict]]:
+    all_results: list[dict] = []
+    per_query: list[dict] = []
+    for query in queries:
+        query_results = _rank_city_chunks(city=city, query=query, top_k=top_k)
+        per_query.append(
+            {
+                "query": query,
+                "result_count": len(query_results),
+                "top_chunk_ids": [result["chunk_id"] for result in query_results[:3]],
+                "search_backend": "local_city_metadata_rag",
+            }
+        )
+        all_results.extend(query_results)
+
+    return _dedupe_results(all_results, top_k=top_k), per_query
+
+
+def _strategy_signal_count(summary: dict, results: list[dict]) -> int:
+    signal_count = 0
+    signal_count += len(summary.get("recommended_pois", []))
+    signal_count += len(summary.get("local_pitfalls", []))
+    signal_count += len(summary.get("neighborhood_notes", []))
+    signal_count += max(0, len(summary.get("theme_suggestions", [])) - 1)
+    for result in results:
+        metadata = result.get("metadata", {})
+        signal_count += len(metadata.get("poi_names", []) or [])
+        signal_count += len(metadata.get("districts", []) or [])
+        signal_count += len(metadata.get("tags", []) or [])
+        signal_count += len(metadata.get("travel_type_tags", []) or [])
+        if metadata.get("title"):
+            signal_count += 1
+        if metadata.get("content_type"):
+            signal_count += 1
+    return signal_count
+
+
+def _summarize_strategy(results: list[dict], travel_type: str) -> dict:
     recommended_pois: list[str] = []
     poi_seen: set[str] = set()
     theme_counter: Counter[str] = Counter()
     pitfall_notes: list[str] = []
     district_counter: Counter[str] = Counter()
 
-    # Build a set of city name variants to cross-check chunk metadata
-    city_variants: set[str] = set()
-    if city:
-        bundle = city_name_bundle(city)
-        city_variants = {bundle["canonical"].lower(), bundle["city_zh"], bundle["city_en"].lower()}
-
     for result in results:
         metadata = result.get("metadata", {})
-        # Skip chunks whose city metadata doesn't match the requested city
-        chunk_city = str(metadata.get("city", "")).strip()
-        if city_variants and chunk_city and chunk_city.lower() not in city_variants:
-            continue
-        chunk_text = result.get("chunk_text", "")
         for poi_name in metadata.get("poi_names", []) or []:
             key = poi_name.strip().lower()
-            if not key or key in poi_seen:
-                continue
-            # Only accept POI if its name actually appears in this chunk's text.
-            # This blocks poi_names that were copied from the document-level frontmatter
-            # of multi-city guides (e.g. a Chengdu-tagged post that lists Xi'an POIs).
-            if poi_name.strip() not in chunk_text:
-                continue
-            poi_seen.add(key)
-            recommended_pois.append(poi_name.strip())
+            if key and key not in poi_seen:
+                poi_seen.add(key)
+                recommended_pois.append(poi_name.strip())
         for tag in (metadata.get("travel_type_tags", []) or []) + (metadata.get("tags", []) or []):
             tag_text = str(tag).strip()
             if tag_text:
@@ -414,6 +573,349 @@ def _summarize_strategy(results: list[dict], travel_type: str, city: str = "") -
     }
 
 
+def _compact_text(text: str) -> str:
+    text = re.sub(r"#[^\s#]+", "", str(text or ""))
+    text = re.sub(r"@\S+", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip(" ，,；;。.!！?？-")
+
+
+def _clip_text(text: str, limit: int = 160) -> str:
+    cleaned = _compact_text(text)
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[:limit].rstrip("，,；;、 ") + "…"
+
+
+def _split_sentences(text: str) -> list[str]:
+    sentences = []
+    for part in re.split(r"[。！？!?;\n]", str(text or "")):
+        candidate = _compact_text(part)
+        if len(candidate) >= 8:
+            sentences.append(candidate)
+    return sentences
+
+
+def _snippet_for_target(text: str, target: str = "", limit: int = 170) -> str:
+    cleaned = _compact_text(text)
+    target = str(target or "").strip()
+    if target and target in cleaned:
+        index = cleaned.find(target)
+        start = max(0, index - 70)
+        end = min(len(cleaned), index + len(target) + 110)
+        window = cleaned[start:end]
+        return _clip_text(window, limit)
+    for sentence in _split_sentences(text):
+        if not target or target in sentence:
+            return _clip_text(sentence, limit)
+    return _clip_text(cleaned, limit)
+
+
+def _contains_any(text: str, hints: tuple[str, ...] | set[str]) -> bool:
+    lowered = str(text or "").lower()
+    return any(str(hint).lower() in lowered for hint in hints if str(hint).strip())
+
+
+def _poi_name_variants(poi_name: str) -> list[str]:
+    name = str(poi_name or "").strip()
+    variants = [name]
+    base = re.sub(r"[（(].*?[）)]", "", name).strip()
+    if base and base != name:
+        variants.append(base)
+    compact = re.sub(r"\s+", "", name)
+    if compact and compact not in variants:
+        variants.append(compact)
+    return [variant for variant in variants if len(variant) >= 2]
+
+
+def _find_poi_mention(text: str, poi_name: str) -> tuple[int, str]:
+    text = str(text or "")
+    for variant in _poi_name_variants(poi_name):
+        index = text.find(variant)
+        if index >= 0:
+            return index, variant
+    return -1, ""
+
+
+def _poi_mentioned_in_text(text: str, poi_name: str) -> bool:
+    return _find_poi_mention(text, poi_name)[0] >= 0
+
+
+def _poi_context_window(text: str, poi_name: str, before: int = 24, after: int = 90) -> tuple[str, str]:
+    index, variant = _find_poi_mention(text, poi_name)
+    if index < 0:
+        return "", ""
+    start = max(0, index - before)
+    end = min(len(text), index + len(variant) + after)
+    prefix = text[max(0, index - 8):index]
+    return text[start:end], prefix
+
+
+def _metadata_types_are_specific(poi_types: list[str], hints: tuple[str, ...] | set[str]) -> bool:
+    cleaned = [item for item in poi_types if item]
+    if not cleaned:
+        return False
+    if len(cleaned) == 1:
+        return _contains_any(cleaned[0], hints)
+    return all(_contains_any(item, hints) for item in cleaned)
+
+
+@lru_cache(maxsize=512)
+def _raw_source_text(city: str, source_id: str) -> str:
+    folder_name = rag_city_folder(city)
+    if not folder_name or not source_id:
+        return ""
+    path = RAW_DATA_ROOT / folder_name / f"{source_id}.md"
+    if not path.exists():
+        return ""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) == 3:
+            text = parts[2]
+    return text
+
+
+def _source_text_for_metadata(metadata: dict) -> str:
+    source_id = str(metadata.get("source_id", "") or "").strip()
+    city = str(metadata.get("city", "") or "").strip()
+    if not source_id or not city:
+        return ""
+    return _raw_source_text(city, source_id)
+
+
+def _infer_poi_role(
+    *,
+    poi_name: str,
+    metadata: dict,
+    chunk_text: str,
+    position: int,
+    total: int,
+) -> str:
+    content_type = str(metadata.get("content_type", "") or "").lower()
+    poi_types = [str(item).strip() for item in metadata.get("poi_types", []) or []]
+    source_text = chunk_text if _poi_mentioned_in_text(chunk_text, poi_name) else _source_text_for_metadata(metadata)
+    context, prefix = _poi_context_window(source_text or chunk_text, poi_name)
+    local_text = " ".join([poi_name, content_type, context])
+
+    if _contains_any(poi_name, TRANSIT_HINTS) or _metadata_types_are_specific(poi_types, TRANSIT_HINTS):
+        return "transit"
+    if (
+        _contains_any(poi_name, FOOD_NAME_HINTS)
+        or _contains_any(prefix, FOOD_CONTEXT_MARKERS)
+        or _contains_any(context, FOOD_CONTEXT_PHRASES)
+        or _metadata_types_are_specific(poi_types, FOOD_TYPE_HINTS)
+    ):
+        return "food"
+    if (
+        _contains_any(poi_name, SHOP_NAME_HINTS)
+        or _contains_any(prefix, SHOP_CONTEXT_MARKERS)
+        or _metadata_types_are_specific(poi_types, SHOP_TYPE_HINTS)
+    ):
+        # Bookstores and shops can be useful stops, but should not become anchors.
+        return "optional_shop"
+    if content_type in {"pitfall", "avoid_guide"} and _contains_any(local_text, PITFALL_HINTS):
+        return "pitfall"
+    if content_type in {"route_plan", "attraction_guide", "hidden_gem", "family_route"}:
+        if position == 0:
+            return "anchor"
+        if total <= 4 or position <= 4:
+            return "nearby_walk"
+    if _metadata_types_are_specific(poi_types, ANCHOR_TYPE_HINTS):
+        return "anchor" if position <= 2 else "nearby_walk"
+    return "nearby_walk" if _contains_any(local_text, ROUTE_HINTS) else "optional"
+
+
+def _route_sequence_from_result(result: dict) -> list[str]:
+    metadata = result.get("metadata", {}) or {}
+    chunk_text = str(result.get("chunk_text", "") or "")
+    content_type = str(metadata.get("content_type", "") or "")
+    poi_names = [
+        str(item).strip()
+        for item in metadata.get("poi_names", []) or []
+        if str(item).strip()
+    ]
+    if not poi_names:
+        return []
+    source_text = chunk_text
+    if not any(_poi_mentioned_in_text(chunk_text, poi_name) for poi_name in poi_names):
+        source_text = _source_text_for_metadata(metadata) or chunk_text
+    mentioned_pois = [poi_name for poi_name in poi_names if _poi_mentioned_in_text(source_text, poi_name)]
+    if mentioned_pois:
+        return mentioned_pois[:8] if content_type == "route_plan" or _contains_any(source_text[:360], ROUTE_HINTS) else mentioned_pois[:4]
+    if content_type == "route_plan" or _contains_any(chunk_text[:360], ROUTE_HINTS):
+        return poi_names[:8]
+    return poi_names[:4]
+
+
+def _build_strategy_evidence(results: list[dict]) -> dict:
+    evidence_chunks: list[dict] = []
+    poi_evidence_map: dict[str, list[dict]] = {}
+    district_evidence_map: dict[str, list[dict]] = {}
+    pitfall_evidence: list[dict] = []
+    route_pair_scores: dict[tuple[str, str], dict] = {}
+    poi_role_priority = {
+        "anchor": 6,
+        "nearby_walk": 5,
+        "food": 4,
+        "optional_shop": 3,
+        "optional": 2,
+        "pitfall": 1,
+        "transit": 0,
+    }
+    poi_roles: dict[str, str] = {}
+
+    for result in sorted(results, key=lambda item: item.get("score", 0), reverse=True)[:8]:
+        metadata = result.get("metadata", {}) or {}
+        chunk_text = str(result.get("chunk_text", "") or "")
+        chunk_id = str(result.get("chunk_id", "") or "")
+        score = float(result.get("score", 0) or 0)
+        title = str(metadata.get("title", "") or "").strip()
+        content_type = str(metadata.get("content_type", "") or "").strip()
+        poi_names = [
+            str(item).strip()
+            for item in metadata.get("poi_names", []) or []
+            if str(item).strip()
+        ][:10]
+        districts = [
+            str(item).strip()
+            for item in metadata.get("districts", []) or []
+            if str(item).strip()
+        ][:6]
+        tags = [
+            str(item).strip()
+            for item in metadata.get("tags", []) or []
+            if str(item).strip()
+        ][:10]
+        route_sequence = _route_sequence_from_result(result)
+        roles = {
+            poi_name: _infer_poi_role(
+                poi_name=poi_name,
+                metadata=metadata,
+                chunk_text=chunk_text,
+                position=index,
+                total=len(poi_names),
+            )
+            for index, poi_name in enumerate(poi_names)
+        }
+        chunk_snippet = _snippet_for_target(chunk_text, route_sequence[0] if route_sequence else "", limit=190)
+        pitfalls = [
+            _clip_text(sentence, 140)
+            for sentence in _split_sentences(chunk_text)
+            if _contains_any(sentence, PITFALL_HINTS)
+        ][:3]
+
+        evidence_chunks.append(
+            {
+                "chunk_id": chunk_id,
+                "score": score,
+                "chunk_text": chunk_text,
+                "snippet": chunk_snippet,
+                "source_title": title,
+                "content_type": content_type,
+                "poi_names": poi_names,
+                "poi_roles": roles,
+                "route_sequence": route_sequence,
+                "time_suggestions": metadata.get("time_suggestions", []) or [],
+                "districts": districts,
+                "tags": tags,
+                "pitfalls": pitfalls,
+            }
+        )
+
+        for poi_name in poi_names:
+            role = roles.get(poi_name, "optional")
+            key = poi_name.strip().lower()
+            if not key:
+                continue
+            if poi_role_priority.get(role, 0) > poi_role_priority.get(poi_roles.get(key, ""), 0):
+                poi_roles[key] = role
+            companions = [item for item in route_sequence if item != poi_name][:4]
+            poi_evidence_map.setdefault(key, []).append(
+                {
+                    "poi_name": poi_name,
+                    "chunk_id": chunk_id,
+                    "score": score,
+                    "snippet": _snippet_for_target(chunk_text, poi_name, limit=180),
+                    "source_title": title,
+                    "content_type": content_type,
+                    "role": role,
+                    "companions": companions,
+                }
+            )
+
+        for district in districts:
+            key = district.strip()
+            district_evidence_map.setdefault(key, []).append(
+                {
+                    "chunk_id": chunk_id,
+                    "score": score,
+                    "snippet": chunk_snippet,
+                    "source_title": title,
+                }
+            )
+
+        for pitfall in pitfalls:
+            targets = poi_names[:3] or ["city"]
+            for target in targets:
+                pitfall_evidence.append(
+                    {
+                        "scope": "poi" if target != "city" else "city",
+                        "target": target,
+                        "chunk_id": chunk_id,
+                        "snippet": pitfall,
+                        "source_title": title,
+                    }
+                )
+
+        for left, right in zip(route_sequence, route_sequence[1:]):
+            if roles.get(left) in {"food", "optional_shop", "optional", "transit", "pitfall"} and roles.get(right) in {
+                "food",
+                "optional_shop",
+                "optional",
+                "transit",
+                "pitfall",
+            }:
+                continue
+            left_key = left.strip().lower()
+            right_key = right.strip().lower()
+            if not left_key or not right_key or left_key == right_key:
+                continue
+            pair_key = tuple(sorted((left_key, right_key)))
+            strength = min(1.0, 0.65 + 0.05 * max(0, len(route_sequence) - 2) + min(score, 5.0) / 30.0)
+            current = route_pair_scores.get(pair_key)
+            if current and current["strength"] >= strength:
+                continue
+            route_pair_scores[pair_key] = {
+                "from": left,
+                "to": right,
+                "strength": round(strength, 3),
+                "chunk_id": chunk_id,
+                "evidence": _snippet_for_target(chunk_text, left, limit=150),
+                "source_title": title,
+            }
+
+    for entries in poi_evidence_map.values():
+        entries.sort(key=lambda item: item.get("score", 0), reverse=True)
+        del entries[3:]
+    for entries in district_evidence_map.values():
+        entries.sort(key=lambda item: item.get("score", 0), reverse=True)
+        del entries[3:]
+
+    return {
+        "evidence_chunks": evidence_chunks,
+        "strategy_evidence_by_poi": poi_evidence_map,
+        "strategy_evidence_by_district": district_evidence_map,
+        "poi_roles": poi_roles,
+        "route_pair_hints": sorted(
+            route_pair_scores.values(),
+            key=lambda item: item["strength"],
+            reverse=True,
+        )[:12],
+        "pitfall_evidence": pitfall_evidence[:12],
+    }
+
+
 def get_strategy_context(
     city: str,
     queries: list[str],
@@ -422,35 +924,53 @@ def get_strategy_context(
 ) -> dict:
     city_info = city_name_bundle(city)
     diagnostics: dict[str, str] = {}
+    local_results, local_queries = _search_via_local_city_rag(
+        city=city,
+        queries=queries,
+        top_k=top_k,
+    )
+    local_summary = _summarize_strategy(local_results, travel_type=travel_type)
+    local_signal_count = _strategy_signal_count(local_summary, local_results)
+
+    final_results = local_results
+    per_query = local_queries
+    strategy_summary = local_summary
+    retrieval_mode = "local_city_metadata_rag"
+    source = "strategy_rag_adapter"
+
     try:
-        final_results, per_query = _search_via_group_a(
+        group_a_results, group_a_queries = _search_via_group_a(
             city=city,
             queries=queries,
             travel_type=travel_type,
             top_k=top_k,
         )
-        retrieval_mode = "group_a_search_notes_hybrid"
-        source = "search_notes"
+        group_a_summary = _summarize_strategy(group_a_results, travel_type=travel_type)
+        group_a_signal_count = _strategy_signal_count(group_a_summary, group_a_results)
+
+        if group_a_signal_count > local_signal_count:
+            final_results = group_a_results
+            per_query = group_a_queries
+            strategy_summary = group_a_summary
+            retrieval_mode = "group_a_search_notes_hybrid"
+            source = "search_notes"
+            diagnostics["strategy_source_decision"] = "preferred_group_a_search_notes"
+        elif group_a_signal_count > 0:
+            diagnostics["strategy_source_decision"] = "kept_local_city_rag_group_a_used_as_secondary"
+            diagnostics["group_a_signal_count"] = str(group_a_signal_count)
+            diagnostics["local_signal_count"] = str(local_signal_count)
+            per_query = local_queries + group_a_queries
+            retrieval_mode = "local_city_metadata_rag+group_a_search_notes_hybrid"
+        else:
+            diagnostics["strategy_source_decision"] = "ignored_group_a_low_signal"
+            diagnostics["group_a_signal_count"] = str(group_a_signal_count)
+            diagnostics["local_signal_count"] = str(local_signal_count)
+            per_query = local_queries + group_a_queries
     except Exception as exc:
         diagnostics["group_a_fallback_reason"] = f"{type(exc).__name__}: {exc}"
-        all_results: list[dict] = []
-        per_query = []
-        for query in queries:
-            query_results = _rank_city_chunks(city=city, query=query, top_k=top_k)
-            per_query.append(
-                {
-                    "query": query,
-                    "result_count": len(query_results),
-                    "top_chunk_ids": [result["chunk_id"] for result in query_results[:3]],
-                    "search_backend": "local_bm25_rag_adapter",
-                }
-            )
-            all_results.extend(query_results)
-        final_results = _dedupe_results(all_results, top_k=top_k)
-        retrieval_mode = "local_bm25_rag_adapter"
-        source = "strategy_rag_adapter"
 
-    strategy_summary = _summarize_strategy(final_results, travel_type=travel_type, city=city)
+    evidence = _build_strategy_evidence(final_results)
+
     return {
         "city": city_info["canonical"],
         "provider_city": city_info["city_zh"],
@@ -461,5 +981,6 @@ def get_strategy_context(
         "results": final_results,
         "adapter_diagnostics": diagnostics,
         **strategy_summary,
+        **evidence,
         "source": source,
     }

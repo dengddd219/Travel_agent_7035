@@ -1,11 +1,26 @@
 {
   "city": "Chengdu",
-  "aliases": ["chengdu", "成都"],
+  "aliases": [
+    "chengdu",
+    "成都"
+  ],
   "recommended_areas": [
-    {"name": "Jinjiang / Chunxi Road", "why": "best for first-time city energy, dining, and easy transport"},
-    {"name": "Qingyang / Kuanzhai", "why": "strong historic walking and tea-house pacing"},
-    {"name": "Chenghua", "why": "good for panda-focused planning"},
-    {"name": "Gaoxin", "why": "modern food and night-view expansion"}
+    {
+      "name": "锦江区 / 春熙路",
+      "why": "best for first-time city energy, dining, and easy transport"
+    },
+    {
+      "name": "青羊区 / Kuanzhai",
+      "why": "strong historic walking and tea-house pacing"
+    },
+    {
+      "name": "成华区",
+      "why": "good for panda-focused planning"
+    },
+    {
+      "name": "Gaoxin",
+      "why": "modern food and night-view expansion"
+    }
   ],
   "transport": [
     "Keep panda attractions and old-city strolling on separate half-days when possible.",
@@ -16,31 +31,89 @@
     "Swap parks and riverside walking for museums, covered markets, tea houses, or shopping complexes.",
     "Use indoor food halls or cultural venues as flexible afternoon anchors."
   ],
-  "signature_foods": ["hotpot", "dan dan noodles", "zhong dumplings", "rabbit head", "tea house snacks"],
+  "signature_foods": [
+    "hotpot",
+    "dan dan noodles",
+    "zhong dumplings",
+    "rabbit head",
+    "tea house snacks"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["culture", "local", "food"],
-      "suggested_queries": ["Kuanzhai Alley", "People's Park Chengdu", "Anshun Bridge", "Taikoo Li Chengdu"],
+      "focus_tags": [
+        "culture",
+        "local",
+        "food"
+      ],
+      "suggested_queries": [
+        "宽窄巷子",
+        "成都人民公园",
+        "安顺廊桥",
+        "成都太古里"
+      ],
       "pace_note": "Chengdu works best with a relaxed rhythm and room for tea, snacks, and neighborhood wandering."
     },
     "family": {
-      "focus_tags": ["family", "park", "panda"],
-      "suggested_queries": ["Chengdu Research Base of Giant Panda Breeding", "Chengdu Museum", "Dongjiao Memory", "Jinsha Site Museum"],
+      "focus_tags": [
+        "family",
+        "park",
+        "panda"
+      ],
+      "suggested_queries": [
+        "成都大熊猫繁育研究基地",
+        "成都博物馆",
+        "东郊记忆",
+        "金沙遗址博物馆"
+      ],
       "pace_note": "Use one headline family stop plus one nearby low-effort backup."
     },
     "food": {
-      "focus_tags": ["food", "market", "local"],
-      "suggested_queries": ["Yulin food street", "Kuixinglou Street", "Jianshe Road food", "hotpot Chengdu"],
+      "focus_tags": [
+        "food",
+        "market",
+        "local"
+      ],
+      "suggested_queries": [
+        "玉林美食街",
+        "魁星楼街",
+        "建设路 美食",
+        "成都 火锅"
+      ],
       "pace_note": "Group meals by district and keep enough buffer for queues and snack stops."
     },
     "theme": {
-      "focus_tags": ["culture", "history", "local"],
-      "suggested_queries": ["Jinsha Site Museum", "Wuhou Shrine", "Du Fu Thatched Cottage", "Eastern Suburb Memory"],
+      "focus_tags": [
+        "culture",
+        "history",
+        "local"
+      ],
+      "suggested_queries": [
+        "金沙遗址博物馆",
+        "武侯祠",
+        "杜甫草堂",
+        "东郊记忆"
+      ],
       "pace_note": "Build around one strong narrative such as Three Kingdoms, old Chengdu, or creative districts."
     }
   },
-  "indoor_keywords": ["museum", "mall", "tea house", "market", "temple", "site museum", "indoor"],
-  "outdoor_keywords": ["park", "bridge", "alley", "street", "base", "lake", "garden"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "tea house",
+    "market",
+    "temple",
+    "site museum",
+    "indoor"
+  ],
+  "outdoor_keywords": [
+    "park",
+    "bridge",
+    "alley",
+    "street",
+    "base",
+    "lake",
+    "garden"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -49,7 +122,9 @@
       "temp_max": 26,
       "precipitation_probability": 30,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for panda-related outdoor sections and historic walking streets."]
+      "suggestions": [
+        "Good day for panda-related outdoor sections and historic walking streets."
+      ]
     },
     {
       "date": "Day 2",
@@ -58,226 +133,310 @@
       "temp_max": 24,
       "precipitation_probability": 60,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use museums, tea houses, and covered food streets as the main anchors."]
+      "suggestions": [
+        "Use museums, tea houses, and covered food streets as the main anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Chengdu Research Base of Giant Panda Breeding",
+      "name": "成都大熊猫繁育研究基地",
       "category": "attraction",
-      "district": "Chenghua",
+      "district": "成华区",
       "lat": 30.7336,
       "lon": 104.1519,
       "duration_hours": 3.0,
       "ticket_price": 55,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["family", "panda", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "family",
+        "panda",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1375 Panda Avenue, Chenghua District",
       "open_hours": "07:30-18:00",
       "rating": 4.7,
       "visit_reason": "The city's strongest family and animal anchor."
     },
     {
-      "name": "Kuanzhai Alley",
+      "name": "宽窄巷子",
       "category": "attraction",
-      "district": "Qingyang",
+      "district": "青羊区",
       "lat": 30.6666,
       "lon": 104.0498,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "local", "food"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "local",
+        "food"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Kuanzhai Xiangzi, Qingyang District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Easy old-city anchor with snacks, tea, and architecture."
     },
     {
-      "name": "People's Park Chengdu",
+      "name": "成都人民公园",
       "category": "attraction",
-      "district": "Qingyang",
+      "district": "青羊区",
       "lat": 30.6597,
       "lon": 104.0555,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "local", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "local",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "12 Shaocheng Road, Qingyang District",
       "open_hours": "06:00-22:00",
       "rating": 4.5,
       "visit_reason": "Best low-pressure stop for local life and tea-house pacing."
     },
     {
-      "name": "Jinsha Site Museum",
+      "name": "金沙遗址博物馆",
       "category": "attraction",
-      "district": "Qingyang",
+      "district": "青羊区",
       "lat": 30.6874,
       "lon": 104.0007,
       "duration_hours": 2.0,
       "ticket_price": 70,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "2 Jinsha Site Road, Qingyang District",
       "open_hours": "09:00-18:00",
       "rating": 4.6,
       "visit_reason": "Strong weather-safe cultural anchor."
     },
     {
-      "name": "Taikoo Li Chengdu",
+      "name": "成都太古里",
       "category": "attraction",
-      "district": "Jinjiang",
+      "district": "锦江区",
       "lat": 30.6574,
       "lon": 104.0813,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "mixed",
-      "tags": ["shopping", "local", "design", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "local",
+        "design",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "8 Middle Shamao Street, Jinjiang District",
       "open_hours": "10:00-22:00",
       "rating": 4.7,
       "visit_reason": "Premier open-air shopping hub combining upscale retail with heritage lane architecture."
     },
     {
-      "name": "Chunxi Road",
+      "name": "春熙路",
       "category": "attraction",
-      "district": "Jinjiang",
+      "district": "锦江区",
       "lat": 30.6572,
       "lon": 104.0798,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["shopping", "local", "food", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "local",
+        "food",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Chunxi Road, Jinjiang District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Main commercial street; best for high-street shopping, local snacks, and city energy."
     },
     {
-      "name": "IFS International Finance Square",
+      "name": "IFS国际金融中心",
       "category": "attraction",
-      "district": "Jinjiang",
+      "district": "锦江区",
       "lat": 30.6568,
       "lon": 104.0812,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["shopping", "luxury", "mall"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "luxury",
+        "mall"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Hongxing Road, Jinjiang District",
       "open_hours": "10:00-22:00",
       "rating": 4.6,
       "visit_reason": "Chengdu's flagship luxury mall adjacent to Chunxi Road and Taikoo Li."
     },
     {
-      "name": "Wuhou Shrine",
+      "name": "武侯祠",
       "category": "attraction",
-      "district": "Wuhou",
+      "district": "武侯区",
       "lat": 30.6413,
       "lon": 104.0452,
       "duration_hours": 2.0,
       "ticket_price": 50,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "culture", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "231 Wuhouci Street, Wuhou District",
       "open_hours": "09:00-18:00",
       "rating": 4.6,
       "visit_reason": "Three Kingdoms cultural landmark; pairs well with adjacent Jinli Old Street."
     },
     {
-      "name": "Jinli Old Street",
+      "name": "锦里古街",
       "category": "attraction",
-      "district": "Wuhou",
+      "district": "武侯区",
       "lat": 30.6396,
-      "lon": 104.0480,
+      "lon": 104.048,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["food", "local", "culture", "shopping"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "culture",
+        "shopping"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Jinli Old Street, Wuhou District",
       "open_hours": "09:00-22:30",
       "rating": 4.3,
       "visit_reason": "Lively pedestrian strip for snacks, souvenirs, and evening lantern atmosphere."
     },
     {
-      "name": "Du Fu Thatched Cottage",
+      "name": "杜甫草堂",
       "category": "attraction",
-      "district": "Qingyang",
+      "district": "青羊区",
       "lat": 30.6677,
       "lon": 104.0406,
       "duration_hours": 1.8,
       "ticket_price": 60,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["culture", "history", "park"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "history",
+        "park"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "28 Caotang Road, Qingyang District",
       "open_hours": "08:00-18:00",
       "rating": 4.4,
       "visit_reason": "Peaceful garden museum dedicated to Tang Dynasty poet Du Fu."
     },
     {
-      "name": "East Suburb Memory",
+      "name": "东郊记忆",
       "category": "attraction",
-      "district": "Chenghua",
+      "district": "成华区",
       "lat": 30.6669,
       "lon": 104.1311,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "design", "local", "shopping"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "design",
+        "local",
+        "shopping"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "4 Jianshe South Road, Chenghua District",
       "open_hours": "10:00-22:00",
       "rating": 4.3,
       "visit_reason": "Converted industrial complex with independent shops, music venues, and street food."
     },
     {
-      "name": "Yulin Food Street",
+      "name": "玉林美食街",
       "category": "food",
-      "district": "Wuhou",
+      "district": "武侯区",
       "lat": 30.6436,
       "lon": 104.0622,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["food", "local", "hotpot"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "hotpot"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Yulin Area, Wuhou District",
       "open_hours": "10:00-23:00",
       "rating": 4.4,
       "visit_reason": "Neighbourhood hotpot and local food cluster popular with Chengdu residents."
     },
     {
-      "name": "Chengdu Museum",
+      "name": "成都博物馆",
       "category": "attraction",
-      "district": "Qingyang",
+      "district": "青羊区",
       "lat": 30.6621,
       "lon": 104.0556,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "147 Tianfu Square, Qingyang District",
       "open_hours": "09:00-17:30",
       "rating": 4.6,

@@ -5,8 +5,7 @@ import os
 import re
 from datetime import date, timedelta
 
-from WeatherCost.weather_cost_api import get_weather_api
-
+from ._group_c_loader import load_group_c_weather_cost_api
 from ..config import Settings
 from ..city_names import provider_city_name
 
@@ -106,6 +105,7 @@ def get_group_c_weather_forecast(
     settings: Settings | None = None,
 ) -> dict:
     """Call Group C weather and return a stable normalized forecast payload."""
+    get_weather_api = load_group_c_weather_cost_api().get_weather_api
     if settings and settings.amap_api_key and not os.getenv("AMAP_WEB_SERVICE_KEY"):
         os.environ["AMAP_WEB_SERVICE_KEY"] = settings.amap_api_key
 

@@ -99,11 +99,11 @@
     state.routeStats.fallback += 1;
     if (state.routeStats.failures.length < 4) {
       state.routeStats.failures.push(
-        (leg.from_poi || "unknown") +
+        (leg.from_poi || "未知地点") +
           " -> " +
-          (leg.to_poi || "unknown") +
+          (leg.to_poi || "未知地点") +
           ": " +
-          (reason || "route service failed")
+          (reason || "路线服务失败")
       );
     }
   }
@@ -115,11 +115,11 @@
     state.routeStats.rerouted += 1;
     if (state.routeStats.failures.length < 4) {
       state.routeStats.failures.push(
-        (leg.from_poi || "unknown") +
+        (leg.from_poi || "未知地点") +
           " -> " +
-          (leg.to_poi || "unknown") +
+          (leg.to_poi || "未知地点") +
           ": " +
-          (reason || "fallback to walking")
+          (reason || "已回退为步行")
       );
     }
   }
@@ -154,12 +154,12 @@
 
   function initMap(containerId) {
     if (!window.AMap) {
-      throw new Error("AMap JS SDK is not loaded.");
+      throw new Error("高德地图 SDK 尚未加载完成。");
     }
 
     var container = document.getElementById(containerId);
     if (!container) {
-      throw new Error('Map container "' + containerId + '" was not found.');
+      throw new Error('未找到地图容器 "' + containerId + '"。');
     }
 
     if (state.map && state.containerId === containerId) {
@@ -247,14 +247,14 @@
           '<div class="legend-item">',
           '  <span class="legend-swatch" style="background:' + escapeHtml(day.color || "#0EA5E9") + ';"></span>',
           "  <div>",
-          '    <div class="legend-name">Day ' + escapeHtml(day.day_index) + " · " + escapeHtml(day.theme || "未命名主题") + "</div>",
+          '    <div class="legend-name">第 ' + escapeHtml(day.day_index) + " 天 · " + escapeHtml(day.theme || "未命名主题") + "</div>",
           '    <div class="legend-meta">' +
             escapeHtml(day.area || "未知区域") +
-            " · " +
+            " · 节点 " +
             escapeHtml((day.stops || []).length) +
-            " stops · " +
+            " 个 · 用时 " +
             escapeHtml(day.inter_stop_duration_min || 0) +
-            " min</div>",
+            " 分钟</div>",
           "  </div>",
           "</div>"
         ].join("");
@@ -277,8 +277,8 @@
         return [
           '<div class="day-card" style="--day-color:' + escapeHtml(day.color || "#0EA5E9") + ';">',
           '  <div class="day-title-row">',
-          '    <div class="day-title">Day ' + escapeHtml(day.day_index) + " · " + escapeHtml(day.theme || "未命名主题") + "</div>",
-          '    <span class="day-chip">' + escapeHtml(day.area || "Unknown") + "</span>",
+          '    <div class="day-title">第 ' + escapeHtml(day.day_index) + " 天 · " + escapeHtml(day.theme || "未命名主题") + "</div>",
+          '    <span class="day-chip">' + escapeHtml(day.area || "未知区域") + "</span>",
           "  </div>",
           '  <div class="day-meta">节点 ' +
             escapeHtml((day.stops || []).length) +
@@ -286,7 +286,7 @@
             escapeHtml(day.inter_stop_distance_m || 0) +
             " m · 用时 " +
             escapeHtml(day.inter_stop_duration_min || 0) +
-            " min</div>",
+            " 分钟</div>",
           '  <div class="day-meta">' +
             escapeHtml(
               (day.stops || [])
@@ -322,7 +322,7 @@
     var currentFocus = options && options.focusDay ? String(options.focusDay) : "all";
 
     var buttons = [
-      '<button class="view-toggle' + (currentFocus === "all" ? " is-active" : "") + '" data-day="all">All Days</button>'
+      '<button class="view-toggle' + (currentFocus === "all" ? " is-active" : "") + '" data-day="all">全部天数</button>'
     ];
 
     days.forEach(function (day) {
@@ -332,9 +332,9 @@
           (currentFocus === dayValue ? " is-active" : "") +
           '" data-day="' +
           escapeHtml(dayValue) +
-          '">Day ' +
+          '">第 ' +
           escapeHtml(dayValue) +
-          "</button>"
+          " 天</button>"
       );
     });
 
@@ -406,25 +406,25 @@
   function buildPopupHtml(day, stop) {
     return [
       '<div class="map-popup">',
-      "  <h3>" + escapeHtml(stop.sequence) + ". " + escapeHtml(stop.poi_name || "Unnamed POI") + "</h3>",
-      '  <div class="popup-subtitle">Day ' +
+      "  <h3>" + escapeHtml(stop.sequence) + ". " + escapeHtml(stop.poi_name || "未命名点位") + "</h3>",
+      '  <div class="popup-subtitle">第 ' +
         escapeHtml(day.day_index) +
-        " · " +
+        " 天 · " +
         escapeHtml(day.theme || "未命名主题") +
         " · " +
-        escapeHtml(stop.time_slot || "unknown") +
+        escapeHtml(stop.time_slot || "未知时段") +
         "</div>",
-      '  <div class="popup-line"><strong>Category:</strong> ' + escapeHtml(stop.category || "-") + "</div>",
-      '  <div class="popup-line"><strong>District:</strong> ' + escapeHtml(stop.district || "-") + "</div>",
-      '  <div class="popup-line"><strong>Address:</strong> ' + escapeHtml(stop.address || "-") + "</div>",
-      '  <div class="popup-line"><strong>Hours:</strong> ' + escapeHtml(stop.open_hours || "-") + "</div>",
-      '  <div class="popup-line"><strong>Ticket:</strong> ' + escapeHtml(stop.ticket_price == null ? "-" : stop.ticket_price) + "</div>",
-      '  <div class="popup-line"><strong>Arrival:</strong> ' +
+      '  <div class="popup-line"><strong>类别:</strong> ' + escapeHtml(stop.category || "-") + "</div>",
+      '  <div class="popup-line"><strong>区域:</strong> ' + escapeHtml(stop.district || "-") + "</div>",
+      '  <div class="popup-line"><strong>地址:</strong> ' + escapeHtml(stop.address || "-") + "</div>",
+      '  <div class="popup-line"><strong>开放时间:</strong> ' + escapeHtml(stop.open_hours || "-") + "</div>",
+      '  <div class="popup-line"><strong>票价:</strong> ' + escapeHtml(stop.ticket_price == null ? "-" : stop.ticket_price) + "</div>",
+      '  <div class="popup-line"><strong>到达:</strong> ' +
         escapeHtml(stop.arrival_mode || "-") +
         " · " +
-        escapeHtml(stop.arrival_duration_min == null ? "-" : stop.arrival_duration_min + " min") +
+        escapeHtml(stop.arrival_duration_min == null ? "-" : stop.arrival_duration_min + " 分钟") +
         "</div>",
-      '  <div class="popup-line"><strong>Hint:</strong> ' + escapeHtml(stop.transport_hint || "-") + "</div>",
+      '  <div class="popup-line"><strong>提示:</strong> ' + escapeHtml(stop.transport_hint || "-") + "</div>",
       "</div>"
     ].join("");
   }
@@ -542,7 +542,7 @@
     if (result && result.infoCode) {
       return status + " / infoCode=" + result.infoCode;
     }
-    return status || "unknown";
+    return status || "未知错误";
   }
 
   function requestWalkingFallbackPath(leg, color, token, reason) {

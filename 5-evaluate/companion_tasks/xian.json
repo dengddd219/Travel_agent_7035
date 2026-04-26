@@ -1,0 +1,395 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Xian",
+  "city_zh": "西安",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_xian_001",
+      "city": "Xian",
+      "city_zh": "西安",
+      "task_type": "deadline_replan_after_completion",
+      "complexity": {
+        "reasoning": [
+          "completed_node_memory",
+          "train_deadline",
+          "time_budget"
+        ],
+        "tool": [
+          "replan_itinerary",
+          "get_route"
+        ],
+        "interaction": [
+          "do_not_repeat_completed_stop"
+        ]
+      },
+      "initial_state": {
+        "city": "Xian",
+        "current_time": "2026-04-30T15:10:00+08:00",
+        "current_location": "City Wall",
+        "base_location": "Hotel near Bell Tower",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "destination_deadlines": [
+          {
+            "name": "Xian North Railway Station",
+            "deadline": "2026-04-30T18:30:00+08:00"
+          }
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "City Wall",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Shaanxi History Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 5.0
+          },
+          {
+            "poi_name": "Muslim Quarter",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Efficient traveller before a train departure.",
+          "style": "Mentions what is already completed and asks for a realistic plan.",
+          "age": "28-40",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "We just finished the City Wall. Our train from Xian North is at 18:30. We have about 3 hours, including getting to the station, and we want one worthwhile stop or food break without missing the train.",
+        "hidden_constraints": [
+          "City Wall is completed and must not be repeated",
+          "train deadline is hard",
+          "only one safe stop is acceptable"
+        ],
+        "disclosure_plan": [
+          "First say City Wall is finished and train is at 18:30.",
+          "If asked priority, say not missing the train is more important than squeezing in a museum."
+        ]
+      },
+      "first_user_message": "We finished City Wall. Our train leaves Xian North at 18:30. Can you replan the last 3 hours?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "replan_itinerary"
+        ],
+        "tools_should_call": [
+          "get_route"
+        ],
+        "state_assertions": [
+          "City Wall is recorded in completed_nodes",
+          "time_budget_hours equals 3",
+          "new plan does not include City Wall",
+          "final reply warns about station transfer buffer"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "record_completed_city_wall",
+            "dimension": "interaction",
+            "rubric": "Agent records City Wall as completed before replanning."
+          },
+          {
+            "key": "extract_train_deadline",
+            "dimension": "reasoning",
+            "rubric": "Agent recognizes 18:30 train departure as a hard deadline."
+          },
+          {
+            "key": "extract_three_hours",
+            "dimension": "reasoning",
+            "rubric": "Agent extracts a 3-hour total time budget."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary with completed_nodes including City Wall."
+          },
+          {
+            "key": "no_repeat_completed_stop",
+            "dimension": "reasoning",
+            "rubric": "Final plan does not repeat City Wall."
+          },
+          {
+            "key": "station_buffer",
+            "dimension": "interaction",
+            "rubric": "Final reply leaves time for transfer/security before the train."
+          }
+        ]
+      },
+      "failure_tags": [
+        "repeat_completed_node",
+        "missed_deadline",
+        "overpacked_plan"
+      ]
+    },
+    {
+      "id": "companion_xian_002",
+      "city": "Xian",
+      "city_zh": "西安",
+      "task_type": "weather_indoor_replan",
+      "complexity": {
+        "reasoning": [
+          "weather_branch",
+          "indoor_substitution",
+          "core_interest_preservation"
+        ],
+        "tool": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "conditional_plan"
+        ]
+      },
+      "initial_state": {
+        "city": "Xian",
+        "current_time": "2026-07-01T14:00:00+08:00",
+        "current_location": "Muslim Quarter",
+        "base_location": "Hotel near Muslim Quarter",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "City Wall",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Shaanxi History Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 3.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Weather-sensitive traveller.",
+          "style": "Accepts tradeoffs if the reason is clear.",
+          "age": "28-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Rain may affect the plan. Avoid exposed outdoor activity and preserve history-focused indoor stop.",
+        "hidden_constraints": [
+          "check weather before deciding",
+          "prefer indoor if raining",
+          "preserve history-focused indoor stop"
+        ],
+        "disclosure_plan": [
+          "Mention rain/weather concern.",
+          "If asked priority, say history-focused indoor stop matters most."
+        ]
+      },
+      "first_user_message": "It may rain. Can you avoid the City Wall if it is slippery and keep a history-focused plan?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "state_assertions": [
+          "Weather is checked.",
+          "Indoor preference or conditional outdoor decision is used."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks Xian weather."
+          },
+          {
+            "key": "indoor_constraint",
+            "dimension": "reasoning",
+            "rubric": "Agent turns rain into an indoor or conditional-outdoor constraint."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary."
+          },
+          {
+            "key": "preserve_core_interest",
+            "dimension": "interaction",
+            "rubric": "Final reply preserves history-focused indoor stop."
+          },
+          {
+            "key": "avoid_exposed_outdoor",
+            "dimension": "reasoning",
+            "rubric": "Agent avoids or makes exposed outdoor stops conditional."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_guess",
+        "drops_core_interest",
+        "keeps_bad_weather_outdoor"
+      ]
+    },
+    {
+      "id": "companion_xian_003",
+      "city": "Xian",
+      "city_zh": "西安",
+      "task_type": "nearby_food_or_rest_search",
+      "complexity": {
+        "reasoning": [
+          "preference_constraint",
+          "nearby_priority",
+          "local_experience"
+        ],
+        "tool": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "interaction": [
+          "ranked_recommendation"
+        ]
+      },
+      "initial_state": {
+        "city": "Xian",
+        "current_time": "2026-07-01T18:00:00+08:00",
+        "current_location": "Bell Tower",
+        "base_location": "Hotel near Bell Tower",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "food_constraints": [
+          "no lamb for one traveller"
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Bell Tower",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller asking the agent to choose a practical local option.",
+          "style": "Prefers a short ranked recommendation.",
+          "age": "25-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Find a nearby option around Bell Tower. Preserve local Xian food, but respect this constraint: no lamb for one traveller.",
+        "hidden_constraints": [
+          "no lamb for one traveller",
+          "nearby matters",
+          "local Xian food"
+        ],
+        "disclosure_plan": [
+          "Ask for a nearby option around Bell Tower.",
+          "If asked, repeat the constraint: no lamb for one traveller."
+        ]
+      },
+      "first_user_message": "Near Bell Tower, can you pick a local Xian dinner place? One of us does not eat lamb.",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "state_assertions": [
+          "Search is scoped to the current city/location.",
+          "Ranking uses the stated constraint."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "retrieve_candidates",
+            "dimension": "tool",
+            "rubric": "Agent retrieves nearby candidates in the correct city."
+          },
+          {
+            "key": "score_constraints",
+            "dimension": "tool",
+            "rubric": "Agent scores candidates with the stated preference or dietary constraint."
+          },
+          {
+            "key": "respect_constraint",
+            "dimension": "reasoning",
+            "rubric": "Final recommendation respects: no lamb for one traveller."
+          },
+          {
+            "key": "preserve_local_style",
+            "dimension": "reasoning",
+            "rubric": "Recommendation preserves local Xian food."
+          },
+          {
+            "key": "few_actionable_options",
+            "dimension": "interaction",
+            "rubric": "Final reply gives 1-3 actionable options with reasons."
+          }
+        ]
+      },
+      "failure_tags": [
+        "constraint_ignored",
+        "wrong_area",
+        "unranked_list"
+      ]
+    }
+  ]
+}

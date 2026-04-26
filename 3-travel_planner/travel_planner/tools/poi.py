@@ -6,7 +6,7 @@ from collections import OrderedDict
 import requests
 
 from ..config import Settings
-from ..city_names import city_name_bundle, provider_city_name
+from ..city_names import city_name_bundle, normalize_poi_display_name, provider_city_name
 from ..data_store import load_city_profile
 
 
@@ -22,6 +22,11 @@ ITINERARY_EXCLUDE_KEYWORDS = {
     "停车",
     "地铁站",
     "公交站",
+    "火车站",
+    "高铁站",
+    "汽车站",
+    "出站口",
+    "航站楼",
     "充电站",
     "写字楼",
     "宿舍",
@@ -76,10 +81,57 @@ def _infer_indoor_outdoor(name: str, raw_type: str, profile: dict) -> str:
 
 def _infer_category(raw_type: str, name: str) -> str:
     text = f"{raw_type} {name}".lower()
-    if any(keyword in text for keyword in ["restaurant", "food", "cafe", "tea", "eat", "dining"]):
+    if any(
+        keyword in text
+        for keyword in [
+            "restaurant",
+            "food",
+            "cafe",
+            "coffee",
+            "tea",
+            "eat",
+            "dining",
+            "餐饮",
+            "餐厅",
+            "饭店",
+            "小吃",
+            "火锅",
+            "咖啡",
+            "奶茶",
+            "茶饮",
+            "甜品",
+            "饮品",
+            "美食",
+            "菜馆",
+            "面馆",
+            "烧烤",
+            "酒吧",
+            "红豆汤",
+            "好吃街",
+        ]
+    ):
         return "food"
-    if any(keyword in text for keyword in ["hotel", "inn", "hostel"]):
+    if any(keyword in text for keyword in ["hotel", "inn", "hostel", "酒店", "宾馆", "民宿"]):
         return "hotel"
+    if any(
+        keyword in text
+        for keyword in [
+            "railway station",
+            "train station",
+            "airport",
+            "地铁站",
+            "公交站",
+            "火车站",
+            "高铁站",
+            "汽车站",
+            "出站口",
+            "航站楼",
+            "机场",
+        ]
+    ):
+        return "transit"
+    if any(keyword in text for keyword in ["shop", "store", "mall", "shopping", "购物", "商场", "百货", "商店", "市场"]):
+        return "shopping"
     if any(keyword in text for keyword in ["museum", "gallery", "park", "peak", "temple", "market", "harbour"]):
         return "attraction"
     return "attraction"
@@ -90,15 +142,21 @@ def _infer_tags(name: str, raw_type: str, category: str) -> list[str]:
     tags = OrderedDict()
     if category == "food":
         tags["food"] = None
+    if category == "shopping":
+        tags["shopping"] = None
+    if category == "transit":
+        tags["transit"] = None
     if any(keyword in text for keyword in ["view", "harbour", "peak", "promenade", "observation"]):
         tags["view"] = None
-    if any(keyword in text for keyword in ["park", "disney", "aquarium", "zoo", "family"]):
+    if any(keyword in text for keyword in ["江景", "夜景", "观景", "外滩", "山顶"]):
+        tags["view"] = None
+    if any(keyword in text for keyword in ["park", "disney", "aquarium", "zoo", "family", "公园", "动物园", "乐园", "亲子"]):
         tags["family"] = None
-    if any(keyword in text for keyword in ["market", "street", "local", "neighborhood"]):
+    if any(keyword in text for keyword in ["market", "street", "local", "neighborhood", "街", "路", "巷", "里", "老街", "街区"]):
         tags["local"] = None
-    if any(keyword in text for keyword in ["museum", "gallery", "culture", "temple"]):
+    if any(keyword in text for keyword in ["museum", "gallery", "culture", "temple", "博物馆", "美术馆", "寺", "故居", "旧居", "历史"]):
         tags["culture"] = None
-    if any(keyword in text for keyword in ["tram", "ferry", "rail", "boat"]):
+    if any(keyword in text for keyword in ["tram", "ferry", "rail", "boat", "轮渡", "索道", "轻轨"]):
         tags["transport_experience"] = None
     return list(tags.keys()) or [category]
 
@@ -194,7 +252,7 @@ def _amap_search(city: str, query: str, limit: int, settings: Settings, profile:
         category = _infer_category(raw_type, item.get("name", ""))
         results.append(
             {
-                "name": item.get("name", query),
+                "name": normalize_poi_display_name(item.get("name", query)),
                 "category": category,
                 "district": item.get("adname") or item.get("pname") or city,
                 "lat": lat,
@@ -230,7 +288,7 @@ def _nominatim_search(city: str, query: str, limit: int, profile: dict) -> list[
         category = _infer_category(raw_type, name)
         results.append(
             {
-                "name": name,
+                "name": normalize_poi_display_name(name),
                 "category": category,
                 "district": city,
                 "lat": float(item.get("lat", 0) or 0),
@@ -296,7 +354,7 @@ def _is_strong_seed_match(query: str, candidate: dict) -> bool:
 
 
 def _is_itinerary_worthy(candidate: dict) -> bool:
-    if candidate.get("category") == "hotel":
+    if candidate.get("category") in {"hotel", "transit"}:
         return False
     searchable = " ".join(
         [

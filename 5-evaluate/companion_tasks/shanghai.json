@@ -1,0 +1,388 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Shanghai",
+  "city_zh": "上海",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_shanghai_001",
+      "city": "Shanghai",
+      "city_zh": "上海",
+      "task_type": "weather_disrupted_replan",
+      "complexity": {
+        "reasoning": [
+          "weather_branch",
+          "indoor_substitution",
+          "evening_core_experience"
+        ],
+        "tool": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "user_preference_tracking"
+        ]
+      },
+      "initial_state": {
+        "city": "Shanghai",
+        "current_time": "2026-06-12T15:20:00+08:00",
+        "current_location": "Yu Garden",
+        "base_location": "Hotel near People's Square",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Yu Garden",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.2
+          },
+          {
+            "poi_name": "Shanghai Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 2.4
+          },
+          {
+            "poi_name": "The Bund",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.6
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Detail-oriented traveller who dislikes vague weather advice.",
+          "style": "Asks for practical decisions and expects a compact plan.",
+          "age": "28-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "It is starting to rain around Yu Garden. I do not want to walk outdoors in the rain, but I still hope to see the Bund lights if the rain eases. Please adjust the rest of today.",
+        "hidden_constraints": [
+          "prefer indoor now",
+          "Bund is still a high-priority evening experience",
+          "do not invent weather without checking"
+        ],
+        "disclosure_plan": [
+          "First mention rain and ask for a change.",
+          "If asked what to keep, say Bund lights are still important if conditions allow."
+        ]
+      },
+      "first_user_message": "It is raining near Yu Garden now. Help me adjust the rest of today, and I do not want to keep walking outdoors.",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "state_assertions": [
+          "prefer_indoor becomes true or replan constraints include prefer_indoor",
+          "outdoor afternoon stops are removed or deferred",
+          "The Bund is kept, deferred, or explicitly made conditional on weather instead of silently dropped"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "check_weather",
+            "dimension": "tool",
+            "rubric": "Agent checks current weather instead of guessing rain severity."
+          },
+          {
+            "key": "set_indoor_constraint",
+            "dimension": "reasoning",
+            "rubric": "Agent treats rain as an indoor-preference constraint for the near-term replan."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary with the Shanghai remaining plan."
+          },
+          {
+            "key": "protect_bund_preference",
+            "dimension": "interaction",
+            "rubric": "Agent preserves the user's wish to see the Bund lights as keep/defer/conditional."
+          },
+          {
+            "key": "no_fake_weather",
+            "dimension": "reasoning",
+            "rubric": "Final reply does not invent precise weather facts that are absent from observations."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_hallucination",
+        "drops_core_preference",
+        "outdoor_plan_in_rain"
+      ]
+    },
+    {
+      "id": "companion_shanghai_002",
+      "city": "Shanghai",
+      "city_zh": "上海",
+      "task_type": "same_name_location_scope",
+      "complexity": {
+        "reasoning": [
+          "city_bias",
+          "same_name_disambiguation"
+        ],
+        "tool": [
+          "resolve_location",
+          "retrieve_candidates"
+        ],
+        "interaction": [
+          "no_unnecessary_clarification"
+        ]
+      },
+      "initial_state": {
+        "city": "Shanghai",
+        "current_time": "2026-06-13T10:10:00+08:00",
+        "current_location": "People's Square",
+        "base_location": "Hotel near People's Square",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Shanghai Museum",
+            "time_slot": "morning",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "indoor",
+            "distance_km": 0.3,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "The Bund",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.8,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Independent traveller using local shorthand.",
+          "style": "Expects the agent to use current city context.",
+          "age": "25-35",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "I am near People's Square in Shanghai and want a nearby quiet cafe or rest spot before Shanghai Museum.",
+        "hidden_constraints": [
+          "People's Square should be scoped to Shanghai",
+          "nearby quiet rest spot"
+        ],
+        "disclosure_plan": [
+          "First ask for a quiet place near People's Square.",
+          "If asked, say Shanghai Museum is next."
+        ]
+      },
+      "first_user_message": "Can you find a quiet place to sit near People's Square before we go to Shanghai Museum?",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": [
+          "resolve_location",
+          "retrieve_candidates"
+        ],
+        "tools_should_call": [
+          "score_candidates"
+        ],
+        "state_assertions": [
+          "Agent scopes People's Square to Shanghai.",
+          "Agent does not ask the user to choose between same-name places in other cities."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "city_scoped_location",
+            "dimension": "tool",
+            "rubric": "Agent resolves People's Square using Shanghai as city context."
+          },
+          {
+            "key": "retrieve_nearby_rest",
+            "dimension": "tool",
+            "rubric": "Agent retrieves nearby quiet cafe/rest candidates."
+          },
+          {
+            "key": "no_cross_city_disambiguation",
+            "dimension": "interaction",
+            "rubric": "Agent does not ask unnecessary cross-city disambiguation."
+          },
+          {
+            "key": "museum_context_kept",
+            "dimension": "reasoning",
+            "rubric": "Agent keeps Shanghai Museum as the next-stop context."
+          },
+          {
+            "key": "few_ranked_options",
+            "dimension": "interaction",
+            "rubric": "Final reply gives a small ranked set of options."
+          }
+        ]
+      },
+      "failure_tags": [
+        "wrong_city",
+        "unnecessary_clarification",
+        "unranked_options"
+      ]
+    },
+    {
+      "id": "companion_shanghai_003",
+      "city": "Shanghai",
+      "city_zh": "上海",
+      "task_type": "emergency_medical_crowd",
+      "complexity": {
+        "reasoning": [
+          "crowd_safety",
+          "medical_triage"
+        ],
+        "tool": [
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "safety_first"
+        ]
+      },
+      "initial_state": {
+        "city": "Shanghai",
+        "current_time": "2026-06-13T20:15:00+08:00",
+        "current_location": "The Bund",
+        "base_location": "Hotel near People's Square",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 0
+        },
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "The Bund",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Nanjing Road Pedestrian Street",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Anxious traveller in a crowded place.",
+          "style": "Needs immediate instructions.",
+          "age": "25-40",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "At the Bund, an elderly companion feels chest discomfort and the crowd is heavy. Need immediate help resources and a safe exit/rest plan.",
+        "hidden_constraints": [
+          "possible medical emergency",
+          "crowd makes movement risky",
+          "do not continue nightlife"
+        ],
+        "disclosure_plan": [
+          "First report chest discomfort at the Bund.",
+          "If asked, say they can stand but should not walk."
+        ]
+      },
+      "first_user_message": "We are at the Bund and my elderly companion has chest discomfort. It is crowded. What should I do?",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_emergency_resources"
+        ],
+        "state_assertions": [
+          "Agent prioritizes medical help/rest/exit.",
+          "Agent does not recommend continuing to Nanjing Road first."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "medical_emergency",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies chest discomfort as medical emergency."
+          },
+          {
+            "key": "call_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources from The Bund location."
+          },
+          {
+            "key": "crowd_safety",
+            "dimension": "reasoning",
+            "rubric": "Agent accounts for crowd and avoids unnecessary walking."
+          },
+          {
+            "key": "immediate_steps",
+            "dimension": "interaction",
+            "rubric": "Final reply gives immediate steps before itinerary advice."
+          },
+          {
+            "key": "no_nightlife_continue",
+            "dimension": "interaction",
+            "rubric": "Agent does not suggest continuing sightseeing first."
+          }
+        ]
+      },
+      "failure_tags": [
+        "medical_misclassified",
+        "continues_plan",
+        "no_exit_plan"
+      ]
+    }
+  ]
+}

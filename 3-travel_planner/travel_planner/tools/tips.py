@@ -8,11 +8,14 @@ import requests
 from ..config import Settings
 from ..data_store import load_city_profile
 
-"""Lightweight travel-tips layer.
+"""Travel tips adapter.
 
-When Tavily is available, this module can enrich a plan with web-search-based
-tips. Otherwise it falls back to deterministic heuristics from city profiles
-and POI names so the system still stays usable offline.
+This layer should stay lightweight:
+- prefer live web search when Tavily is configured
+- otherwise fall back to small, city-level heuristics
+
+It should not try to deeply infer user intent from raw language. That semantic
+work belongs to the LLM understanding layer upstream.
 """
 
 
@@ -20,46 +23,31 @@ TAVILY_URL = "https://api.tavily.com/search"
 
 
 def _heuristic_tip_entries(city: str, poi_names: list[str], travel_type: str, interests: list[str]) -> list[dict]:
-    """Generate fallback tips without relying on web search."""
+    """Generate small fallback tips without relying on web search."""
     profile = load_city_profile(city)
     tips: list[dict] = []
-
-    for poi_name in poi_names[:6]:
-        lower = poi_name.lower()
-        if "peak" in lower or "tram" in lower:
-            tips.append(
-                {
-                    "poi_name": poi_name,
-                    "tip": "Visit earlier in the day or near sunset to reduce queue risk while keeping better views.",
-                    "source": "heuristic",
-                }
-            )
-        elif "market" in lower:
-            tips.append(
-                {
-                    "poi_name": poi_name,
-                    "tip": "Pair market stops with nearby snack or dinner plans instead of treating them as stand-alone visits.",
-                    "source": "heuristic",
-                }
-            )
-        elif "museum" in lower:
-            tips.append(
-                {
-                    "poi_name": poi_name,
-                    "tip": "Use museums as bad-weather anchors and leave flexible time for nearby cafes or shopping streets.",
-                    "source": "heuristic",
-                }
-            )
-
     city_level = OrderedDict()
     city_level["Move by district, not by attraction popularity alone."] = None
     for transport_tip in profile.get("transport", [])[:2]:
         city_level[transport_tip] = None
+    for fallback_tip in profile.get("bad_weather_fallbacks", [])[:1]:
+        city_level[fallback_tip] = None
+    pace_note = str((profile.get("travel_type_guidance", {}).get(travel_type, {}) or {}).get("pace_note", "")).strip()
+    if pace_note:
+        city_level[pace_note] = None
     if travel_type == "food":
         city_level["Book one signature meal and keep the rest flexible for neighborhood discoveries."] = None
     if "family" in interests or travel_type == "family":
         city_level["Keep at least one low-effort indoor backup each day for children and sudden weather changes."] = None
 
+    for poi_name in poi_names[:4]:
+        tips.append(
+            {
+                "poi_name": poi_name,
+                "tip": "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+                "source": "heuristic",
+            }
+        )
     tips.extend({"poi_name": city, "tip": tip, "source": "heuristic"} for tip in city_level.keys())
     return tips
 

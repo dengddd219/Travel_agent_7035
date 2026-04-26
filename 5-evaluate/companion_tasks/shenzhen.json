@@ -1,0 +1,380 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Shenzhen",
+  "city_zh": "深圳",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_shenzhen_001",
+      "city": "Shenzhen",
+      "city_zh": "深圳",
+      "task_type": "emergency_power_and_help",
+      "complexity": {
+        "reasoning": [
+          "lost_companion",
+          "phone_power_risk",
+          "location_resolution"
+        ],
+        "tool": [
+          "resolve_location",
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "urgent_but_not_medical"
+        ]
+      },
+      "initial_state": {
+        "city": "Shenzhen",
+        "current_time": "2026-10-03T20:10:00+08:00",
+        "current_location": "",
+        "base_location": "Hotel near OCT Loft",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Window of the World",
+            "time_slot": "evening",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Nervous traveller with low phone battery.",
+          "style": "Gives partial location and expects immediate next steps.",
+          "age": "22-35",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "I am at Window of the World in Shenzhen. My phone battery is almost dead and I cannot find my friend. I need a safe meeting/help point and charging option.",
+        "hidden_constraints": [
+          "not a sightseeing search",
+          "need power/help resources",
+          "location must be resolved from user text"
+        ],
+        "disclosure_plan": [
+          "First say phone is almost dead and friend is missing at Window of the World.",
+          "If asked, say the city is Shenzhen and you can still send one or two messages."
+        ]
+      },
+      "first_user_message": "I am at Window of the World, my phone is almost dead and I cannot find my friend. Help me quickly.",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_location",
+          "resolve_emergency_resources"
+        ],
+        "state_assertions": [
+          "Agent resolves Window of the World within Shenzhen city context",
+          "Agent treats this as power/help emergency",
+          "Final answer suggests a meeting/help point and battery-saving next step"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "resolve_location_with_city",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_location and scopes Window of the World to Shenzhen."
+          },
+          {
+            "key": "classify_power_help_emergency",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies the message as emergency/help or power, not a normal search."
+          },
+          {
+            "key": "call_emergency_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources for charging/help resources."
+          },
+          {
+            "key": "battery_saving_action",
+            "dimension": "interaction",
+            "rubric": "Final reply includes a concrete battery-saving or one-message coordination action."
+          },
+          {
+            "key": "meeting_point",
+            "dimension": "reasoning",
+            "rubric": "Final reply proposes a safe, easy-to-find meeting or help point."
+          }
+        ]
+      },
+      "failure_tags": [
+        "normal_search_for_power",
+        "no_location_resolution",
+        "no_meeting_plan"
+      ]
+    },
+    {
+      "id": "companion_shenzhen_002",
+      "city": "Shenzhen",
+      "city_zh": "深圳",
+      "task_type": "weather_indoor_replan",
+      "complexity": {
+        "reasoning": [
+          "weather_branch",
+          "indoor_substitution",
+          "core_interest_preservation"
+        ],
+        "tool": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "conditional_plan"
+        ]
+      },
+      "initial_state": {
+        "city": "Shenzhen",
+        "current_time": "2026-07-01T14:00:00+08:00",
+        "current_location": "Shenzhen Bay Park",
+        "base_location": "Hotel near Shenzhen Bay Park",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Shenzhen Bay Park",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Sea World Culture and Arts Center",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 3.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Weather-sensitive traveller.",
+          "style": "Accepts tradeoffs if the reason is clear.",
+          "age": "28-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Rain may affect the plan. Avoid exposed outdoor activity and preserve design/art experience.",
+        "hidden_constraints": [
+          "check weather before deciding",
+          "prefer indoor if raining",
+          "preserve design/art experience"
+        ],
+        "disclosure_plan": [
+          "Mention rain/weather concern.",
+          "If asked priority, say design/art experience matters most."
+        ]
+      },
+      "first_user_message": "It is starting to rain at Shenzhen Bay Park. Can you replan and keep something design/art related?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "state_assertions": [
+          "Weather is checked.",
+          "Indoor preference or conditional outdoor decision is used."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks Shenzhen weather."
+          },
+          {
+            "key": "indoor_constraint",
+            "dimension": "reasoning",
+            "rubric": "Agent turns rain into an indoor or conditional-outdoor constraint."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary."
+          },
+          {
+            "key": "preserve_core_interest",
+            "dimension": "interaction",
+            "rubric": "Final reply preserves design/art experience."
+          },
+          {
+            "key": "avoid_exposed_outdoor",
+            "dimension": "reasoning",
+            "rubric": "Agent avoids or makes exposed outdoor stops conditional."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_guess",
+        "drops_core_interest",
+        "keeps_bad_weather_outdoor"
+      ]
+    },
+    {
+      "id": "companion_shenzhen_003",
+      "city": "Shenzhen",
+      "city_zh": "深圳",
+      "task_type": "deadline_coordinate",
+      "complexity": {
+        "reasoning": [
+          "deadline",
+          "route_feasibility",
+          "optional_stop_tradeoff"
+        ],
+        "tool": [
+          "get_route",
+          "get_poi_detail"
+        ],
+        "interaction": [
+          "clear_go_or_skip"
+        ]
+      },
+      "initial_state": {
+        "city": "Shenzhen",
+        "current_time": "2026-07-01T16:00:00+08:00",
+        "current_location": "OCT Loft",
+        "base_location": "Hotel near OCT Loft",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "destination_deadlines": [
+          {
+            "name": "Coco Park dinner",
+            "deadline": "2026-10-04T19:00:00+08:00"
+          }
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Ping An Finance Centre",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 2.5,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Coco Park dinner",
+            "time_slot": "evening",
+            "duration_hours": 0.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller with a fixed departure or reservation.",
+          "style": "Needs a conservative answer.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Decide whether Ping An Finance Centre can fit before Coco Park dinner at 2026-10-04T19:00:00+08:00. If risky, skip it.",
+        "hidden_constraints": [
+          "2026-10-04T19:00:00+08:00 is fixed",
+          "Ping An Finance Centre is optional",
+          "route and buffer matter"
+        ],
+        "disclosure_plan": [
+          "Ask whether the optional stop fits.",
+          "If asked, say the deadline cannot move."
+        ]
+      },
+      "first_user_message": "Can I still do Ping An Finance Centre before my 7 pm Coco Park dinner?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": [
+          "get_route"
+        ],
+        "tools_should_call": [
+          "get_poi_detail"
+        ],
+        "state_assertions": [
+          "Deadline is treated as hard.",
+          "Route/time is checked.",
+          "Optional stop is skipped if risky."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "deadline_recognized",
+            "dimension": "reasoning",
+            "rubric": "Agent recognizes the fixed deadline."
+          },
+          {
+            "key": "route_checked",
+            "dimension": "tool",
+            "rubric": "Agent calls get_route for a relevant leg."
+          },
+          {
+            "key": "duration_or_buffer",
+            "dimension": "tool",
+            "rubric": "Agent checks or accounts for visit duration and buffer."
+          },
+          {
+            "key": "clear_recommendation",
+            "dimension": "interaction",
+            "rubric": "Final reply clearly says go or skip."
+          },
+          {
+            "key": "avoid_overpack",
+            "dimension": "reasoning",
+            "rubric": "Agent does not squeeze in the optional stop if it risks the deadline."
+          }
+        ]
+      },
+      "failure_tags": [
+        "missed_deadline",
+        "no_route_check",
+        "overpacked_plan"
+      ]
+    }
+  ]
+}

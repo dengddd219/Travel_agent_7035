@@ -1,0 +1,408 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Beijing",
+  "city_zh": "北京",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_beijing_001",
+      "city": "Beijing",
+      "city_zh": "北京",
+      "task_type": "replan_with_clarification",
+      "complexity": {
+        "reasoning": [
+          "time_budget",
+          "must_visit_preservation",
+          "mobility_constraint"
+        ],
+        "tool": [
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "missing_current_location",
+          "progressive_disclosure"
+        ]
+      },
+      "initial_state": {
+        "city": "Beijing",
+        "current_time": "2026-05-02T13:10:00+08:00",
+        "current_location": "",
+        "base_location": "Hotel near Wangfujing",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 0
+        },
+        "mobility_risk": "normal",
+        "remaining_plan": [
+          {
+            "poi_name": "Summer Palace",
+            "time_slot": "afternoon",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.2,
+            "walking_km": 1.6,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "National Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 4.5,
+            "walking_km": 0.8,
+            "mobility_level": "low"
+          },
+          {
+            "poi_name": "Nanluoguxiang",
+            "time_slot": "evening",
+            "duration_hours": 1.5,
+            "priority": 2,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 5.0,
+            "walking_km": 1.2,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Anxious but cooperative parent travelling with an elderly father.",
+          "style": "Short messages, responds quickly when asked for missing operational details.",
+          "age": "35-50",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "We only have 4 hours left this afternoon in Beijing. My father walks slowly, but I still want to keep Summer Palace if possible. We are currently at the hotel near Wangfujing.",
+        "hidden_constraints": [
+          "current location is initially omitted",
+          "Summer Palace should be preserved if feasible",
+          "elderly walking load should be controlled"
+        ],
+        "disclosure_plan": [
+          "First say only that there are 4 hours left and ask the agent to replan.",
+          "If the agent asks where we are, answer that we are at the hotel near Wangfujing.",
+          "If the agent asks about priority, say Summer Palace is the main one to keep."
+        ]
+      },
+      "first_user_message": "We only have 4 hours this afternoon. Can you replan the rest for us?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "replan_itinerary"
+        ],
+        "tool_preconditions": [
+          "current_location must be known before replan_itinerary is executed"
+        ],
+        "state_assertions": [
+          "clarification_pending is set to current_location before the user gives the hotel location",
+          "time_budget_hours equals 4",
+          "task_status is completed after replanning",
+          "remaining_plan keeps Summer Palace if the time budget allows it"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "ask_location_before_replan",
+            "dimension": "interaction",
+            "rubric": "Agent asks for the missing current location before executing the replan."
+          },
+          {
+            "key": "extract_time_budget",
+            "dimension": "reasoning",
+            "rubric": "Agent extracts the 4-hour remaining time budget."
+          },
+          {
+            "key": "call_replan_tool",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary after the current location is known."
+          },
+          {
+            "key": "preserve_core_poi",
+            "dimension": "reasoning",
+            "rubric": "The new plan preserves Summer Palace unless the tool result proves it infeasible."
+          },
+          {
+            "key": "mention_elderly_constraint",
+            "dimension": "interaction",
+            "rubric": "Final reply explains how the plan reduces walking or accounts for the elderly traveller."
+          }
+        ]
+      },
+      "failure_tags": [
+        "premature_tool_call",
+        "missed_clarification",
+        "lost_must_visit",
+        "ignores_mobility"
+      ]
+    },
+    {
+      "id": "companion_beijing_002",
+      "city": "Beijing",
+      "city_zh": "北京",
+      "task_type": "deadline_coordinate",
+      "complexity": {
+        "reasoning": [
+          "route_duration",
+          "appointment_deadline",
+          "optional_stop_tradeoff"
+        ],
+        "tool": [
+          "get_route",
+          "get_poi_detail"
+        ],
+        "interaction": [
+          "clear_go_or_skip_advice"
+        ]
+      },
+      "initial_state": {
+        "city": "Beijing",
+        "current_time": "2026-05-03T16:20:00+08:00",
+        "current_location": "National Museum",
+        "base_location": "Hotel near Wangfujing",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "destination_deadlines": [
+          {
+            "name": "Peking duck dinner near Qianmen",
+            "deadline": "2026-05-03T18:30:00+08:00"
+          }
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Temple of Heaven",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 4.8,
+            "walking_km": 1.5,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Qianmen Street",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.2,
+            "walking_km": 0.8,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Time-sensitive traveller with dinner reservation.",
+          "style": "Wants a direct feasibility answer.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "I am at the National Museum at 16:20. I want to add Temple of Heaven, but I must reach Qianmen for Peking duck dinner by 18:30.",
+        "hidden_constraints": [
+          "18:30 dinner is fixed",
+          "Temple of Heaven is optional",
+          "do not guess route time"
+        ],
+        "disclosure_plan": [
+          "Ask if Temple of Heaven can still fit.",
+          "If asked, say dinner cannot move."
+        ]
+      },
+      "first_user_message": "I am at the National Museum now. Can I still go to Temple of Heaven before my 6:30 Qianmen dinner?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": [
+          "get_route"
+        ],
+        "tools_should_call": [
+          "get_poi_detail"
+        ],
+        "state_assertions": [
+          "Agent checks route feasibility before advising.",
+          "Agent treats 18:30 dinner as a hard deadline.",
+          "Agent clearly says go, skip, or only do a shortened visit."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "recognize_deadline",
+            "dimension": "reasoning",
+            "rubric": "Agent recognizes the 18:30 dinner as a hard deadline."
+          },
+          {
+            "key": "route_checked",
+            "dimension": "tool",
+            "rubric": "Agent calls get_route for a relevant leg."
+          },
+          {
+            "key": "poi_time_considered",
+            "dimension": "tool",
+            "rubric": "Agent checks or accounts for Temple of Heaven visit/opening time."
+          },
+          {
+            "key": "clear_feasibility",
+            "dimension": "interaction",
+            "rubric": "Final answer gives a clear feasibility recommendation."
+          },
+          {
+            "key": "avoid_overcommit",
+            "dimension": "reasoning",
+            "rubric": "Agent does not overcommit to a rushed plan without buffer."
+          }
+        ]
+      },
+      "failure_tags": [
+        "missed_deadline",
+        "no_route_check",
+        "overcommitted_plan"
+      ]
+    },
+    {
+      "id": "companion_beijing_003",
+      "city": "Beijing",
+      "city_zh": "北京",
+      "task_type": "emergency_toilet_family",
+      "complexity": {
+        "reasoning": [
+          "urgent_need",
+          "child_context",
+          "nearest_resource"
+        ],
+        "tool": [
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "immediate_action"
+        ]
+      },
+      "initial_state": {
+        "city": "Beijing",
+        "current_time": "2026-05-04T11:05:00+08:00",
+        "current_location": "Forbidden City",
+        "base_location": "Hotel near Wangfujing",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 1
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Forbidden City",
+            "time_slot": "morning",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Jingshan Park",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.8,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Parent with urgent child need.",
+          "style": "Short and stressed.",
+          "age": "30-40",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "My child urgently needs a toilet inside or near the Forbidden City. Stop sightseeing advice and help find the nearest safe facility or staff help point.",
+        "hidden_constraints": [
+          "urgent toilet/help scene",
+          "do not continue normal itinerary",
+          "child safety matters"
+        ],
+        "disclosure_plan": [
+          "First say the child urgently needs a restroom.",
+          "If asked, say you are near the central area."
+        ]
+      },
+      "first_user_message": "My kid urgently needs a toilet in the Forbidden City. Where should we go right now?",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_emergency_resources"
+        ],
+        "state_assertions": [
+          "Agent treats this as an urgent toilet/help scene.",
+          "Final answer leads with nearest practical action."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "classify_urgent_toilet",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies the message as emergency/toilet."
+          },
+          {
+            "key": "call_emergency_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources for toilet/help resources."
+          },
+          {
+            "key": "immediate_action_first",
+            "dimension": "interaction",
+            "rubric": "Final reply starts with the immediate action."
+          },
+          {
+            "key": "child_context",
+            "dimension": "reasoning",
+            "rubric": "Agent accounts for the child and prioritizes nearest/safe facility."
+          },
+          {
+            "key": "fallback_staff",
+            "dimension": "interaction",
+            "rubric": "If exact data is missing, agent suggests staff or visitor center."
+          }
+        ]
+      },
+      "failure_tags": [
+        "normal_search",
+        "no_resource_lookup",
+        "continues_sightseeing"
+      ]
+    }
+  ]
+}

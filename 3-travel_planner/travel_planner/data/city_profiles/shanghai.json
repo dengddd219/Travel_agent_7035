@@ -1,11 +1,26 @@
 {
   "city": "Shanghai",
-  "aliases": ["shanghai", "上海"],
+  "aliases": [
+    "shanghai",
+    "上海"
+  ],
   "recommended_areas": [
-    {"name": "Huangpu / Bund", "why": "best first-time skyline, history, and city-icon flow"},
-    {"name": "Jing'an", "why": "strong shopping, cafes, and indoor flexibility"},
-    {"name": "Xuhui / Former French Concession", "why": "best for urban strolling, design, and cafe pacing"},
-    {"name": "Pudong", "why": "headline skyline and family-heavy attractions"}
+    {
+      "name": "黄浦区 / Bund",
+      "why": "best first-time skyline, history, and city-icon flow"
+    },
+    {
+      "name": "静安区",
+      "why": "strong shopping, cafes, and indoor flexibility"
+    },
+    {
+      "name": "徐汇区 / 法租界",
+      "why": "best for urban strolling, design, and cafe pacing"
+    },
+    {
+      "name": "浦东新区",
+      "why": "headline skyline and family-heavy attractions"
+    }
   ],
   "transport": [
     "Use metro as the backbone and avoid stacking too many cross-river transfers in one day.",
@@ -16,31 +31,89 @@
     "Shift waterfront walks to museums, malls, art centers, or food halls.",
     "Use major commercial complexes and museums as rain-safe anchors."
   ],
-  "signature_foods": ["xiaolongbao", "shengjian", "hairy crab seasonal dishes", "scallion oil noodles", "local desserts"],
+  "signature_foods": [
+    "xiaolongbao",
+    "shengjian",
+    "hairy crab seasonal dishes",
+    "scallion oil noodles",
+    "local desserts"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["view", "culture", "local"],
-      "suggested_queries": ["The Bund", "Yu Garden", "Wukang Road", "Shanghai Museum East"],
+      "focus_tags": [
+        "view",
+        "culture",
+        "local"
+      ],
+      "suggested_queries": [
+        "外滩",
+        "豫园",
+        "武康路",
+        "上海博物馆东馆"
+      ],
       "pace_note": "Shanghai works best when you balance one major icon with one neighborhood walking stretch."
     },
     "family": {
-      "focus_tags": ["family", "park", "museum"],
-      "suggested_queries": ["Shanghai Disneyland", "Shanghai Natural History Museum", "Shanghai Ocean Aquarium", "Century Park"],
+      "focus_tags": [
+        "family",
+        "park",
+        "museum"
+      ],
+      "suggested_queries": [
+        "上海迪士尼",
+        "上海自然博物馆",
+        "上海海洋水族馆",
+        "世纪公园"
+      ],
       "pace_note": "Use one large family attraction per day and pair it with a low-effort indoor backup."
     },
     "food": {
-      "focus_tags": ["food", "market", "local"],
-      "suggested_queries": ["Yuyuan food", "Jing'an cafe", "Xintiandi dining", "Wukang Road cafe"],
+      "focus_tags": [
+        "food",
+        "market",
+        "local"
+      ],
+      "suggested_queries": [
+        "豫园 美食",
+        "静安 咖啡",
+        "新天地 美食",
+        "武康路 咖啡"
+      ],
       "pace_note": "Keep meals neighborhood-based and leave time for queues and coffee breaks."
     },
     "theme": {
-      "focus_tags": ["design", "culture", "history"],
-      "suggested_queries": ["M50", "West Bund Museum", "Long Museum", "Former French Concession"],
+      "focus_tags": [
+        "design",
+        "culture",
+        "history"
+      ],
+      "suggested_queries": [
+        "M50创意园",
+        "西岸美术馆",
+        "龙美术馆",
+        "法租界"
+      ],
       "pace_note": "Choose one strong theme such as art, modern architecture, or concession-era urban history."
     }
   },
-  "indoor_keywords": ["museum", "mall", "art", "gallery", "aquarium", "indoor", "shopping"],
-  "outdoor_keywords": ["bund", "garden", "road", "park", "tower", "waterfront", "walk"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "art",
+    "gallery",
+    "aquarium",
+    "indoor",
+    "shopping"
+  ],
+  "outdoor_keywords": [
+    "bund",
+    "garden",
+    "road",
+    "park",
+    "tower",
+    "waterfront",
+    "walk"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -49,7 +122,9 @@
       "temp_max": 27,
       "precipitation_probability": 25,
       "outdoor_suitability": "good",
-      "suggestions": ["Good weather for Bund walks and low-rise historic neighborhoods."]
+      "suggestions": [
+        "Good weather for Bund walks and low-rise historic neighborhoods."
+      ]
     },
     {
       "date": "Day 2",
@@ -58,209 +133,288 @@
       "temp_max": 24,
       "precipitation_probability": 55,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use museums, malls, and design spaces as the main anchors."]
+      "suggestions": [
+        "Use museums, malls, and design spaces as the main anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "The Bund",
+      "name": "外滩",
       "category": "attraction",
-      "district": "Huangpu",
-      "lat": 31.2400,
+      "district": "黄浦区",
+      "lat": 31.24,
       "lon": 121.4904,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "landmark", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Zhongshan East 1st Road, Huangpu District",
       "open_hours": "Open 24 hours",
       "rating": 4.7,
       "visit_reason": "Shanghai's strongest skyline and city-icon anchor."
     },
     {
-      "name": "Yu Garden",
+      "name": "豫园",
       "category": "attraction",
-      "district": "Huangpu",
+      "district": "黄浦区",
       "lat": 31.2273,
-      "lon": 121.4920,
+      "lon": 121.492,
       "duration_hours": 1.8,
       "ticket_price": 40,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "history", "garden"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "history",
+        "garden"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "279 Yuyuan Old Street, Huangpu District",
       "open_hours": "09:00-16:30",
       "rating": 4.4,
       "visit_reason": "Classic historic anchor with easy market extensions."
     },
     {
-      "name": "Wukang Road",
+      "name": "武康路",
       "category": "attraction",
-      "district": "Xuhui",
+      "district": "徐汇区",
       "lat": 31.2046,
       "lon": 121.4373,
       "duration_hours": 1.6,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["city walk", "design", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "city walk",
+        "design",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Wukang Road, Xuhui District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Ideal city-walk anchor for concession-era streets and cafes."
     },
     {
-      "name": "Shanghai Natural History Museum",
+      "name": "上海自然博物馆",
       "category": "attraction",
-      "district": "Jing'an",
-      "lat": 31.2380,
+      "district": "静安区",
+      "lat": 31.238,
       "lon": 121.4626,
       "duration_hours": 2.2,
       "ticket_price": 30,
       "price_level": 2,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "family", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "family",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "510 Beijing West Road, Jing'an District",
       "open_hours": "09:00-17:00",
       "rating": 4.7,
       "visit_reason": "Excellent indoor family and culture fallback."
     },
     {
-      "name": "Xintiandi",
+      "name": "新天地",
       "category": "attraction",
-      "district": "Huangpu",
+      "district": "黄浦区",
       "lat": 31.2189,
       "lon": 121.4741,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "mixed",
-      "tags": ["design", "food", "city walk", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "design",
+        "food",
+        "city walk",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "181 Taicang Road, Huangpu District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Restored Shikumen lane blocks repurposed as upscale dining and design hub."
     },
     {
-      "name": "Oriental Pearl Tower",
+      "name": "东方明珠",
       "category": "attraction",
-      "district": "Pudong",
+      "district": "浦东新区",
       "lat": 31.2397,
       "lon": 121.4997,
       "duration_hours": 1.5,
       "ticket_price": 180,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["view", "landmark", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Century Avenue, Pudong District",
       "open_hours": "08:00-21:30",
       "rating": 4.5,
       "visit_reason": "Iconic Pudong tower with the city history museum inside — strong skyline anchor."
     },
     {
-      "name": "Tianzifang",
+      "name": "田子坊",
       "category": "attraction",
-      "district": "Huangpu",
-      "lat": 31.2110,
+      "district": "黄浦区",
+      "lat": 31.211,
       "lon": 121.4657,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["art", "design", "city walk", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "art",
+        "design",
+        "city walk",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "210 Taikang Road, Huangpu District",
       "open_hours": "10:00-22:00",
       "rating": 4.5,
       "visit_reason": "Labyrinth of art studios, boutiques, and cafes in old Shikumen alleys."
     },
     {
-      "name": "Former French Concession",
+      "name": "法租界",
       "category": "attraction",
-      "district": "Xuhui",
-      "lat": 31.2150,
-      "lon": 121.4560,
+      "district": "徐汇区",
+      "lat": 31.215,
+      "lon": 121.456,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["city walk", "design", "history", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "city walk",
+        "design",
+        "history",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Fuxing Road area, Xuhui District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Tree-lined concession-era streets for cafe culture and boutique strolling."
     },
     {
-      "name": "Shanghai Museum",
+      "name": "上海博物馆",
       "category": "attraction",
-      "district": "Huangpu",
+      "district": "黄浦区",
       "lat": 31.2295,
       "lon": 121.4731,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture", "art"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture",
+        "art"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "201 Renmin Avenue, Huangpu District",
       "open_hours": "09:00-17:00",
       "rating": 4.7,
       "visit_reason": "World-class collection of Chinese art and antiquities — best rainy-day anchor."
     },
     {
-      "name": "Nanjing Road Pedestrian Street",
+      "name": "南京路步行街",
       "category": "food",
-      "district": "Huangpu",
+      "district": "黄浦区",
       "lat": 31.2357,
       "lon": 121.4783,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["shopping", "food", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Nanjing East Road, Huangpu District",
       "open_hours": "Open 24 hours",
       "rating": 4.3,
       "visit_reason": "Shanghai's most famous commercial street — buzzing with department stores and snacks."
     },
     {
-      "name": "West Bund Museum",
+      "name": "西岸美术馆",
       "category": "attraction",
-      "district": "Xuhui",
+      "district": "徐汇区",
       "lat": 31.1909,
       "lon": 121.4592,
       "duration_hours": 2.0,
       "ticket_price": 100,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "art", "design", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "art",
+        "design",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "2555 Longteng Avenue, Xuhui District",
       "open_hours": "10:00-18:00",
       "rating": 4.7,
       "visit_reason": "Partnership museum with Paris Centre Pompidou — top contemporary art destination."
     },
     {
-      "name": "Jing'an Temple",
+      "name": "静安寺",
       "category": "attraction",
-      "district": "Jing'an",
+      "district": "静安区",
       "lat": 31.2243,
       "lon": 121.4477,
       "duration_hours": 1.0,
       "ticket_price": 50,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "temple", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "temple",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1686 Nanjing West Road, Jing'an District",
       "open_hours": "07:30-17:00",
       "rating": 4.5,

@@ -4,11 +4,23 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import re
+import time
 from dataclasses import dataclass, field
 
-from .city_names import CITY_ALIASES, normalize_city_name, provider_city_name
+from .city_names import CITY_ALIASES, normalize_city_name, normalize_location_display_name, normalize_poi_display_name, normalize_rag_query_text, provider_city_name
 from .config import Settings
-from .llm import create_response_client
+from .debug_tracer import (
+    trace_decomposition,
+    trace_plan_output,
+    trace_planner_input,
+    trace_profile,
+    trace_rag_input,
+    trace_rag_output,
+    trace_session_start,
+    trace_tool_call,
+    trace_turn_understanding,
+)
+from .llm import build_turn_understanding_messages, create_response_client
 from .planner import plan_itinerary, render_markdown_report
 from .tools.city_context import get_city_context
 from .tools.cost_adapter import get_group_c_cost_summary
@@ -17,57 +29,13 @@ from .tools.strategy_rag_adapter import get_strategy_context
 from .tools.weather_adapter import get_group_c_weather_forecast
 from .tools.poi import search_batch_pois
 from .tools.tips import get_travel_tips
-from .debug_tracer import (
-    trace_session_start,
-    trace_profile,
-    trace_decomposition,
-    trace_rag_input,
-    trace_rag_output,
-    trace_tool_call,
-    trace_planner_input,
-    trace_plan_output,
-    trace_step_timer,
-)
 
-"""Main orchestration agent for our travel planner.
+"""LLM-first orchestration layer for the travel planner.
 
-This module sits between user input and the deterministic planner. Its job is to:
-- understand what the user wants
-- keep multi-turn preference memory
-- split complex requests into smaller sub-queries
-- gather evidence from strategy / geo / conditions tools
-- call the planner only after the context is rich enough
-"""
-
-
-SYSTEM_PROMPT = """
-You are an expert travel-planning agent inspired by itinerary-builder apps.
-
-Your job is not to free-write a generic travel plan. You must orchestrate tools to:
-1. understand the city, trip duration, travel style, budget, and constraints
-2. search and normalize relevant POIs
-3. inspect weather
-4. collect local travel tips
-5. call the deterministic planner to build a structured itinerary
-6. call the report generator to produce the final markdown report
-
-Rules:
-- Start with strategy retrieval for destination knowledge unless it is already available.
-- Treat retrieved guide knowledge as planning evidence, not as decoration.
-- When strategy retrieval suggests specific POIs or neighborhoods, prefer them unless they conflict with hard constraints, weather, or budget.
-- Use POI search to normalize and verify guide recommendations instead of replacing them with arbitrary map results.
-- If the user request is sparse, use city profile suggestions plus retrieved travel-guide signals to build a plausible first itinerary.
-- Prefer geographically coherent day plans.
-- Avoid jumping across distant districts on the same day unless the user explicitly requests it.
-- Use indoor or mixed venues on poor-weather days.
-- Respect must-visit and avoid lists.
-- Keep the final answer concise but useful, and include the generated report.
-- Do not stop for clarifying questions unless the request is impossible to fulfill.
-- If dates are missing, assume the next available trip window and still produce a plan.
-- If mobility constraints are missing, assume average adult walking tolerance.
-- If a skyline preference is missing, choose the option that best fits the must-visit list and routing logic.
-- If some tools return partial data, continue with the best available information instead of asking the user to fill the gap.
-- Do not invent a route that ignores retrieved guide clusters when those clusters are available.
+The guiding design is:
+1. Let the model understand the user and produce structured state.
+2. Keep deterministic code focused on tool I/O, normalization, and safety.
+3. Avoid encoding too much product behavior in regex-heavy control flow.
 """
 
 
@@ -129,6 +97,19 @@ class ConversationRunResult:
     missing_profile_slots: list[str] = field(default_factory=list)
 
 
+@dataclass(slots=True)
+class TurnUnderstandingResult:
+    """Structured understanding of one user turn before tool execution."""
+
+    resolved_profile: dict
+    missing_profile_slots: list[str]
+    needs_clarification: bool
+    clarification_question: str = ""
+    decomposition_overrides: dict = field(default_factory=dict)
+    source: str = "heuristic"
+    raw_output: str = ""
+
+
 class TravelPlanningAgent:
     """Main orchestration agent.
 
@@ -146,7 +127,7 @@ class TravelPlanningAgent:
     }
     BUDGET_ALIASES = {
         "low": ["low budget", "budget low", "低预算", "省钱", "economy"],
-        "medium": ["medium budget", "budget medium", "中等预算", "适中预算", "中等", "中档"],
+        "medium": ["medium budget", "budget medium", "中等预算", "适中预算", "预算适中", "中等", "中档"],
         "high": ["high budget", "budget high", "高预算", "luxury", "豪华", "不限预算", "预算不是问题"],
     }
     PACE_ALIASES = {
@@ -164,84 +145,7 @@ class TravelPlanningAgent:
         "hidden gems": ["hidden gem", "小众", "冷门"],
         "night views": ["night", "night view", "夜景"],
     }
-    POI_NAME_ALIASES = {
-        "太古": "太古里",
-        "成都太古": "成都太古里",
-        "春熙": "春熙路",
-    }
-    INTEREST_QUERY_ALIASES = {
-        "landmarks": "landmark",
-        "viewpoints": "viewpoint",
-        "local food": "food market",
-        "museums": "museum",
-        "shopping": "shopping district",
-        "culture": "cultural district",
-        "family friendly": "family attraction",
-        "night views": "night view",
-        "hidden gems": "hidden gem",
-    }
-    GEO_QUERY_ALIASES = {
-        "local food": "美食街",
-        "viewpoints": "观景台",
-        "culture": "博物馆",
-        "family friendly": "亲子景区",
-        "museums": "博物馆",
-        "shopping": "购物中心",
-        "night views": "夜景",
-        "hidden gems": "小众景点",
-    }
     PROFILE_SLOT_ORDER = ("city", "trip_days", "travel_style", "budget_level", "pace", "constraints")
-    PROFILE_FLEXIBLE_REPLIES = (
-        "都可以",
-        "都行",
-        "随便",
-        "你定",
-        "你决定",
-        "你来定",
-        "无所谓",
-        "没要求",
-        "whatever",
-        "either is fine",
-        "up to you",
-    )
-    PROFILE_NEGATIVE_REPLIES = (
-        "没有",
-        "没了",
-        "none",
-        "no",
-        "不用",
-        "不需要",
-        "没有特别的",
-        "没有要求",
-        "没有必须去的",
-        "没有想避开的",
-    )
-    TRAVEL_TYPE_LABELS = {
-        "leisure": "轻松逛逛",
-        "family": "亲子友好",
-        "food": "美食优先",
-        "theme": "主题体验",
-    }
-    BUDGET_LEVEL_LABELS = {
-        "low": "低预算",
-        "medium": "中等预算",
-        "high": "高预算",
-    }
-    PACE_LABELS = {
-        "slow": "轻松节奏",
-        "balanced": "适中节奏",
-        "packed": "紧凑节奏",
-    }
-    INTEREST_LABELS = {
-        "local food": "本地美食",
-        "viewpoints": "观景夜景",
-        "culture": "文化体验",
-        "family friendly": "亲子友好",
-        "museums": "博物馆",
-        "shopping": "购物逛街",
-        "hidden gems": "小众路线",
-        "night views": "夜景",
-    }
     CHINESE_DAY_NUMBERS = {
         "一": 1,
         "二": 2,
@@ -261,23 +165,9 @@ class TravelPlanningAgent:
     }
 
     def __init__(self, settings: Settings | None = None) -> None:
-        # Load settings once for reuse across runs.
-        # The runtime is mostly deterministic today, so we only initialize the
-        # LLM client when a code path actually needs it.
         self.settings = settings or Settings.from_env()
         self.client = None
         self.model = self.settings.foundry_deployment
-        # Tool implementations exposed to the model. Names must match schemas in build_tools().
-        # This indirection lets the LLM see a clean tool contract while we keep
-        # the real Python callables configurable on our side.
-        self.tool_impls = {
-            "get_city_context": get_city_context,
-            "get_strategy_context": self._get_strategy_context,
-            "search_batch_pois": self._search_batch_pois,
-            "get_weather_forecast": self._get_weather_forecast,
-            "get_cost_summary": self._get_cost_summary,
-            "get_travel_tips": self._get_travel_tips,
-        }
 
     def _ensure_response_client(self):
         if self.client is None:
@@ -336,17 +226,14 @@ class TravelPlanningAgent:
         )
 
     @staticmethod
-    def _extract_function_calls(response) -> list:
-        # Responses API may contain multiple output item types; keep only tool calls.
-        return [item for item in response.output if getattr(item, "type", None) == "function_call"]
-
-    @staticmethod
     def _preview_tool_result(result: object, limit: int = 500) -> str:
         try:
             preview = json.dumps(result, ensure_ascii=False)
         except Exception:
             preview = str(result)
         return preview[:limit]
+
+    # --- Profile normalization helpers -------------------------------------
 
     @classmethod
     def _append_tool_log(
@@ -366,104 +253,211 @@ class TravelPlanningAgent:
         )
 
     @staticmethod
-    def build_tools() -> list[dict]:
-        # JSON schemas define the contract the model must follow when invoking tools.
-        # Keeping these schemas explicit helps the orchestration stay stable even
-        # when the user's request is vague or highly conversational.
-        return [
+    def _record_tool_latency(tool_results: dict[str, object], tool_name: str, started_at: float) -> None:
+        latencies = tool_results.setdefault("_latencies", {})
+        if isinstance(latencies, dict):
+            latencies[tool_name] = int((time.monotonic() - started_at) * 1000)
+
+    @classmethod
+    def _append_latency_log(cls, tool_results: dict[str, object]) -> None:
+        latencies = tool_results.get("_latencies")
+        if not isinstance(latencies, dict):
+            return
+        tool_results.setdefault("_logs", []).append(
             {
-                "type": "function",
-                "name": "get_strategy_context",
-                "description": "Retrieve strategy-level travel knowledge from the local RAG corpus, including recommended POIs and pitfalls.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "queries": {"type": "array", "items": {"type": "string"}},
-                        "travel_type": {"type": "string"},
-                        "top_k": {"type": "integer", "minimum": 1, "maximum": 10, "default": 8},
-                    },
-                    "required": ["city", "queries", "travel_type"],
-                    "additionalProperties": False,
-                },
-            },
-            {
-                "type": "function",
-                "name": "get_city_context",
-                "description": "Load curated city context, transport hints, and suggested search themes.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "travel_type": {"type": "string"},
-                    },
-                    "required": ["city", "travel_type"],
-                    "additionalProperties": False,
-                },
-            },
-            {
-                "type": "function",
-                "name": "search_batch_pois",
-                "description": "Search and normalize real POIs for a city based on named attractions, food spots, or neighborhoods.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "queries": {"type": "array", "items": {"type": "string"}},
-                        "limit_per_query": {"type": "integer", "minimum": 1, "maximum": 5, "default": 3},
-                    },
-                    "required": ["city", "queries"],
-                    "additionalProperties": False,
-                },
-            },
-            {
-                "type": "function",
-                "name": "get_weather_forecast",
-                "description": "Fetch date-aligned weather forecast for the trip window using the conditions provider.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "trip_days": {"type": "integer", "minimum": 1, "maximum": 14},
-                        "start_date": {"type": "string"},
-                    },
-                    "required": ["city", "trip_days"],
-                    "additionalProperties": False,
-                },
-            },
-            {
-                "type": "function",
-                "name": "get_cost_summary",
-                "description": "Estimate city-level hotel, food, and local transport budget for the trip window.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "days": {"type": "integer", "minimum": 1, "maximum": 30},
-                        "budget_level": {"type": "string"},
-                        "user_budget": {"type": ["number", "null"]},
-                    },
-                    "required": ["city", "days", "budget_level"],
-                    "additionalProperties": False,
-                },
-            },
-            {
-                "type": "function",
-                "name": "get_travel_tips",
-                "description": "Collect local travel tips and pitfalls for the selected POIs and travel style.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "city": {"type": "string"},
-                        "poi_names": {"type": "array", "items": {"type": "string"}},
-                        "travel_type": {"type": "string"},
-                        "interests": {"type": "array", "items": {"type": "string"}},
-                    },
-                    "required": ["city", "poi_names", "travel_type"],
-                    "additionalProperties": False,
-                },
-            },
+                "tool_name": "_tool_latencies",
+                "arguments": {},
+                "result_preview": cls._preview_tool_result(latencies, limit=2000),
+            }
+        )
+
+    @staticmethod
+    def _extract_json_object(raw_text: str) -> dict | None:
+        if not raw_text.strip():
+            return None
+        try:
+            return json.loads(raw_text)
+        except json.JSONDecodeError:
+            pass
+        match = re.search(r"\{[\s\S]*\}", raw_text)
+        if not match:
+            return None
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            return None
+
+    @classmethod
+    def _default_user_profile(cls, default_city: str) -> dict:
+        city = normalize_city_name(default_city) or default_city or "Hong Kong"
+        return {
+            "city": city,
+            "start_date": "",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "travelers": "friends",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "interests": [],
+            "must_visit": [],
+            "avoid": [],
+            "notes": "",
+            "extra_request": "",
+        }
+
+    @classmethod
+    def _coerce_profile_scalar(cls, value: object, allowed: set[str], aliases: dict[str, list[str]], default: str) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return default
+        lowered = text.lower()
+        if lowered in allowed:
+            return lowered
+        return cls._find_alias_group(lowered + text, aliases) or default
+
+    @classmethod
+    def _coerce_text_list(cls, value: object) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return cls._split_csv(str(value))
+
+    @classmethod
+    def _normalize_interest_item(cls, value: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            return ""
+        lowered = normalized.lower()
+        if lowered in cls.INTEREST_ALIASES:
+            return lowered
+        return cls._find_alias_group(lowered + normalized, cls.INTEREST_ALIASES) or normalized
+
+    @classmethod
+    def _sanitize_resolved_profile(
+        cls,
+        candidate: dict | None,
+        *,
+        default_city: str,
+        stored_preferences: dict | None = None,
+    ) -> dict:
+        base = deepcopy(stored_preferences) if stored_preferences else cls._default_user_profile(default_city)
+        candidate = candidate or {}
+
+        city = normalize_city_name(str(candidate.get("city", "")).strip()) or base.get("city") or default_city
+        base["city"] = city
+        start_date = str(candidate.get("start_date", base.get("start_date", "")) or "").strip()
+        base["start_date"] = start_date
+
+        trip_days_value = candidate.get("trip_days", base.get("trip_days", 3))
+        if isinstance(trip_days_value, int):
+            trip_days = trip_days_value
+        else:
+            trip_days = cls._parse_trip_days(str(trip_days_value)) or int(base.get("trip_days", 3) or 3)
+        base["trip_days"] = max(1, min(14, int(trip_days)))
+
+        base["travel_type"] = cls._coerce_profile_scalar(
+            candidate.get("travel_type", base.get("travel_type", "leisure")),
+            {"leisure", "family", "food", "theme"},
+            cls.TRAVEL_TYPE_ALIASES,
+            str(base.get("travel_type", "leisure")),
+        )
+        base["budget_level"] = cls._coerce_profile_scalar(
+            candidate.get("budget_level", base.get("budget_level", "medium")),
+            {"low", "medium", "high"},
+            cls.BUDGET_ALIASES,
+            str(base.get("budget_level", "medium")),
+        )
+        base["pace"] = cls._coerce_profile_scalar(
+            candidate.get("pace", base.get("pace", "balanced")),
+            {"slow", "balanced", "packed"},
+            cls.PACE_ALIASES,
+            str(base.get("pace", "balanced")),
+        )
+
+        travelers = str(candidate.get("travelers", base.get("travelers", "friends")) or "").strip()
+        base["travelers"] = travelers or "friends"
+
+        interests = candidate.get("interests", base.get("interests", []))
+        base["interests"] = cls._dedupe_items(
+            [
+                normalized
+                for normalized in (cls._normalize_interest_item(item) for item in cls._coerce_text_list(interests))
+                if normalized
+            ]
+        )
+
+        must_visit = candidate.get("must_visit", base.get("must_visit", []))
+        base["must_visit"] = [
+            normalized
+            for normalized in (cls._normalize_poi_name(item) for item in cls._coerce_text_list(must_visit))
+            if normalized
         ]
+        avoid = candidate.get("avoid", base.get("avoid", []))
+        base["avoid"] = [
+            normalized
+            for normalized in (cls._normalize_avoid_item(item) for item in cls._coerce_text_list(avoid))
+            if normalized
+        ]
+        if base["avoid"]:
+            base["must_visit"] = [
+                value
+                for value in base["must_visit"]
+                if not any(cls._preference_terms_conflict(value, avoid_item) for avoid_item in base["avoid"])
+            ]
+
+        for field in ("notes", "extra_request"):
+            value = candidate.get(field, base.get(field, ""))
+            base[field] = str(value or "").strip()
+
+        return base
+
+    @classmethod
+    def _normalize_llm_understanding_payload(
+        cls,
+        payload: dict | None,
+        *,
+        default_city: str,
+        stored_preferences: dict | None = None,
+    ) -> TurnUnderstandingResult | None:
+        if not payload:
+            return None
+
+        resolved_profile = cls._sanitize_resolved_profile(
+            payload.get("resolved_profile"),
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+        )
+        missing_slots = cls._order_profile_slots(payload.get("missing_profile_slots", []))
+        needs_clarification = bool(payload.get("needs_clarification"))
+        clarification_question = str(payload.get("clarification_question", "") or "").strip()
+        overrides = payload.get("decomposition_overrides") or {}
+        strategy_queries = cls._normalize_rag_queries(
+            cls._coerce_text_list(overrides.get("strategy_queries", [])),
+            resolved_profile["city"],
+        )
+        geo_queries = cls._dedupe_queries(
+            [normalize_poi_display_name(item) for item in cls._coerce_text_list(overrides.get("geo_queries", [])) if normalize_poi_display_name(item)],
+            limit=14,
+        )
+        strategy_queries = cls._filter_queries_against_avoid(strategy_queries, resolved_profile.get("avoid", []), limit=12)
+        geo_queries = cls._filter_queries_against_avoid(geo_queries, resolved_profile.get("avoid", []), limit=14)
+        planning_constraints = [str(item).strip() for item in cls._coerce_text_list(overrides.get("planning_constraints", [])) if str(item).strip()]
+
+        return TurnUnderstandingResult(
+            resolved_profile=resolved_profile,
+            missing_profile_slots=missing_slots,
+            needs_clarification=needs_clarification,
+            clarification_question=clarification_question,
+            decomposition_overrides={
+                "strategy_queries": strategy_queries,
+                "geo_queries": geo_queries,
+                "planning_constraints": planning_constraints,
+                "intent_summary": str(overrides.get("intent_summary", "") or "").strip(),
+            },
+            source="llm",
+            raw_output=json.dumps(payload, ensure_ascii=False),
+        )
 
     @staticmethod
     def _extract_clause(text: str, label: str) -> str:
@@ -487,58 +481,9 @@ class TravelPlanningAgent:
         r"^[一二两三四五六七八九十]+\s*天$",
         r"^(?:路线|行程|计划|攻略|安排)$",
     ]
-    _POI_REMOVE_PREFIX_CUES: tuple[str, ...] = (
-        "不去",
-        "不想去",
-        "先不去",
-        "不打算去",
-        "不考虑去",
-        "取消去",
-        "别去",
-        "不要去",
-        "不用去",
-        "不安排",
-        "先不安排",
-        "别安排",
-        "不要安排",
-        "去掉",
-        "删掉",
-        "移除",
-        "拿掉",
-        "撤掉",
-        "取消",
-        "remove",
-        "drop",
-        "delete",
-        "skip",
-        "cancel",
-    )
-    _POI_REMOVE_SUFFIX_CUES: tuple[str, ...] = (
-        "不去了",
-        "先不去了",
-        "不想去了",
-        "不要了",
-        "先不要了",
-        "不用去了",
-        "别安排了",
-        "不安排了",
-        "先不安排了",
-        "不考虑了",
-        "先不考虑了",
-        "取消了",
-        "取消",
-        "去掉",
-        "去掉了",
-        "删掉",
-        "删掉了",
-        "移除",
-        "拿掉",
-        "撤掉",
-        "remove",
-        "drop",
-        "deleted",
-        "skip",
-        "cancel",
+    _AVOID_REASON_SUFFIX_PATTERNS: tuple[str, ...] = (
+        r"(?:太累|太远|太贵|太挤|太热|太晒|太冷|太折腾|太麻烦|太费体力|人太多|排队太久|要排队|会很累|比较累|有点累).*$",
+        r"(?:不方便|不适合带娃|不适合老人|不适合我).*$",
     )
 
     @classmethod
@@ -550,30 +495,40 @@ class TravelPlanningAgent:
 
     @classmethod
     def _normalize_poi_name(cls, value: str) -> str:
-        # Users often mention POIs in a conversational way:
-        # "我想去太古", "然后去春熙", "成都玩三天必须去..."
-        # This helper strips those wrappers and keeps only the part we should
-        # use for POI search and must-visit matching.
-        normalized = value.strip()
+        normalized = str(value or "").strip()
         if not normalized:
             return ""
-        normalized = normalized.strip("，,；;、。.!？?：: ")
-        cleanup_patterns = [
-            r"^(?:我想去|想去|一定要去|必须去|安排去|要去|去|打卡|逛)\s*",
-            r"^(?:必须去|一定要去|安排去|要去)\s*",
-            r"^(?:再去|然后去|顺路去|以及去)\s*",
-            r"^(?:香港|东京|成都|上海|北京|广州|深圳|杭州|西安|重庆|厦门|南京)\s*(?:玩|逛|待)?\s*(?:\d+\s*天|[一二两三四五六七八九十]+\s*天)?\s*",
-            r"^(?:玩|逛)\s*(?:\d+\s*天|[一二两三四五六七八九十]+\s*天)\s*",
-        ]
-        previous = None
-        while normalized and normalized != previous:
-            previous = normalized
-            for pattern in cleanup_patterns:
-                normalized = re.sub(pattern, "", normalized).strip("，,；;、。.!？?：: ")
+        normalized = re.split(r"[，,；;。.!?\n]", normalized, maxsplit=1)[0].strip("，,；;、。.!？?：: ")
+        normalized = re.sub(
+            r"^(?:我)?(?:想去|要去|去|打卡|逛|安排去|必须去|一定要去|顺路去|然后去)\s*",
+            "",
+            normalized,
+        ).strip("，,；;、。.!？?：: ")
         normalized = re.sub(r"(?:了|啦|呀|啊|呢|吧)$", "", normalized).strip("，,；;、。.!？?：: ")
         if cls._is_noise_poi(normalized):
             return ""
-        return cls.POI_NAME_ALIASES.get(normalized, normalized)
+        return normalize_poi_display_name(normalized)
+
+    @classmethod
+    def _normalize_avoid_item(cls, value: str) -> str:
+        normalized = str(value or "").strip().strip("，,；;、。.!？?：: ")
+        if not normalized:
+            return ""
+        normalized = re.split(r"[，,；;。.!?\n]", normalized, maxsplit=1)[0].strip("，,；;、。.!？?：: ")
+        normalized = re.sub(
+            r"^(?:我)?(?:还是)?(?:先)?(?:不想|不太想|不喜欢|不爱|不要|别|避免|避开|排除|取消)\s*",
+            "",
+            normalized,
+        ).strip("，,；;、。.!？?：: ")
+        normalized = re.sub(r"^(?:去|安排|打卡|逛|看|玩|吃|爬|走|跑|坐|住)\s*", "", normalized).strip("，,；;、。.!？?：: ")
+        for pattern in cls._AVOID_REASON_SUFFIX_PATTERNS:
+            normalized = re.sub(pattern, "", normalized).strip("，,；;、。.!？?：: ")
+        normalized = re.sub(r"(?:了|啦|呀|啊|呢|吧)$", "", normalized).strip("，,；;、。.!？?：: ")
+        if cls._is_noise_poi(normalized):
+            return ""
+        if not normalized:
+            return ""
+        return normalize_poi_display_name(normalized)
 
     @classmethod
     def _match_alias_group(cls, text: str, mapping: dict[str, list[str]], default: str) -> str:
@@ -708,15 +663,44 @@ class TravelPlanningAgent:
     @classmethod
     def _parse_trip_days(cls, user_request: str) -> int | None:
         lower = user_request.lower()
-        trip_days_match = re.search(r"(\d+)\s*-\s*day|(\d+)\s+day|(\d+)\s*天", lower)
-        if trip_days_match:
-            return int(next(group for group in trip_days_match.groups() if group))
+        day_reference_prefixes = {"第", "这", "那", "哪", "某", "昨", "今", "明", "前", "后"}
 
-        chinese_days_match = re.search(r"([一二两三四五六七八九十]{1,3})\s*天", user_request)
-        if chinese_days_match:
-            days = cls.CHINESE_DAY_NUMBERS.get(chinese_days_match.group(1))
-            if days is not None:
-                return days
+        def _looks_like_day_reference(text: str, start: int) -> bool:
+            if start <= 0:
+                return False
+            return text[start - 1] in day_reference_prefixes
+
+        def _valid_days(value: int | None) -> int | None:
+            if value is None:
+                return None
+            return value if 1 <= value <= 14 else None
+
+        for trip_days_match in re.finditer(
+            r"(\d+)\s*(?:-\s*)?(?:day|days|天|日)(?:\s*(?:trip|tour|itinerary|游|游玩|行程|路线))?",
+            lower,
+        ):
+            if _looks_like_day_reference(lower, trip_days_match.start(1)):
+                continue
+            return _valid_days(int(trip_days_match.group(1)))
+
+        for chinese_days_match in re.finditer(
+            r"([一二两三四五六七八九十]{1,3})\s*(?:天|日)(?:\s*(?:游|游玩|行程|路线))?",
+            user_request,
+        ):
+            if _looks_like_day_reference(user_request, chinese_days_match.start(1)):
+                continue
+            return _valid_days(cls.CHINESE_DAY_NUMBERS.get(chinese_days_match.group(1)))
+
+        overnight_match = re.search(r"(\d+)\s*天\s*\d+\s*(?:晚|夜)", user_request)
+        if overnight_match:
+            return _valid_days(int(overnight_match.group(1)))
+
+        chinese_overnight_match = re.search(
+            r"([一二两三四五六七八九十]{1,3})\s*天\s*[一二两三四五六七八九十\d]+\s*(?:晚|夜)",
+            user_request,
+        )
+        if chinese_overnight_match:
+            return _valid_days(cls.CHINESE_DAY_NUMBERS.get(chinese_overnight_match.group(1)))
 
         if "weekend" in lower or "周末" in user_request:
             return 2
@@ -730,11 +714,9 @@ class TravelPlanningAgent:
 
     @classmethod
     def _extract_user_profile(cls, user_request: str, default_city: str = "Hong Kong") -> dict:
-        # Build a normalized profile from noisy natural language input.
-        # This function is intentionally permissive because user input is often:
-        # - incomplete
-        # - partly Chinese, partly English
-        # - not written in explicit "field: value" form
+        # Lightweight fallback only.
+        # The LLM path should handle real semantic understanding; this path just
+        # extracts a few explicit fields so the app still works without LLM creds.
         lower = user_request.lower()
         city = cls._extract_city(user_request, default_city)
 
@@ -775,36 +757,6 @@ class TravelPlanningAgent:
             "notes": notes_clause,
             "extra_request": extra_clause,
         }
-
-        # Backfill obvious must-visit items if user mentions places inline instead
-        # of using an explicit "Must visit:" clause.
-        if not profile["must_visit"]:
-            implicit_items: list[str] = []
-            for pattern in [
-                r"(?:想去|一定要去|必须去|安排去|想逛|要去)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
-            ]:
-                for match in re.finditer(pattern, user_request, flags=re.IGNORECASE):
-                    implicit_items.extend(cls._split_csv(match.group(1)))
-            profile["must_visit"] = cls._dedupe_items(
-                [n for n in (cls._normalize_poi_name(item) for item in implicit_items) if n]
-            )
-        if not profile["must_visit"]:
-            known_places = [
-                "Peak Tram",
-                "Central Market",
-                "Tsim Sha Tsui Promenade",
-                "Star Ferry",
-                "Temple Street Night Market",
-            ]
-            profile["must_visit"] = [place for place in known_places if place.lower() in lower]
-        # Infer interests from aliases when explicit "Interests:" clause is absent.
-        if not profile["interests"]:
-            inferred = []
-            combined_text = lower + user_request
-            for interest, aliases in cls.INTEREST_ALIASES.items():
-                if any(alias in combined_text for alias in aliases):
-                    inferred.append(interest)
-            profile["interests"] = inferred
         return profile
 
     @staticmethod
@@ -819,6 +771,31 @@ class TravelPlanningAgent:
             seen.add(key)
             deduped.append(query.strip())
         return deduped[:limit]
+
+    @classmethod
+    def _preference_terms_conflict(cls, left: str, right: str) -> bool:
+        left_key = cls._normalize_avoid_item(left).lower()
+        right_key = cls._normalize_avoid_item(right).lower()
+        if not left_key or not right_key:
+            return False
+        return left_key in right_key or right_key in left_key
+
+    @classmethod
+    def _query_matches_avoid_item(cls, query: str, avoid_item: str) -> bool:
+        query_key = normalize_poi_display_name(str(query or "").strip()).lower()
+        avoid_key = cls._normalize_avoid_item(avoid_item).lower()
+        if not query_key or not avoid_key:
+            return False
+        return cls._preference_terms_conflict(query_key, avoid_key)
+
+    @classmethod
+    def _filter_queries_against_avoid(cls, queries: list[str], avoid_items: list[str], limit: int = 12) -> list[str]:
+        filtered = [
+            query
+            for query in queries
+            if not any(cls._query_matches_avoid_item(query, avoid_item) for avoid_item in avoid_items)
+        ]
+        return cls._dedupe_queries(filtered, limit=limit)
 
     @classmethod
     def _dedupe_items(cls, values: list[str]) -> list[str]:
@@ -843,28 +820,6 @@ class TravelPlanningAgent:
         return cls._dedupe_items(items)
 
     @classmethod
-    def _extract_negated_memory_items(cls, user_request: str, existing_items: list[str]) -> list[str]:
-        removals: list[str] = []
-        if not existing_items:
-            return removals
-
-        for item in existing_items:
-            normalized_item = cls._normalize_poi_name(item)
-            if not normalized_item:
-                continue
-            for match in re.finditer(re.escape(normalized_item), user_request, flags=re.IGNORECASE):
-                before = user_request[max(0, match.start() - 12):match.start()]
-                after = user_request[match.end():match.end() + 12]
-                before_text = before.lower() + before
-                after_text = after.lower() + after
-                if any(cue in before_text for cue in cls._POI_REMOVE_PREFIX_CUES) or any(
-                    cue in after_text for cue in cls._POI_REMOVE_SUFFIX_CUES
-                ):
-                    removals.append(normalized_item)
-                    break
-        return cls._dedupe_items(removals)
-
-    @classmethod
     def _merge_text_field(cls, existing: str, addition: str) -> str:
         # Merge note fields as unique snippets joined by a stable delimiter.
         snippets = [snippet.strip() for snippet in [existing, addition] if snippet and snippet.strip()]
@@ -879,27 +834,47 @@ class TravelPlanningAgent:
         return " | ".join(merged)
 
     @classmethod
-    def _is_flexible_reply(cls, user_request: str) -> bool:
-        lowered = user_request.lower()
-        return any(alias in user_request or alias in lowered for alias in cls.PROFILE_FLEXIBLE_REPLIES)
+    def _order_profile_slots(cls, slots: set[str] | list[str]) -> list[str]:
+        slot_set = {slot for slot in slots if slot}
+        return [slot for slot in cls.PROFILE_SLOT_ORDER if slot in slot_set]
 
     @classmethod
-    def _is_negative_reply(cls, user_request: str) -> bool:
-        lowered = user_request.lower().strip()
-        if any(alias == lowered for alias in cls.PROFILE_NEGATIVE_REPLIES):
-            return True
-        return any(alias in user_request or alias in lowered for alias in cls.PROFILE_NEGATIVE_REPLIES)
+    def _build_clarification_question(
+        cls,
+        user_profile: dict,
+        missing_profile_slots: list[str],
+    ) -> str:
+        active_slot = missing_profile_slots[0]
+        if active_slot == "city":
+            return "为了把攻略做准一点，我先确认一下目的地：你这次想去哪个城市？"
+        if active_slot == "trip_days":
+            return "这次大概玩几天？比如 2 天、3 天、5 天都可以。"
+        if active_slot == "travel_style":
+            return (
+                "你更想走哪种路线？比如轻松逛、美食、亲子、主题体验；"
+                "如果有特别想去的点，也可以直接告诉我。"
+            )
+        if active_slot == "budget_level":
+            return "预算大概想走什么档位？低预算 / 中等 / 高预算 都可以。"
+        if active_slot == "pace":
+            return "行程节奏想轻松一点、适中，还是尽量排满？"
+
+        return "有没有一定要去或想避开的地方？没有的话直接回复“没有”，我就开始生成完整攻略。"
 
     @classmethod
-    def _extract_confirmed_profile_slots(
+    def _infer_missing_profile_slots(
         cls,
         user_request: str,
-        pending_profile_slots: list[str] | None = None,
-    ) -> set[str]:
-        combined_text = user_request.lower() + user_request
-        confirmed: set[str] = set()
-        pending_profile_slots = pending_profile_slots or []
+        stored_preferences: dict | None = None,
+    ) -> list[str]:
+        # Fallback clarification policy.
+        # If the LLM path is unavailable, we still prefer asking for key
+        # preferences on the first turn instead of silently filling them all.
+        if stored_preferences:
+            return []
 
+        missing: list[str] = []
+        combined_text = user_request.lower() + user_request
         must_visit_items = cls._extract_action_items(
             user_request,
             [
@@ -914,139 +889,104 @@ class TravelPlanningAgent:
             ],
         )
 
-        if cls._extract_explicit_city(user_request):
-            confirmed.add("city")
-        if cls._parse_trip_days(user_request) is not None:
-            confirmed.add("trip_days")
-        if (
+        if not cls._extract_explicit_city(user_request):
+            missing.append("city")
+        if cls._parse_trip_days(user_request) is None:
+            missing.append("trip_days")
+        if not (
             cls._find_alias_group(combined_text, cls.TRAVEL_TYPE_ALIASES)
             or cls._extract_clause(user_request, "Interests")
             or any(alias in combined_text for aliases in cls.INTEREST_ALIASES.values() for alias in aliases)
             or must_visit_items
             or cls._extract_clause(user_request, "Must visit")
         ):
-            confirmed.add("travel_style")
-        if cls._find_alias_group(combined_text, cls.BUDGET_ALIASES):
-            confirmed.add("budget_level")
-        if cls._find_alias_group(combined_text, cls.PACE_ALIASES):
-            confirmed.add("pace")
-        if must_visit_items or avoid_items or cls._extract_clause(user_request, "Must visit") or cls._extract_clause(user_request, "Avoid"):
-            confirmed.add("constraints")
+            missing.append("travel_style")
+        if not cls._find_alias_group(combined_text, cls.BUDGET_ALIASES):
+            missing.append("budget_level")
+        if not cls._find_alias_group(combined_text, cls.PACE_ALIASES):
+            missing.append("pace")
+        if not (must_visit_items or avoid_items or cls._extract_clause(user_request, "Must visit") or cls._extract_clause(user_request, "Avoid")):
+            missing.append("constraints")
+        return cls._order_profile_slots(missing)
 
-        if pending_profile_slots:
-            active_slot = pending_profile_slots[0]
-            if active_slot in {"travel_style", "budget_level", "pace"} and cls._is_flexible_reply(user_request):
-                confirmed.add(active_slot)
-            if active_slot == "constraints" and (cls._is_negative_reply(user_request) or cls._is_flexible_reply(user_request)):
-                confirmed.add(active_slot)
-
-        return confirmed
-
-    @classmethod
-    def _order_profile_slots(cls, slots: set[str] | list[str]) -> list[str]:
-        slot_set = {slot for slot in slots if slot}
-        return [slot for slot in cls.PROFILE_SLOT_ORDER if slot in slot_set]
-
-    @classmethod
-    def _resolve_confirmed_profile_slots(
-        cls,
-        previous_state: ConversationState | None,
-        user_request: str,
-        user_profile: dict,
-    ) -> list[str]:
-        if previous_state and previous_state.confirmed_profile_slots:
-            confirmed = set(previous_state.confirmed_profile_slots)
-        elif previous_state and previous_state.latest_plan:
-            confirmed = set(cls.PROFILE_SLOT_ORDER)
-        else:
-            confirmed = set()
-
-        previous_city = str(previous_state.preference_memory.get("city", "")).strip() if previous_state else ""
-        current_city = str(user_profile.get("city", "")).strip()
-        if previous_city and current_city and previous_city != current_city:
-            confirmed.discard("constraints")
-
-        confirmed.update(
-            cls._extract_confirmed_profile_slots(
-                user_request,
-                pending_profile_slots=previous_state.pending_profile_slots if previous_state else [],
-            )
-        )
-        return cls._order_profile_slots(confirmed)
-
-    @classmethod
-    def _next_missing_profile_slots(cls, confirmed_profile_slots: list[str]) -> list[str]:
-        confirmed = set(confirmed_profile_slots)
-        return [slot for slot in cls.PROFILE_SLOT_ORDER if slot not in confirmed]
-
-    @classmethod
-    def _build_profile_checkpoint(cls, user_profile: dict, confirmed_profile_slots: list[str]) -> str:
-        confirmed = set(confirmed_profile_slots)
-        snippets: list[str] = []
-        if "city" in confirmed and user_profile.get("city"):
-            snippets.append(f"去 {user_profile['city']}")
-        if "trip_days" in confirmed and user_profile.get("trip_days"):
-            snippets.append(f"玩 {user_profile['trip_days']} 天")
-        if "travel_style" in confirmed:
-            if user_profile.get("must_visit"):
-                snippets.append("想去 " + "、".join(user_profile["must_visit"][:2]))
-            elif user_profile.get("interests"):
-                snippets.append(
-                    "偏好 "
-                    + "、".join(cls.INTEREST_LABELS.get(item, item) for item in user_profile["interests"][:2])
-                )
-            else:
-                snippets.append(cls.TRAVEL_TYPE_LABELS.get(user_profile.get("travel_type", "leisure"), "轻松逛逛"))
-        if "budget_level" in confirmed:
-            snippets.append(cls.BUDGET_LEVEL_LABELS.get(user_profile.get("budget_level", "medium"), "中等预算"))
-        if "pace" in confirmed:
-            snippets.append(cls.PACE_LABELS.get(user_profile.get("pace", "balanced"), "适中节奏"))
-        return "，".join(snippets[:4])
-
-    @classmethod
-    def _build_clarification_question(
-        cls,
-        user_profile: dict,
-        confirmed_profile_slots: list[str],
-        missing_profile_slots: list[str],
-    ) -> str:
-        active_slot = missing_profile_slots[0]
-        checkpoint = cls._build_profile_checkpoint(user_profile, confirmed_profile_slots)
-        if active_slot == "city":
-            return "为了把攻略做准一点，我先确认一下目的地：你这次想去哪个城市？"
-        if active_slot == "trip_days":
-            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
-            return f"{prefix}这次大概玩几天？比如 2 天、3 天、5 天都可以。"
-        if active_slot == "travel_style":
-            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
-            return (
-                f"{prefix}你更想走哪种路线？比如轻松逛、美食、亲子、主题体验；"
-                "如果有特别想去的点，也可以直接告诉我。"
-            )
-        if active_slot == "budget_level":
-            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
-            return f"{prefix}预算大概想走什么档位？低预算 / 中等 / 高预算 都可以。"
-        if active_slot == "pace":
-            prefix = f"目前我先记下了：{checkpoint}。" if checkpoint else ""
-            return f"{prefix}行程节奏想轻松一点、适中，还是尽量排满？"
-
-        prefix = "信息已经差不多齐了。" if len(missing_profile_slots) == 1 else (f"目前我先记下了：{checkpoint}。" if checkpoint else "")
-        return f"{prefix}有没有一定要去或想避开的地方？没有的话直接回复“没有”，我就开始生成完整攻略。"
-
-    @classmethod
-    def _extract_profile_updates(cls, user_request: str) -> dict:
-        # Parse incremental update instructions from follow-up conversation turns.
-        # Structure:
-        # - replace: overwrite scalar/list fields when explicit instruction exists
-        # - add/remove: patch list fields incrementally
-        # - append: append text memory fields (notes/extra_request)
-        combined_text = user_request.lower() + user_request
-        updates = {
+    @staticmethod
+    def _empty_profile_updates() -> dict:
+        return {
             "replace": {},
             "add": {"interests": [], "must_visit": [], "avoid": []},
             "remove": {"interests": [], "must_visit": [], "avoid": []},
             "append": {"notes": "", "extra_request": ""},
         }
+
+    @classmethod
+    def _normalize_updates_payload(cls, updates: dict | None) -> dict:
+        normalized = cls._empty_profile_updates()
+        if not updates:
+            return normalized
+
+        for field, value in (updates.get("replace") or {}).items():
+            if value not in (None, "", []):
+                normalized["replace"][field] = value
+        for bucket in ("add", "remove"):
+            bucket_values = updates.get(bucket) or {}
+            for field in ("interests", "must_visit", "avoid"):
+                values = bucket_values.get(field) or []
+                if isinstance(values, str):
+                    values = cls._split_csv(values)
+                normalized[bucket][field].extend(str(item).strip() for item in values if str(item).strip())
+        for field in ("notes", "extra_request"):
+            value = str((updates.get("append") or {}).get(field, "") or "").strip()
+            if value:
+                normalized["append"][field] = value
+
+        for field in ("interests", "must_visit", "avoid"):
+            normalized["add"][field] = cls._dedupe_items(normalized["add"][field])
+            normalized["remove"][field] = cls._dedupe_items(normalized["remove"][field])
+        normalized["add"]["interests"] = [
+            cls._normalize_interest_item(item) for item in normalized["add"]["interests"] if cls._normalize_interest_item(item)
+        ]
+        normalized["remove"]["interests"] = [
+            cls._normalize_interest_item(item) for item in normalized["remove"]["interests"] if cls._normalize_interest_item(item)
+        ]
+        normalized["add"]["must_visit"] = [cls._normalize_poi_name(item) for item in normalized["add"]["must_visit"] if cls._normalize_poi_name(item)]
+        normalized["add"]["avoid"] = [cls._normalize_avoid_item(item) for item in normalized["add"]["avoid"] if cls._normalize_avoid_item(item)]
+        normalized["remove"]["must_visit"] = [
+            cls._normalize_poi_name(item) for item in normalized["remove"]["must_visit"] if cls._normalize_poi_name(item)
+        ]
+        normalized["remove"]["avoid"] = [
+            cls._normalize_avoid_item(item) for item in normalized["remove"]["avoid"] if cls._normalize_avoid_item(item)
+        ]
+        if "must_visit" in normalized["replace"]:
+            value = normalized["replace"]["must_visit"]
+            if isinstance(value, str):
+                value = cls._split_csv(value)
+            normalized["replace"]["must_visit"] = [
+                cls._normalize_poi_name(item) for item in value if cls._normalize_poi_name(item)
+            ]
+        if "avoid" in normalized["replace"]:
+            value = normalized["replace"]["avoid"]
+            if isinstance(value, str):
+                value = cls._split_csv(value)
+            normalized["replace"]["avoid"] = [
+                cls._normalize_avoid_item(item) for item in value if cls._normalize_avoid_item(item)
+            ]
+        if "interests" in normalized["replace"] and isinstance(normalized["replace"]["interests"], str):
+            normalized["replace"]["interests"] = cls._split_csv(normalized["replace"]["interests"])
+        if "interests" in normalized["replace"]:
+            normalized["replace"]["interests"] = [
+                cls._normalize_interest_item(item)
+                for item in normalized["replace"]["interests"]
+                if cls._normalize_interest_item(item)
+            ]
+        return normalized
+
+    @classmethod
+    def _extract_profile_updates(cls, user_request: str) -> dict:
+        # Tiny offline fallback for multi-turn edits.
+        # Keep only explicit updates here; deeper semantic interpretation should
+        # come from the LLM understanding path.
+        combined_text = user_request.lower() + user_request
+        updates = cls._empty_profile_updates()
 
         explicit_city = cls._extract_explicit_city(user_request)
         if explicit_city:
@@ -1086,22 +1026,10 @@ class TravelPlanningAgent:
         extra_clause = cls._extract_clause(user_request, "Extra request")
         if extra_clause:
             updates["append"]["extra_request"] = extra_clause
-        elif re.search(r"第\s*\d+\s*天", user_request) and re.search(
-            r"(简单|太少|不够|空|单薄|丰富|增加|加点|多安排|充实|more|denser|too simple|add)",
-            combined_text,
-        ):
-            updates["append"]["extra_request"] = user_request.strip()
 
         interests_clause = cls._extract_clause(user_request, "Interests")
         if interests_clause:
             updates["replace"]["interests"] = cls._split_csv(interests_clause)
-        else:
-            inferred_interests = [
-                interest
-                for interest, aliases in cls.INTEREST_ALIASES.items()
-                if any(alias in combined_text for alias in aliases)
-            ]
-            updates["add"]["interests"].extend(inferred_interests)
 
         must_visit_clause = cls._extract_clause(user_request, "Must visit")
         if must_visit_clause:
@@ -1133,38 +1061,37 @@ class TravelPlanningAgent:
                 user_request,
                 [
                     r"(?:avoid|skip|不要去|别去|避开|排除)\s*[:：]?\s*(.+?)(?:[。.!?]|$)",
+                    r"(?:不喜欢去|不想去|不爱去|不喜欢|不太喜欢|不爱)\s*[:：]?\s*(.+?)(?:[，,。.!?\n]|$)",
+                    r"(?:不要安排|别安排|不想安排|不喜欢安排)\s*[:：]?\s*(.+?)(?:[，,。.!?\n]|$)",
+                    r"(?:不想|不太想|别|不要)\s*(?:爬|逛|看|玩|吃|打卡|走|跑|坐|住)\s*[:：]?\s*(.+?)(?:[，,。.!?\n]|$)",
                 ],
             )
         )
 
-        for field in ("interests", "must_visit", "avoid"):
-            updates["add"][field] = cls._dedupe_items(updates["add"][field])
-            updates["remove"][field] = cls._dedupe_items(updates["remove"][field])
-        updates["add"]["must_visit"] = [cls._normalize_poi_name(item) for item in updates["add"]["must_visit"]]
-        updates["remove"]["must_visit"] = [
-            normalized
-            for normalized in (cls._normalize_poi_name(item) for item in updates["remove"]["must_visit"])
-            if normalized
-        ]
-        if "must_visit" in updates["replace"]:
-            updates["replace"]["must_visit"] = [
-                normalized
-                for normalized in (cls._normalize_poi_name(item) for item in updates["replace"]["must_visit"])
-                if normalized
-            ]
-        return updates
+        return cls._normalize_updates_payload(updates)
 
-    @classmethod
-    def _merge_preference_memory(cls, preference_memory: dict, user_request: str) -> dict:
-        # Apply parsed updates on top of previous memory to get latest preference state.
-        # This is what makes "Refine Existing Plan" feel conversational instead
-        # of forcing the user to repeat the whole trip profile every time.
+    @staticmethod
+    def _summarize_plan_for_intent_understanding(plan: dict | None) -> str:
+        if not plan:
+            return "暂无上一版行程。"
+        lines: list[str] = []
+        for day in plan.get("days", [])[:10]:
+            stops = [item.get("poi_name", "") for item in day.get("items", []) if item.get("poi_name")]
+            lines.append(
+                f"第{day.get('day_index', '?')}天｜区域：{day.get('area', '')}｜主题：{day.get('theme', '')}｜点位：{'、'.join(stops[:6])}"
+            )
+        return "\n".join(lines) or "暂无上一版行程。"
+
+    def _merge_preference_memory(
+        self,
+        preference_memory: dict,
+        user_request: str,
+    ) -> dict:
+        # Fallback-only incremental merge.
+        # In the normal path, the LLM already returns the fully resolved profile.
         merged = deepcopy(preference_memory)
-        updates = cls._extract_profile_updates(user_request)
-        updates["remove"]["must_visit"] = cls._dedupe_items(
-            updates["remove"]["must_visit"]
-            + cls._extract_negated_memory_items(user_request, list(merged.get("must_visit", [])))
-        )
+        rule_updates = self._extract_profile_updates(user_request)
+        updates = self._normalize_updates_payload(rule_updates)
         city_changed = False
         previous_city = str(merged.get("city", "")).strip()
 
@@ -1181,12 +1108,12 @@ class TravelPlanningAgent:
             merged["extra_request"] = ""
 
         for field in ("interests", "must_visit", "avoid"):
-            current_values = cls._dedupe_items(list(merged.get(field, [])))
+            current_values = self._dedupe_items(list(merged.get(field, [])))
             removals = {value.lower() for value in updates["remove"].get(field, [])}
             if removals:
                 current_values = [value for value in current_values if value.lower() not in removals]
             current_values.extend(updates["add"].get(field, []))
-            merged[field] = cls._dedupe_items(current_values)
+            merged[field] = self._dedupe_items(current_values)
 
         # Conflict resolution rule: avoid-list wins over must-visit to prevent unsafe plans.
         must_visit_keys = {value.lower() for value in merged.get("must_visit", [])}
@@ -1197,33 +1124,176 @@ class TravelPlanningAgent:
             ]
 
         if updates["append"]["notes"]:
-            merged["notes"] = cls._merge_text_field(merged.get("notes", ""), updates["append"]["notes"])
+            merged["notes"] = self._merge_text_field(merged.get("notes", ""), updates["append"]["notes"])
         if updates["append"]["extra_request"]:
-            merged["extra_request"] = cls._merge_text_field(
+            merged["extra_request"] = self._merge_text_field(
                 merged.get("extra_request", ""),
                 updates["append"]["extra_request"],
             )
 
-        return merged
+        return self._sanitize_resolved_profile(
+            merged,
+            default_city=str(merged.get("city", "") or self.settings.default_city),
+        )
 
-    @classmethod
     def _resolve_user_profile(
-        cls,
+        self,
         user_request: str,
         *,
         default_city: str,
         stored_preferences: dict | None = None,
     ) -> dict:
-        # Multi-turn: merge into memory. Single-turn: fresh extraction.
         if stored_preferences:
-            return cls._merge_preference_memory(stored_preferences, user_request)
-        return cls._extract_user_profile(user_request, default_city=default_city)
+            return self._merge_preference_memory(stored_preferences, user_request)
+        base_profile = self._sanitize_resolved_profile(
+            self._extract_user_profile(user_request, default_city=default_city),
+            default_city=default_city,
+        )
+        return self._merge_preference_memory(base_profile, user_request)
+
+    # --- LLM-first turn understanding --------------------------------------
+
+    def _llm_understand_turn(
+        self,
+        *,
+        user_request: str,
+        default_city: str,
+        stored_preferences: dict | None = None,
+        latest_plan: dict | None = None,
+    ) -> TurnUnderstandingResult | None:
+        # Main understanding path.
+        # The model receives the schema plus conversation context and returns a
+        # single JSON object that already contains both the resolved profile and
+        # the search/planning hints needed by downstream tools.
+        if not self.settings.has_llm_credentials:
+            return None
+
+        try:
+            client = self._ensure_response_client()
+        except Exception:
+            return None
+
+        supported_cities = sorted(set(CITY_ALIASES.values()))
+        import datetime as _dt
+        today_iso = _dt.date.today().isoformat()
+        messages = build_turn_understanding_messages(
+            default_city=default_city,
+            user_request=user_request,
+            supported_cities=supported_cities,
+            stored_preferences=stored_preferences,
+            latest_plan_summary=self._summarize_plan_for_intent_understanding(latest_plan),
+            today_iso=today_iso,
+        )
+
+        try:
+            response = client.responses.create(
+                model=self.model,
+                input=messages,
+            )
+        except Exception:
+            return None
+
+        parsed = self._extract_json_object(getattr(response, "output_text", "") or "")
+        understanding = self._normalize_llm_understanding_payload(
+            parsed,
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+        )
+        if understanding:
+            understanding.raw_output = getattr(response, "output_text", "") or understanding.raw_output
+        return understanding
+
+    # --- Retrieval decomposition and orchestration -------------------------
+
+    def _heuristic_understand_turn(
+        self,
+        *,
+        user_request: str,
+        default_city: str,
+        stored_preferences: dict | None = None,
+        latest_plan: dict | None = None,
+    ) -> TurnUnderstandingResult:
+        # Small offline fallback for environments without LLM credentials.
+        # We keep it intentionally conservative instead of trying to replicate
+        # the full semantic understanding logic with rules.
+        resolved_profile = self._resolve_user_profile(
+            user_request,
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+        )
+        missing_profile_slots = self._infer_missing_profile_slots(
+            user_request,
+            stored_preferences=stored_preferences,
+        )
+        clarification_question = ""
+        if missing_profile_slots:
+            clarification_question = self._build_clarification_question(
+                user_profile=resolved_profile,
+                missing_profile_slots=missing_profile_slots,
+            )
+
+        city_context = get_city_context(resolved_profile["city"], resolved_profile["travel_type"])
+        decomposition = self._decompose_request(user_request, resolved_profile, city_context=city_context)
+        return TurnUnderstandingResult(
+            resolved_profile=resolved_profile,
+            missing_profile_slots=missing_profile_slots,
+            needs_clarification=bool(missing_profile_slots),
+            clarification_question=clarification_question,
+            decomposition_overrides={
+                "strategy_queries": decomposition.get("strategy_queries", []),
+                "geo_queries": decomposition.get("geo_queries", []),
+                "planning_constraints": decomposition.get("planning_constraints", []),
+                "intent_summary": user_request.strip(),
+            },
+            source="heuristic",
+            raw_output="",
+        )
+
+    def _understand_turn(
+        self,
+        *,
+        user_request: str,
+        default_city: str,
+        stored_preferences: dict | None = None,
+        latest_plan: dict | None = None,
+    ) -> TurnUnderstandingResult:
+        llm_result = self._llm_understand_turn(
+            user_request=user_request,
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+            latest_plan=latest_plan,
+        )
+        if llm_result:
+            return llm_result
+        return self._heuristic_understand_turn(
+            user_request=user_request,
+            default_city=default_city,
+            stored_preferences=stored_preferences,
+            latest_plan=latest_plan,
+        )
+
+    @classmethod
+    def _contains_chinese(cls, text: str) -> bool:
+        return any("一" <= ch <= "鿿" for ch in text)
+
+    @classmethod
+    def _normalize_rag_queries(cls, queries: list[str], city: str) -> list[str]:
+        normalized: list[str] = []
+        for query in queries:
+            normalized_query = normalize_rag_query_text(query)
+            if not normalized_query:
+                continue
+            if cls._contains_chinese(normalized_query):
+                normalized.append(normalized_query)
+            # English-only queries are poor fits for the Chinese guide corpus.
+            # Keep only those that become Chinese after normalization.
+        return cls._dedupe_queries(normalized, limit=12)
 
     @classmethod
     def _build_strategy_queries(cls, user_profile: dict, city_context: dict | None = None) -> list[str]:
-        # Build high-level discovery queries for POI/theme exploration.
-        # These queries are meant for the strategy/RAG side, so they can be
-        # broader and more thematic than map-search queries.
+        # Fallback query builder only.
+        # In the normal path the LLM already emits strategy_queries; here we only
+        # provide a small amount of deterministic padding for sparse requests.
         queries: list[str] = []
         city = user_profile.get("city", "")
         rag_city = provider_city_name(city, "zh") or city
@@ -1233,103 +1303,110 @@ class TravelPlanningAgent:
             queries.append(poi_name)
             if rag_city and rag_city not in poi_name:
                 queries.append(f"{rag_city} {poi_name}")
-        if user_profile.get("notes"):
-            note_parts = [part.strip() for part in re.split(r"[\n,，;；/|]+", user_profile["notes"]) if part.strip()]
-            queries.extend(note_parts[:6])
         if city_context:
             queries.extend(city_context.get("suggested_queries", [])[:4])
-
-        for interest in user_profile.get("interests", []):
-            alias = cls.INTEREST_QUERY_ALIASES.get(interest, interest)
-            if rag_city:
-                queries.append(f"{rag_city} {alias}")
-            else:
-                queries.append(alias)
+            if not user_profile.get("must_visit"):
+                queries.extend(city_context.get("seed_poi_names", [])[:4])
 
         if city_context:
             recommended_areas = [item.get("name", "") for item in city_context.get("recommended_areas", []) if item.get("name")]
             queries.extend(recommended_areas[:3])
 
-        return cls._dedupe_queries(queries, limit=12)
+        return cls._filter_queries_against_avoid(
+            cls._normalize_rag_queries(queries, city),
+            user_profile.get("avoid", []),
+            limit=12,
+        )
 
     @classmethod
-    def _decompose_request(
+    def _build_decomposition(
         cls,
+        *,
         user_request: str,
         user_profile: dict,
         city_context: dict | None = None,
+        understanding: TurnUnderstandingResult | None = None,
     ) -> dict:
-        # Convert one user request into parallelizable subtasks:
-        # - strategy queries (thematic ideas)
-        # - geo queries (routeable POIs)
-        # - condition queries (weather + budget)
-        # plus planning constraints for deterministic planner.
-        #
-        # This is the main "agentic workflow" step. Instead of throwing the
-        # entire user question at every tool, we decompose it into smaller asks.
+        # Prefer the model's structured decomposition output. Deterministic code
+        # only fills essential gaps so downstream tool calls always have enough
+        # input to run.
         city = user_profile["city"]
         rag_city = provider_city_name(city, "zh") or city
         combined_text = " ".join(
             part for part in [user_request, user_profile.get("notes", ""), user_profile.get("extra_request", "")] if part
         ).lower()
+        overrides = understanding.decomposition_overrides if understanding else {}
 
-        strategy_queries = cls._build_strategy_queries(user_profile, city_context)
-        geo_queries = list(user_profile.get("must_visit", []))
-        provider_city = provider_city_name(city, "zh")
-        geo_queries.extend(
-            f"{provider_city} {poi_name}"
-            for poi_name in user_profile.get("must_visit", [])
-            if poi_name and provider_city and provider_city not in poi_name
-        )
-        geo_queries.extend(
-            part.strip()
-            for part in re.split(r"[\n,，;；/|]+", user_profile.get("notes", ""))
-            if 2 <= len(part.strip()) <= 40
-        )
-        for interest in user_profile.get("interests", []):
-            alias = cls.GEO_QUERY_ALIASES.get(interest, interest)
-            geo_queries.append(f"{city} {alias}")
+        strategy_queries = cls._coerce_text_list(overrides.get("strategy_queries", []))
+        geo_queries = [
+            normalize_poi_display_name(item)
+            for item in cls._coerce_text_list(overrides.get("geo_queries", []))
+            if normalize_poi_display_name(item)
+        ]
+        planning_constraints = [
+            str(item).strip()
+            for item in cls._coerce_text_list(overrides.get("planning_constraints", []))
+            if str(item).strip()
+        ]
 
-        if user_profile["travel_type"] == "family":
-            strategy_queries.append(f"{rag_city} 亲子游")
-        if user_profile["travel_type"] == "food":
-            strategy_queries.append(f"{rag_city} 美食路线")
-        if user_profile["trip_days"] > 1:
-            strategy_queries.append(f"{rag_city} {user_profile['trip_days']}天 行程")
+        if not strategy_queries:
+            strategy_queries = cls._build_strategy_queries(user_profile, city_context)
+            if user_profile["trip_days"] > 1:
+                strategy_queries.append(f"{rag_city} {user_profile['trip_days']}天 行程")
+            if user_profile["budget_level"] != "medium":
+                strategy_queries.append(f"{rag_city} {user_profile['budget_level']} 预算 玩法")
+        typed_strategy_queries = [
+            f"{rag_city} {user_profile['trip_days']}天 路线 攻略",
+            f"{rag_city} 本地人 推荐 小众",
+            f"{rag_city} 旅游 避坑 排队 预约",
+        ]
+        if user_profile.get("travel_type") == "food" or any(
+            "food" in str(item).lower() or "美食" in str(item) or "吃" in str(item)
+            for item in user_profile.get("interests", [])
+        ):
+            typed_strategy_queries.append(f"{rag_city} 美食 小吃 本地推荐")
+        if user_profile.get("travel_type") == "family":
+            typed_strategy_queries.append(f"{rag_city} 亲子 轻松 路线")
+        for query in typed_strategy_queries:
+            if query not in strategy_queries:
+                strategy_queries.append(query)
 
-        if city_context:
-            fallback_geo = city_context.get("suggested_queries", [])[:4]
-            if geo_queries:
-                # Keep user-requested POIs first, but always blend in a few city defaults so sparse requests
-                # still have enough candidate places to fill multi-day itineraries.
-                geo_queries.extend(fallback_geo[: max(0, min(3, user_profile["trip_days"]))])
-            else:
-                geo_queries.extend(fallback_geo)
+        if not geo_queries:
+            geo_queries = list(user_profile.get("must_visit", []))
+            provider_city = provider_city_name(city, "zh")
+            geo_queries.extend(
+                f"{provider_city} {poi_name}"
+                for poi_name in user_profile.get("must_visit", [])
+                if poi_name and provider_city and provider_city not in poi_name
+            )
+            if city_context:
+                fallback_geo = city_context.get("seed_poi_names", [])[:4] or city_context.get("suggested_queries", [])[:4]
+                if geo_queries:
+                    geo_queries.extend(fallback_geo[: max(0, min(3, user_profile["trip_days"]))])
+                else:
+                    geo_queries.extend(fallback_geo)
+
+        if not planning_constraints:
+            planning_constraints = [
+                f"Pace target: {user_profile['pace']}",
+                f"Budget target: {user_profile['budget_level']}",
+                f"Travel type: {user_profile['travel_type']}",
+            ]
+            if user_profile.get("must_visit"):
+                planning_constraints.append(f"Must keep these if possible: {', '.join(user_profile['must_visit'])}")
+            if user_profile.get("avoid"):
+                planning_constraints.append(f"Avoid these places or patterns: {', '.join(user_profile['avoid'])}")
+            if user_profile.get("extra_request"):
+                planning_constraints.append(f"Extra request: {user_profile['extra_request']}")
 
         rain_sensitive = any(
             term in combined_text
             for term in ["rain", "rainy", "umbrella", "indoor", "下雨", "雨天", "室内"]
         )
-        if rain_sensitive:
+        if rain_sensitive and not any("weather-safe" in item.lower() or "indoor" in item.lower() or "雨天" in item for item in strategy_queries):
             strategy_queries.append(f"{rag_city} 雨天 室内")
-
-        if user_profile["budget_level"] != "medium":
-            budget_label = cls.BUDGET_LEVEL_LABELS.get(user_profile["budget_level"], user_profile["budget_level"])
-            strategy_queries.append(f"{rag_city} {budget_label} 玩法")
-
-        planning_constraints = [
-            f"Pace target: {user_profile['pace']}",
-            f"Budget target: {user_profile['budget_level']}",
-            f"Travel type: {user_profile['travel_type']}",
-        ]
-        if user_profile.get("must_visit"):
-            planning_constraints.append(f"Must keep these if possible: {', '.join(user_profile['must_visit'])}")
-        if user_profile.get("avoid"):
-            planning_constraints.append(f"Avoid these places or patterns: {', '.join(user_profile['avoid'])}")
-        if rain_sensitive:
+        if rain_sensitive and "Need indoor backups or weather-safe swaps." not in planning_constraints:
             planning_constraints.append("Need indoor backups or weather-safe swaps.")
-        if user_profile.get("extra_request"):
-            planning_constraints.append(f"Extra request: {user_profile['extra_request']}")
 
         condition_queries = {
             "weather": {
@@ -1349,28 +1426,30 @@ class TravelPlanningAgent:
 
         return {
             "original_request": user_request,
-            "strategy_queries": cls._dedupe_queries(strategy_queries, limit=14),
-            "geo_queries": cls._dedupe_queries(geo_queries, limit=14),
+            "strategy_queries": cls._filter_queries_against_avoid(
+                cls._normalize_rag_queries(strategy_queries, city),
+                user_profile.get("avoid", []),
+                limit=14,
+            ),
+            "geo_queries": cls._filter_queries_against_avoid(geo_queries, user_profile.get("avoid", []), limit=14),
             "condition_queries": condition_queries,
-            "planning_constraints": planning_constraints,
+            "planning_constraints": cls._dedupe_items(planning_constraints),
             "synthesis_goal": f"Produce one executable {user_profile['trip_days']}-day itinerary JSON for {city}.",
         }
 
-    @staticmethod
-    def _build_structured_agent_input(user_request: str, user_profile: dict, decomposition: dict) -> str:
-        # Feed the model with explicit structured context to reduce hallucinated assumptions.
-        # The more we tell the model about already-resolved structure, the less
-        # likely it is to skip tools or make up missing details.
-        return "\n".join(
-            [
-                f"Original request: {user_request}",
-                f"Normalized profile: {json.dumps(user_profile, ensure_ascii=False)}",
-                f"Strategy subtasks: {json.dumps(decomposition['strategy_queries'], ensure_ascii=False)}",
-                f"Geo subtasks: {json.dumps(decomposition['geo_queries'], ensure_ascii=False)}",
-                f"Condition subtasks: {json.dumps(decomposition['condition_queries'], ensure_ascii=False)}",
-                f"Planning constraints: {json.dumps(decomposition['planning_constraints'], ensure_ascii=False)}",
-                f"Synthesis goal: {decomposition['synthesis_goal']}",
-            ]
+    @classmethod
+    def _decompose_request(
+        cls,
+        user_request: str,
+        user_profile: dict,
+        city_context: dict | None = None,
+        understanding: TurnUnderstandingResult | None = None,
+    ) -> dict:
+        return cls._build_decomposition(
+            user_request=user_request,
+            user_profile=user_profile,
+            city_context=city_context,
+            understanding=understanding,
         )
 
     @staticmethod
@@ -1387,6 +1466,25 @@ class TravelPlanningAgent:
             for item in merged["tips"]
             if isinstance(item, dict)
         }
+        evidence_by_poi = strategy_context.get("strategy_evidence_by_poi", {}) or {}
+        for entries in evidence_by_poi.values():
+            for evidence in entries[:1]:
+                poi_name = str(evidence.get("poi_name", "")).strip()
+                snippet = str(evidence.get("snippet", "")).strip()[:180]
+                role = str(evidence.get("role", "")).strip()
+                if not poi_name or not snippet or role in {"transit", "pitfall"}:
+                    continue
+                key = (poi_name.lower(), snippet.lower())
+                if key not in existing_pairs:
+                    merged["tips"].append(
+                        {
+                            "poi_name": poi_name,
+                            "tip": snippet,
+                            "source": evidence.get("source_title", ""),
+                            "role": role,
+                        }
+                    )
+                    existing_pairs.add(key)
         for result in strategy_context.get("results", []):
             text = str(result.get("chunk_text", "")).strip()
             if not text:
@@ -1421,10 +1519,16 @@ class TravelPlanningAgent:
             for poi_name in user_profile.get("must_visit", [])
             if poi_name.strip().lower() not in existing_names
         ]
+        poi_roles = (strategy_context or {}).get("poi_roles", {}) or {}
+        high_value_roles = {"anchor", "nearby_walk"}
+        allow_food_strategy_pois = user_profile.get("travel_type") == "food" or "local food" in set(user_profile.get("interests", []))
+        if allow_food_strategy_pois:
+            high_value_roles.add("food")
         missing_strategy_queries = [
             poi_name
             for poi_name in (strategy_context or {}).get("recommended_pois", [])
             if poi_name.strip().lower() not in existing_names
+            and poi_roles.get(poi_name.strip().lower(), "anchor") in high_value_roles
         ][:6]
         missing_queries = self._dedupe_queries(missing_must_visit + missing_strategy_queries, limit=8)
         if not missing_queries:
@@ -1440,16 +1544,6 @@ class TravelPlanningAgent:
         for item in extra_result.get("results", []):
             name_key = str(item.get("name", "")).strip().lower()
             if not name_key or name_key in seen:
-                continue
-            # Verify the returned POI name meaningfully matches the query that produced it.
-            # Amap fuzzy-matches "黄鹤楼" in Chengdu and returns "新场黄鹤楼" — we keep it
-            # only if at least 2 characters from the original query appear in the result name.
-            query_for_item = next(
-                (q for q in missing_queries if q.strip().lower() == name_key or
-                 sum(1 for ch in q if ch in item.get("name", "")) >= 2),
-                None,
-            )
-            if query_for_item is None:
                 continue
             merged_results.append(item)
             seen.add(name_key)
@@ -1483,7 +1577,7 @@ class TravelPlanningAgent:
         return summary
 
     @staticmethod
-    def _render_budget_section(cost_summary: dict | None, budget_summary: dict) -> str:
+    def _render_budget_section(cost_summary: dict | None, budget_summary: dict, *, zh: bool = False) -> str:
         # Render an optional markdown budget block for final report.
         if not cost_summary:
             return ""
@@ -1491,30 +1585,65 @@ class TravelPlanningAgent:
         totals = cost_summary.get("totals", {})
         budget_fit = cost_summary.get("budget_fit", {})
         breakdown = cost_summary.get("breakdown", {})
-        lines = [
-            "## Budget Envelope",
-            f"- Trip estimate: CNY {totals.get('min', 0):.0f}-{totals.get('max', 0):.0f}",
-            f"- Attraction estimate in current itinerary: CNY {budget_summary.get('estimated_core_attraction_cost', 0):.0f}",
-        ]
+        if zh:
+            lines = [
+                "## 预算概览",
+                f"- 行程总预算估算：¥ {totals.get('min', 0):.0f}-{totals.get('max', 0):.0f}",
+                f"- 当前行程景点门票估算：¥ {budget_summary.get('estimated_core_attraction_cost', 0):.0f}",
+            ]
+        else:
+            lines = [
+                "## Budget Envelope",
+                f"- Trip estimate: CNY {totals.get('min', 0):.0f}-{totals.get('max', 0):.0f}",
+                f"- Attraction estimate in current itinerary: CNY {budget_summary.get('estimated_core_attraction_cost', 0):.0f}",
+            ]
         if breakdown:
             hotel = breakdown.get("hotel_per_night", {})
             food = breakdown.get("food_per_day", {})
             transport = breakdown.get("local_transport_total", {})
-            lines.extend(
-                [
-                    f"- Hotel per night: CNY {hotel.get('min', 0):.0f}-{hotel.get('max', 0):.0f}",
-                    f"- Food per day: CNY {food.get('min', 0):.0f}-{food.get('max', 0):.0f}",
-                    f"- Local transport total: CNY {transport.get('min', 0):.0f}-{transport.get('max', 0):.0f}",
-                ]
-            )
+            if zh:
+                lines.extend(
+                    [
+                        f"- 酒店每晚参考：¥ {hotel.get('min', 0):.0f}-{hotel.get('max', 0):.0f}",
+                        f"- 每日餐饮参考：¥ {food.get('min', 0):.0f}-{food.get('max', 0):.0f}",
+                        f"- 当地交通参考：¥ {transport.get('min', 0):.0f}-{transport.get('max', 0):.0f}",
+                    ]
+                )
+            else:
+                lines.extend(
+                    [
+                        f"- Hotel per night: CNY {hotel.get('min', 0):.0f}-{hotel.get('max', 0):.0f}",
+                        f"- Food per day: CNY {food.get('min', 0):.0f}-{food.get('max', 0):.0f}",
+                        f"- Local transport total: CNY {transport.get('min', 0):.0f}-{transport.get('max', 0):.0f}",
+                    ]
+                )
         if budget_fit.get("user_budget") is not None:
             lines.append(
-                f"- User budget fit: {'within budget' if budget_fit.get('within_budget') else 'above full budget range'}"
+                (
+                    f"- 用户预算匹配：{'在预算内' if budget_fit.get('within_budget') else '高于当前完整方案预算'}"
+                    if zh
+                    else f"- User budget fit: {'within budget' if budget_fit.get('within_budget') else 'above full budget range'}"
+                )
             )
             if budget_fit.get("minimum_feasible") and not budget_fit.get("within_budget"):
-                lines.append("- Minimum feasible version is possible, but the upper end exceeds the stated budget.")
+                lines.append(
+                    "- 低配版本仍可行，但完整方案的上限会超过当前预算。"
+                    if zh
+                    else "- Minimum feasible version is possible, but the upper end exceeds the stated budget."
+                )
         for note in cost_summary.get("pricing_notes", [])[:2]:
-            lines.append(f"- Note: {note}")
+            localized_note = note
+            if zh:
+                localized_note = (
+                    "当前预算只覆盖酒店、餐饮和本地交通。"
+                    if note == "Budget currently covers hotel, food, and local transport only."
+                    else (
+                        "长途交通和景点门票暂未计入，除非后续有其他数据源补充。"
+                        if note == "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+                        else note
+                    )
+                )
+            lines.append(f"- {'说明' if zh else 'Note'}: {localized_note}")
         return "\n".join(lines)
 
     @staticmethod
@@ -1549,13 +1678,19 @@ class TravelPlanningAgent:
         )
 
     @staticmethod
-    def _render_hotel_section(hotel_recommendations: dict | None) -> str:
+    def _render_hotel_section(hotel_recommendations: dict | None, *, zh: bool = False) -> str:
         # Render concise markdown section with areas + top hotel candidates.
         if not hotel_recommendations:
             return ""
-        lines = ["## Stay Suggestions"]
+        lines = ["## 住宿建议" if zh else "## Stay Suggestions"]
         for area in hotel_recommendations.get("recommended_areas", [])[:3]:
-            lines.append(f"- Area: {area.get('district', 'Unknown')} — {area.get('reason', '')}")
+            district_label = normalize_location_display_name(area.get("district", "Unknown")) if zh else area.get("district", "Unknown")
+            reason = area.get("reason", "")
+            if zh and reason == "Matches the itinerary's highest-frequency districts.":
+                reason = "与当前行程最集中的活动片区最匹配。"
+            lines.append(
+                f"- {'区域' if zh else 'Area'}: {district_label} — {reason}"
+            )
         for hotel in hotel_recommendations.get("hotel_candidates", [])[:3]:
             price_text = (
                 f"CNY {float(hotel['min_price']):.0f}+"
@@ -1564,12 +1699,20 @@ class TravelPlanningAgent:
             )
             district = hotel.get("district") or "Unknown district"
             lines.append(
-                f"- Hotel: {hotel.get('name', 'Unknown')} ({district}, {price_text}, source: {hotel.get('source', 'unknown')})"
+                f"- {'酒店' if zh else 'Hotel'}: {hotel.get('name', 'Unknown')} ({normalize_location_display_name(district) if zh else district}, {price_text}, {'来源' if zh else 'source'}: {hotel.get('source', 'unknown')})"
             )
             if hotel.get("price_note"):
-                lines.append(f"  Note: {hotel['price_note']}")
+                lines.append(f"  {'说明' if zh else 'Note'}: {hotel['price_note']}")
         for note in hotel_recommendations.get("selection_notes", [])[:2]:
-            lines.append(f"- Note: {note}")
+            localized_note = note
+            if zh:
+                if note == "Hotels are ranked by itinerary district match first, then by price visibility and source quality.":
+                    localized_note = "酒店优先按和行程片区的匹配度排序，其次参考价格可见性和数据来源质量。"
+                elif note.startswith("Current hotel budget reference is up to CNY "):
+                    localized_note = note.replace("Current hotel budget reference is up to CNY ", "当前酒店预算参考上限约为每晚 ¥ ").replace(" per night.", "。")
+                elif note == "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide.":
+                    localized_note = "当前没有拿到实时酒店候选，可先按推荐住宿区域作为备选。"
+            lines.append(f"- {'说明' if zh else 'Note'}: {localized_note}")
         return "\n".join(lines)
 
     @staticmethod
@@ -1579,6 +1722,17 @@ class TravelPlanningAgent:
         if not strategy_context:
             return []
         references: list[str] = []
+        for hint in strategy_context.get("route_pair_hints", [])[:3]:
+            left = str(hint.get("from", "")).strip()
+            right = str(hint.get("to", "")).strip()
+            evidence = str(hint.get("evidence", "")).strip()
+            if left and right and evidence:
+                references.append(f"{left} - {right}: {evidence[:100]}")
+        for chunk in strategy_context.get("evidence_chunks", [])[:3]:
+            snippet = str(chunk.get("snippet", "")).strip()
+            title = str(chunk.get("source_title", "")).strip()
+            if snippet:
+                references.append((f"{title}: " if title else "") + snippet[:110])
         for result in strategy_context.get("results", [])[:3]:
             text = str(result.get("chunk_text", "")).strip()
             if not text:
@@ -1593,7 +1747,14 @@ class TravelPlanningAgent:
             district = str(neighborhood.get("district", "")).strip()
             if district:
                 references.append(f"攻略里这个区域被反复提到：{district}")
-        return references[:4]
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for item in references:
+            key = item.strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                deduped.append(item)
+        return deduped[:5]
 
     def _build_orchestration_payload(
         self,
@@ -1704,12 +1865,7 @@ class TravelPlanningAgent:
         )
 
     def _auto_finish(self, user_profile: dict, tool_results: dict) -> AgentRunResult:
-        # Deterministic finalization path once minimum required tool data is present.
-        # The planner is called only after we have enough:
-        # - city context
-        # - POIs
-        # - weather
-        # - travel tips / strategy context
+        # Final deterministic assembly step after all upstream context is ready.
         city_context = tool_results["get_city_context"]
         strategy_context = tool_results.get("get_strategy_context", {})
         poi_result = self._augment_poi_results_with_strategy(
@@ -1718,7 +1874,6 @@ class TravelPlanningAgent:
             strategy_context,
         )
         tool_results["search_batch_pois"] = poi_result
-        trace_planner_input(strategy_context, len(poi_result.get("results", [])))
         weather = tool_results["get_weather_forecast"]
         cost_summary = tool_results.get("get_cost_summary")
         tips = self._merge_strategy_into_travel_tips(
@@ -1726,6 +1881,7 @@ class TravelPlanningAgent:
             strategy_context,
         )
         tool_results["get_travel_tips"] = tips
+        trace_planner_input(strategy_context, len(poi_result.get("results", [])))
         plan = plan_itinerary(
             user_profile=user_profile,
             candidate_pois=poi_result["results"],
@@ -1756,8 +1912,14 @@ class TravelPlanningAgent:
             cost_summary=cost_summary,
         )
         tool_results["get_hotel_candidates"] = hotel_recommendations
-        budget_section = self._render_budget_section(cost_summary, budget_summary)
-        hotel_section = self._render_hotel_section(hotel_recommendations)
+        plan["conditions_context"] = {
+            "weather": weather,
+            "cost_summary": cost_summary,
+            "budget_summary": budget_summary,
+        }
+        plan["lodging_context"] = hotel_recommendations
+        budget_section = self._render_budget_section(cost_summary, budget_summary, zh=True)
+        hotel_section = self._render_hotel_section(hotel_recommendations, zh=True)
         sections = [report]
         if budget_section:
             sections.append(budget_section)
@@ -1776,25 +1938,54 @@ class TravelPlanningAgent:
         user_request: str,
         max_rounds: int = 8,
         stored_preferences: dict | None = None,
+        stored_plan: dict | None = None,
+        understanding: TurnUnderstandingResult | None = None,
     ) -> tuple[dict, dict, dict, str]:
-        # Core control loop:
-        # 1) normalize request/profile
-        # 2) let model decide tool sequence
-        # 3) execute tool calls and return outputs
-        # 4) auto-finish when required tool set is complete
-        # 5) fallback-fill missing tools if model stops early
+        # End-to-end orchestration:
+        # 1. understand the turn
+        # 2. derive retrieval subtasks
+        # 3. call deterministic tools
+        # 4. hand everything to the planner/report renderer
         default_city = stored_preferences.get("city", self.settings.default_city) if stored_preferences else self.settings.default_city
-        trace_session_start(user_request)
-        user_profile = self._resolve_user_profile(
+        should_trace_understanding = understanding is None
+        if should_trace_understanding:
+            trace_session_start(user_request)
+        if understanding is None:
+            understanding = self._understand_turn(
+                user_request=user_request,
+                default_city=default_city,
+                stored_preferences=stored_preferences,
+                latest_plan=stored_plan,
+            )
+        user_profile = understanding.resolved_profile
+        if should_trace_understanding:
+            trace_turn_understanding(understanding)
+            trace_profile(user_profile)
+        city = user_profile["city"]
+        _t0 = time.monotonic()
+        city_context = get_city_context(city, user_profile["travel_type"])
+        city_context_latency_ms = int((time.monotonic() - _t0) * 1000)
+        decomposition = self._decompose_request(
             user_request,
-            default_city=default_city,
-            stored_preferences=stored_preferences,
+            user_profile,
+            city_context=city_context,
+            understanding=understanding,
         )
-        trace_profile(user_profile)
-        decomposition = self._decompose_request(user_request, user_profile)
         trace_decomposition(decomposition)
         tool_results: dict[str, object] = {
             "_logs": [
+                {
+                    "tool_name": "understand_turn",
+                    "arguments": {"user_request": user_request, "source": understanding.source},
+                    "result_preview": self._preview_tool_result(
+                        {
+                            "resolved_profile": user_profile,
+                            "missing_profile_slots": understanding.missing_profile_slots,
+                            "needs_clarification": understanding.needs_clarification,
+                            "decomposition_overrides": understanding.decomposition_overrides,
+                        }
+                    ),
+                },
                 {
                     "tool_name": "decompose_request",
                     "arguments": {"user_request": user_request},
@@ -1813,47 +2004,59 @@ class TravelPlanningAgent:
                 else []
             ),
             "_decomposition": decomposition,
+            "_latencies": {"get_city_context": city_context_latency_ms},
+            "get_city_context": city_context,
         }
 
         # Pre-fill all required tools deterministically to skip LLM tool-calling loop.
-        city = user_profile["city"]
         strategy_queries = decomposition.get("strategy_queries") or [f"{city} {user_profile['travel_type']} itinerary"]
         geo_queries = decomposition.get("geo_queries") or [f"{city} landmark"]
 
-        tool_results["get_city_context"] = get_city_context(city, user_profile["travel_type"])
         self._append_tool_log(
             tool_results,
             tool_name="get_city_context",
             arguments={"city": city, "travel_type": user_profile["travel_type"]},
             result=tool_results["get_city_context"],
         )
-        trace_tool_call("get_city_context", {"city": city, "travel_type": user_profile["travel_type"]}, tool_results["get_city_context"])
-        _rag_queries = self._dedupe_queries(strategy_queries, limit=6)
-        trace_rag_input(queries=_rag_queries, city=city, travel_type=user_profile["travel_type"], top_k=5)
-        with trace_step_timer("RAG retrieval"):
-            tool_results["get_strategy_context"] = self._get_strategy_context(
-                city=city,
-                queries=_rag_queries,
-                travel_type=user_profile["travel_type"],
-                top_k=5,
-            )
-        trace_rag_output(tool_results["get_strategy_context"])
+        trace_tool_call(
+            "get_city_context",
+            {"city": city, "travel_type": user_profile["travel_type"]},
+            tool_results["get_city_context"],
+        )
+        strategy_query_batch = self._dedupe_queries(strategy_queries, limit=6)
+        trace_rag_input(
+            queries=strategy_query_batch,
+            city=city,
+            travel_type=user_profile["travel_type"],
+            top_k=8,
+        )
+        _t0 = time.monotonic()
+        tool_results["get_strategy_context"] = self._get_strategy_context(
+            city=city,
+            queries=strategy_query_batch,
+            travel_type=user_profile["travel_type"],
+            top_k=8,
+        )
+        self._record_tool_latency(tool_results, "get_strategy_context", _t0)
         self._append_tool_log(
             tool_results,
             tool_name="get_strategy_context",
             arguments={
                 "city": city,
-                "queries": self._dedupe_queries(strategy_queries, limit=6),
+                "queries": strategy_query_batch,
                 "travel_type": user_profile["travel_type"],
-                "top_k": 5,
+                "top_k": 8,
             },
             result=tool_results["get_strategy_context"],
         )
+        trace_rag_output(tool_results["get_strategy_context"])
+        _t0 = time.monotonic()
         tool_results["get_weather_forecast"] = self._get_weather_forecast(
             city=city,
             trip_days=user_profile["trip_days"],
             start_date=user_profile.get("start_date", ""),
         )
+        self._record_tool_latency(tool_results, "get_weather_forecast", _t0)
         self._append_tool_log(
             tool_results,
             tool_name="get_weather_forecast",
@@ -1864,29 +2067,47 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_weather_forecast"],
         )
-        trace_tool_call("get_weather_forecast", {"city": city, "trip_days": user_profile["trip_days"]}, tool_results["get_weather_forecast"])
+        trace_tool_call(
+            "get_weather_forecast",
+            {
+                "city": city,
+                "trip_days": user_profile["trip_days"],
+                "start_date": user_profile.get("start_date", ""),
+            },
+            tool_results["get_weather_forecast"],
+        )
+        geo_query_batch = self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10)
+        _t0 = time.monotonic()
         tool_results["search_batch_pois"] = self._search_batch_pois(
             city=city,
-            queries=self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
+            queries=geo_query_batch,
             limit_per_query=3,
         )
+        self._record_tool_latency(tool_results, "search_batch_pois", _t0)
         self._append_tool_log(
             tool_results,
             tool_name="search_batch_pois",
             arguments={
                 "city": city,
-                "queries": self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
+                "queries": geo_query_batch,
                 "limit_per_query": 3,
             },
             result=tool_results["search_batch_pois"],
         )
-        trace_tool_call("search_batch_pois", {"city": city, "queries": self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10)}, tool_results["search_batch_pois"])
+        trace_tool_call(
+            "search_batch_pois",
+            {"city": city, "queries": geo_query_batch, "limit_per_query": 3},
+            tool_results["search_batch_pois"],
+        )
+        cost_user_budget = decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget")
+        _t0 = time.monotonic()
         tool_results["get_cost_summary"] = self._get_cost_summary(
             city=city,
             days=user_profile["trip_days"],
             budget_level=user_profile["budget_level"],
-            user_budget=decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
+            user_budget=cost_user_budget,
         )
+        self._record_tool_latency(tool_results, "get_cost_summary", _t0)
         self._append_tool_log(
             tool_results,
             tool_name="get_cost_summary",
@@ -1894,18 +2115,29 @@ class TravelPlanningAgent:
                 "city": city,
                 "days": user_profile["trip_days"],
                 "budget_level": user_profile["budget_level"],
-                "user_budget": decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
+                "user_budget": cost_user_budget,
             },
             result=tool_results["get_cost_summary"],
         )
-        trace_tool_call("get_cost_summary", {"city": city, "days": user_profile["trip_days"], "budget_level": user_profile["budget_level"]}, tool_results["get_cost_summary"])
+        trace_tool_call(
+            "get_cost_summary",
+            {
+                "city": city,
+                "days": user_profile["trip_days"],
+                "budget_level": user_profile["budget_level"],
+                "user_budget": cost_user_budget,
+            },
+            tool_results["get_cost_summary"],
+        )
         poi_names = [item["name"] for item in tool_results["search_batch_pois"].get("results", [])[:8]]
+        _t0 = time.monotonic()
         tool_results["get_travel_tips"] = self._get_travel_tips(
             city=city,
             poi_names=poi_names,
             travel_type=user_profile["travel_type"],
             interests=user_profile.get("interests", []),
         )
+        self._record_tool_latency(tool_results, "get_travel_tips", _t0)
         self._append_tool_log(
             tool_results,
             tool_name="get_travel_tips",
@@ -1917,148 +2149,17 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_travel_tips"],
         )
-        trace_tool_call("get_travel_tips", {"city": city, "poi_names": poi_names, "travel_type": user_profile["travel_type"]}, tool_results["get_travel_tips"])
-        result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
-        return user_profile, tool_results, result.plan or {}, result.answer
-
-        structured_request = self._build_structured_agent_input(user_request, user_profile, decomposition)
-        client = self._ensure_response_client()
-        response = client.responses.create(
-            model=self.model,
-            instructions=SYSTEM_PROMPT,
-            input=structured_request,
-            tools=self.build_tools(),
-        )
-        tool_logs: list[dict] = []
-
-        for _ in range(max_rounds):
-            # Pull tool calls from latest model response.
-            function_calls = self._extract_function_calls(response)
-            if not function_calls:
-                # If model stops issuing calls but we already have full required context, finish.
-                if {
-                    "get_strategy_context",
-                    "get_city_context",
-                    "search_batch_pois",
-                    "get_weather_forecast",
-                    "get_cost_summary",
-                    "get_travel_tips",
-                }.issubset(tool_results.keys()):
-                    result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
-                    return user_profile, tool_results, result.plan or {}, result.answer
-                break
-
-            tool_outputs = []
-            for item in function_calls:
-                function_name = item.name
-                # Keep loop resilient: malformed args or runtime tool errors become structured error outputs.
-                try:
-                    function_args = json.loads(item.arguments or "{}")
-                except json.JSONDecodeError as exc:
-                    function_args = {}
-                    function_result = {"error": f"Invalid function arguments: {exc}"}
-                else:
-                    try:
-                        function_result = self.tool_impls[function_name](**function_args)
-                    except Exception as exc:
-                        function_result = {"error": f"{type(exc).__name__}: {exc}"}
-
-                tool_logs.append(
-                    {
-                        "tool_name": function_name,
-                        "arguments": function_args,
-                        "result_preview": self._preview_tool_result(function_result),
-                    }
-                )
-                tool_results["_logs"].append(tool_logs[-1])
-                tool_results[function_name] = function_result
-
-                # Send tool result back to model so it can decide subsequent actions.
-                tool_outputs.append(
-                    {
-                        "type": "function_call_output",
-                        "call_id": item.call_id,
-                        "output": json.dumps(function_result, ensure_ascii=False),
-                    }
-                )
-
-            # Fast-path: if minimum required tool set is complete, skip extra model roundtrips.
-            if {
-                "get_strategy_context",
-                "get_city_context",
-                "search_batch_pois",
-                "get_weather_forecast",
-                "get_cost_summary",
-                "get_travel_tips",
-            }.issubset(tool_results.keys()):
-                result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
-                return user_profile, tool_results, result.plan or {}, result.answer
-
-            response = client.responses.create(
-                model=self.model,
-                instructions=SYSTEM_PROMPT,
-                input=tool_outputs,
-                tools=self.build_tools(),
-                previous_response_id=response.id,
-            )
-
-        # Fallback layer: if model under-calls tools, run missing tools directly and still finish.
-        missing = {
-            "get_strategy_context",
-            "get_city_context",
-            "search_batch_pois",
-            "get_weather_forecast",
-            "get_cost_summary",
+        trace_tool_call(
             "get_travel_tips",
-        } - set(tool_results.keys())
-        if missing:
-            if "get_strategy_context" in missing:
-                tool_results["get_strategy_context"] = self._get_strategy_context(
-                    city=user_profile["city"],
-                    queries=decomposition["strategy_queries"] or [f"{user_profile['city']} {user_profile['travel_type']} itinerary"],
-                    travel_type=user_profile["travel_type"],
-                    top_k=8,
-                )
-            if "get_city_context" in missing:
-                tool_results["get_city_context"] = get_city_context(user_profile["city"], user_profile["travel_type"])
-            if "search_batch_pois" in missing:
-                strategy_queries = tool_results.get("get_strategy_context", {}).get("recommended_pois", [])
-                tool_results["search_batch_pois"] = self._search_batch_pois(
-                    city=user_profile["city"],
-                    queries=(
-                        self._dedupe_queries(
-                            decomposition["geo_queries"]
-                            + strategy_queries
-                            + user_profile["must_visit"]
-                        )
-                        or [f"{user_profile['city']} landmark"]
-                    ),
-                    limit_per_query=3,
-                )
-            if "get_weather_forecast" in missing:
-                tool_results["get_weather_forecast"] = self._get_weather_forecast(
-                    city=user_profile["city"],
-                    trip_days=user_profile["trip_days"],
-                    start_date=user_profile.get("start_date", ""),
-                )
-            if "get_cost_summary" in missing:
-                tool_results["get_cost_summary"] = self._get_cost_summary(
-                    city=user_profile["city"],
-                    days=user_profile["trip_days"],
-                    budget_level=user_profile["budget_level"],
-                    user_budget=decomposition["condition_queries"].get("cost", {}).get("user_budget"),
-                )
-            if "get_travel_tips" in missing:
-                poi_names = [
-                    item["name"]
-                    for item in tool_results["search_batch_pois"].get("results", [])[:8]
-                ]
-                tool_results["get_travel_tips"] = self._get_travel_tips(
-                    city=user_profile["city"],
-                    poi_names=poi_names,
-                    travel_type=user_profile["travel_type"],
-                    interests=user_profile.get("interests", []),
-                )
+            {
+                "city": city,
+                "poi_names": poi_names,
+                "travel_type": user_profile["travel_type"],
+                "interests": user_profile.get("interests", []),
+            },
+            tool_results["get_travel_tips"],
+        )
+        self._append_latency_log(tool_results)
         result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
         return user_profile, tool_results, result.plan or {}, result.answer
 
@@ -2106,33 +2207,35 @@ class TravelPlanningAgent:
         user_request: str,
         max_rounds: int = 8,
     ) -> ConversationRunResult:
+        trace_session_start(user_request, turn=(len(previous_state.turn_history) + 1 if previous_state else 1))
         stored_preferences = previous_state.preference_memory if previous_state else None
         default_city = (
             stored_preferences.get("city", self.settings.default_city)
             if stored_preferences
             else self.settings.default_city
         )
-        preview_profile = self._resolve_user_profile(
-            user_request,
+        understanding = self._understand_turn(
+            user_request=user_request,
             default_city=default_city,
             stored_preferences=stored_preferences,
+            latest_plan=previous_state.latest_plan if previous_state else None,
         )
-        confirmed_profile_slots = self._resolve_confirmed_profile_slots(
-            previous_state=previous_state,
-            user_request=user_request,
-            user_profile=preview_profile,
-        )
-        missing_profile_slots = self._next_missing_profile_slots(confirmed_profile_slots)
+        trace_turn_understanding(understanding)
+        preview_profile = understanding.resolved_profile
+        trace_profile(preview_profile)
+        missing_profile_slots = understanding.missing_profile_slots
+        confirmed_profile_slots = self._order_profile_slots(set(self.PROFILE_SLOT_ORDER) - set(missing_profile_slots))
 
-        if missing_profile_slots:
+        needs_clarification = bool(missing_profile_slots)
+
+        if needs_clarification:
             question = self._build_clarification_question(
                 user_profile=preview_profile,
-                confirmed_profile_slots=confirmed_profile_slots,
                 missing_profile_slots=missing_profile_slots,
             )
             tool_logs = [
                 {
-                    "tool_name": "profile_completeness_check",
+                    "tool_name": "understand_turn",
                     "arguments": {"user_request": user_request},
                     "result_preview": json.dumps(
                         {
@@ -2140,6 +2243,7 @@ class TravelPlanningAgent:
                             "confirmed_profile_slots": confirmed_profile_slots,
                             "missing_profile_slots": missing_profile_slots,
                             "follow_up_question": question,
+                            "source": understanding.source,
                         },
                         ensure_ascii=False,
                     )[:800],
@@ -2169,6 +2273,8 @@ class TravelPlanningAgent:
             user_request,
             max_rounds=max_rounds,
             stored_preferences=stored_preferences,
+            stored_plan=previous_state.latest_plan if previous_state else None,
+            understanding=understanding,
         )
         state = self._build_conversation_state(
             previous_state=previous_state,

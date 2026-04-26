@@ -8,20 +8,25 @@ def _normalize_text(values: list[str]) -> str:
     return " ".join(value.lower() for value in values if value).strip()
 
 
-def _budget_weight(constraints: list[str], candidate: dict[str, Any]) -> float:
-    text = _normalize_text(constraints)
+def _budget_weight(context: dict[str, Any], candidate: dict[str, Any]) -> float:
+    text = _normalize_text((context.get("confirmed_constraints") or []) + (context.get("inferred_constraints") or []))
+    budget_level = str(context.get("budget_level", "")).strip().lower()
     price_level = candidate.get("price_level")
     if not price_level:
         return 0.0
-    if "预算高" in text or "high budget" in text or "预算高一点" in text:
+    if budget_level == "high" or "预算高" in text or "high budget" in text or "预算高一点" in text:
         return 2.0 if price_level >= 3 else 0.5
-    if "预算低" in text or "省钱" in text:
+    if budget_level == "low" or "预算低" in text or "省钱" in text:
         return 2.0 if price_level <= 2 else -1.5
     return 0.0
 
 
-def _cuisine_penalty(constraints: list[str], candidate: dict[str, Any]) -> float:
-    text = _normalize_text(constraints)
+def _cuisine_penalty(context: dict[str, Any], candidate: dict[str, Any]) -> float:
+    text = _normalize_text(
+        (context.get("confirmed_constraints") or [])
+        + (context.get("inferred_constraints") or [])
+        + (context.get("food_constraints") or [])
+    )
     candidate_text = _normalize_text(
         [
             candidate.get("name", ""),
@@ -35,6 +40,26 @@ def _cuisine_penalty(constraints: list[str], candidate: dict[str, Any]) -> float
     if "不喜欢北京菜" in text and any(token in candidate_text for token in ["北京菜", "烤鸭", "京味"]):
         penalty -= 1.5
     return penalty
+
+
+def _indoor_preference_score(context: dict[str, Any], candidate: dict[str, Any]) -> float:
+    if not context.get("prefer_indoor"):
+        return 0.0
+    text = _normalize_text([candidate.get("name", ""), candidate.get("category", ""), candidate.get("type_text", "")])
+    if any(token in text for token in ["博物馆", "美术馆", "艺术馆", "商场", "购物中心", "书店", "影城"]):
+        return 1.5
+    if any(token in text for token in ["广场", "公园", "景区", "遗址", "园"]):
+        return -2.0
+    return 0.0
+
+
+def _avoid_poi_penalty(context: dict[str, Any], candidate: dict[str, Any]) -> float:
+    avoid_pois = context.get("avoid_pois") or []
+    candidate_name = str(candidate.get("name", "")).strip()
+    for poi_name in avoid_pois:
+        if poi_name and (candidate_name == poi_name or poi_name in candidate_name):
+            return -10.0
+    return 0.0
 
 
 def _distance_score(candidate: dict[str, Any]) -> float:
@@ -58,21 +83,21 @@ def _family_score(context: dict[str, Any], candidate: dict[str, Any]) -> float:
         score += 1.0
     if party.get("elderly", 0) > 0 and candidate.get("distance_m") and candidate["distance_m"] > 1500:
         score -= 1.0
+    if context.get("mobility_risk") == "high" and candidate.get("distance_m") and candidate["distance_m"] > 1000:
+        score -= 1.5
     return score
 
 
 def score_candidates(candidates: list[dict[str, Any]], context: dict[str, Any]) -> dict[str, Any]:
-    confirmed = context.get("confirmed_constraints", []) or []
-    inferred = context.get("inferred_constraints", []) or []
-    all_constraints = confirmed + inferred
-
     ranked: list[tuple[float, dict[str, Any], str]] = []
     for candidate in candidates:
         rating = float(candidate.get("rating") or 0.0)
         score = 0.0
         score += _distance_score(candidate)
-        score += _budget_weight(all_constraints, candidate)
-        score += _cuisine_penalty(all_constraints, candidate)
+        score += _budget_weight(context, candidate)
+        score += _cuisine_penalty(context, candidate)
+        score += _indoor_preference_score(context, candidate)
+        score += _avoid_poi_penalty(context, candidate)
         score += _family_score(context, candidate)
         score += min(rating / 2.0, 2.5)
 

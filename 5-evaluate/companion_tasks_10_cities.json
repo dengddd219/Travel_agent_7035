@@ -1,0 +1,839 @@
+{
+  "version": "0.1",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "VitaBench-style task set for the Travel_agent_7035 companion agent. Each task is built around in-trip travel assistance, multi-turn user disclosure, tool-use trajectory checks, and atomic rubric evaluation.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": ["avg_at_4", "pass_at_4", "pass_all_4", "rubric_completion_rate"]
+  },
+  "cities": [
+    "Beijing",
+    "Shanghai",
+    "Chengdu",
+    "Chongqing",
+    "Guangzhou",
+    "Shenzhen",
+    "Hangzhou",
+    "Xian",
+    "Xiamen",
+    "Nanjing"
+  ],
+  "tasks": [
+    {
+      "id": "companion_beijing_001",
+      "city": "Beijing",
+      "city_zh": "北京",
+      "task_type": "replan_with_clarification",
+      "complexity": {
+        "reasoning": ["time_budget", "must_visit_preservation", "mobility_constraint"],
+        "tool": ["replan_itinerary"],
+        "interaction": ["missing_current_location", "progressive_disclosure"]
+      },
+      "initial_state": {
+        "city": "Beijing",
+        "current_time": "2026-05-02T13:10:00+08:00",
+        "current_location": "",
+        "base_location": "Hotel near Wangfujing",
+        "party": {"adults": 2, "elderly": 1, "children": 0},
+        "mobility_risk": "normal",
+        "remaining_plan": [
+          {
+            "poi_name": "Summer Palace",
+            "time_slot": "afternoon",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.2,
+            "walking_km": 1.6,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "National Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 4.5,
+            "walking_km": 0.8,
+            "mobility_level": "low"
+          },
+          {
+            "poi_name": "Nanluoguxiang",
+            "time_slot": "evening",
+            "duration_hours": 1.5,
+            "priority": 2,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 5.0,
+            "walking_km": 1.2,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Anxious but cooperative parent travelling with an elderly father.",
+          "style": "Short messages, responds quickly when asked for missing operational details."
+        },
+        "complete_instruction": "We only have 4 hours left this afternoon in Beijing. My father walks slowly, but I still want to keep Summer Palace if possible. We are currently at the hotel near Wangfujing.",
+        "hidden_constraints": ["current location is initially omitted", "Summer Palace should be preserved if feasible", "elderly walking load should be controlled"],
+        "disclosure_plan": [
+          "First say only that there are 4 hours left and ask the agent to replan.",
+          "If the agent asks where we are, answer that we are at the hotel near Wangfujing.",
+          "If the agent asks about priority, say Summer Palace is the main one to keep."
+        ]
+      },
+      "first_user_message": "We only have 4 hours this afternoon. Can you replan the rest for us?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["replan_itinerary"],
+        "tool_preconditions": ["current_location must be known before replan_itinerary is executed"],
+        "state_assertions": [
+          "clarification_pending is set to current_location before the user gives the hotel location",
+          "time_budget_hours equals 4",
+          "task_status is completed after replanning",
+          "remaining_plan keeps Summer Palace if the time budget allows it"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "ask_location_before_replan", "dimension": "interaction", "rubric": "Agent asks for the missing current location before executing the replan."},
+          {"key": "extract_time_budget", "dimension": "reasoning", "rubric": "Agent extracts the 4-hour remaining time budget."},
+          {"key": "call_replan_tool", "dimension": "tool", "rubric": "Agent calls replan_itinerary after the current location is known."},
+          {"key": "preserve_core_poi", "dimension": "reasoning", "rubric": "The new plan preserves Summer Palace unless the tool result proves it infeasible."},
+          {"key": "mention_elderly_constraint", "dimension": "interaction", "rubric": "Final reply explains how the plan reduces walking or accounts for the elderly traveller."}
+        ]
+      },
+      "failure_tags": ["premature_tool_call", "missed_clarification", "lost_must_visit", "ignores_mobility"]
+    },
+    {
+      "id": "companion_shanghai_001",
+      "city": "Shanghai",
+      "city_zh": "上海",
+      "task_type": "weather_disrupted_replan",
+      "complexity": {
+        "reasoning": ["weather_branch", "indoor_substitution", "evening_core_experience"],
+        "tool": ["get_weather_now", "replan_itinerary"],
+        "interaction": ["user_preference_tracking"]
+      },
+      "initial_state": {
+        "city": "Shanghai",
+        "current_time": "2026-06-12T15:20:00+08:00",
+        "current_location": "Yu Garden",
+        "base_location": "Hotel near People's Square",
+        "party": {"adults": 2, "elderly": 0, "children": 0},
+        "remaining_plan": [
+          {
+            "poi_name": "Yu Garden",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.2
+          },
+          {
+            "poi_name": "Shanghai Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 2.4
+          },
+          {
+            "poi_name": "The Bund",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.6
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Detail-oriented traveller who dislikes vague weather advice.",
+          "style": "Asks for practical decisions and expects a compact plan."
+        },
+        "complete_instruction": "It is starting to rain around Yu Garden. I do not want to walk outdoors in the rain, but I still hope to see the Bund lights if the rain eases. Please adjust the rest of today.",
+        "hidden_constraints": ["prefer indoor now", "Bund is still a high-priority evening experience", "do not invent weather without checking"],
+        "disclosure_plan": [
+          "First mention rain and ask for a change.",
+          "If asked what to keep, say Bund lights are still important if conditions allow."
+        ]
+      },
+      "first_user_message": "It is raining near Yu Garden now. Help me adjust the rest of today, and I do not want to keep walking outdoors.",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["get_weather_now", "replan_itinerary"],
+        "state_assertions": [
+          "prefer_indoor becomes true or replan constraints include prefer_indoor",
+          "outdoor afternoon stops are removed or deferred",
+          "The Bund is kept, deferred, or explicitly made conditional on weather instead of silently dropped"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "check_weather", "dimension": "tool", "rubric": "Agent checks current weather instead of guessing rain severity."},
+          {"key": "set_indoor_constraint", "dimension": "reasoning", "rubric": "Agent treats rain as an indoor-preference constraint for the near-term replan."},
+          {"key": "call_replan", "dimension": "tool", "rubric": "Agent calls replan_itinerary with the Shanghai remaining plan."},
+          {"key": "protect_bund_preference", "dimension": "interaction", "rubric": "Agent preserves the user's wish to see the Bund lights as keep/defer/conditional."},
+          {"key": "no_fake_weather", "dimension": "reasoning", "rubric": "Final reply does not invent precise weather facts that are absent from observations."}
+        ]
+      },
+      "failure_tags": ["weather_hallucination", "drops_core_preference", "outdoor_plan_in_rain"]
+    },
+    {
+      "id": "companion_chengdu_001",
+      "city": "Chengdu",
+      "city_zh": "成都",
+      "task_type": "emergency_mobility",
+      "complexity": {
+        "reasoning": ["safety_priority", "mobility_triage", "route_to_help"],
+        "tool": ["resolve_emergency_resources"],
+        "interaction": ["urgent_user", "do_not_continue_sightseeing"]
+      },
+      "initial_state": {
+        "city": "Chengdu",
+        "current_time": "2026-07-08T10:45:00+08:00",
+        "current_location": "Chengdu Research Base of Giant Panda Breeding",
+        "base_location": "Hotel near Chunxi Road",
+        "party": {"adults": 2, "elderly": 1, "children": 1},
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "Chengdu Research Base of Giant Panda Breeding",
+            "time_slot": "morning",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 2.4,
+            "mobility_level": "high"
+          },
+          {
+            "poi_name": "Du Fu Thatched Cottage",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 12.0,
+            "walking_km": 1.1,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Kuanzhai Alley",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 13.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Panicked family member.",
+          "style": "Provides location but expects immediate safety guidance."
+        },
+        "complete_instruction": "My father is at the panda base, feels dizzy and cannot keep walking. I need an immediate rest or medical/help point, and we may need to go back to the hotel.",
+        "hidden_constraints": ["safety is more important than completing itinerary", "need rest/medical/help resources", "need group split or fallback advice"],
+        "disclosure_plan": [
+          "First report dizziness and inability to walk.",
+          "If asked whether there is injury, say no obvious injury but he is dizzy and weak.",
+          "If asked location, repeat that we are inside the panda base."
+        ]
+      },
+      "first_user_message": "We are in the panda base. My father is dizzy and cannot keep walking. What should we do now?",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": ["resolve_emergency_resources"],
+        "tools_should_not_call": ["replan_itinerary before emergency resources"],
+        "state_assertions": [
+          "intent is emergency",
+          "emergency scene is medical or mobility",
+          "final answer leads with immediate safety action"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "classify_emergency", "dimension": "reasoning", "rubric": "Agent classifies the message as emergency rather than search or normal replan."},
+          {"key": "call_emergency_resources", "dimension": "tool", "rubric": "Agent calls resolve_emergency_resources using the current Chengdu location."},
+          {"key": "safety_first", "dimension": "interaction", "rubric": "Final reply tells the user to stop walking/rest and seek nearby help before continuing the trip."},
+          {"key": "no_sightseeing_priority", "dimension": "reasoning", "rubric": "Agent does not prioritize completing the remaining sightseeing plan."},
+          {"key": "fallback_if_data_missing", "dimension": "interaction", "rubric": "If map data is incomplete, agent gives safe fallback options such as visitor center, staff, exit, or emergency services."}
+        ]
+      },
+      "failure_tags": ["emergency_misclassified", "continues_itinerary", "no_resource_lookup"]
+    },
+    {
+      "id": "companion_chongqing_001",
+      "city": "Chongqing",
+      "city_zh": "重庆",
+      "task_type": "timing_feasibility",
+      "complexity": {
+        "reasoning": ["deadline", "route_duration", "queue_risk"],
+        "tool": ["get_route", "get_poi_detail"],
+        "interaction": ["clear_yes_no_feasibility"]
+      },
+      "initial_state": {
+        "city": "Chongqing",
+        "current_time": "2026-08-18T16:25:00+08:00",
+        "current_location": "Three Gorges Museum",
+        "base_location": "Hotel near Jiefangbei",
+        "party": {"adults": 2, "elderly": 0, "children": 0},
+        "destination_deadlines": [
+          {"name": "Hotpot dinner near Jiefangbei", "deadline": "2026-08-18T19:00:00+08:00"}
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Yangtze River Cableway",
+            "time_slot": "afternoon",
+            "duration_hours": 0.75,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 4.0,
+            "queue_risk": "high"
+          },
+          {
+            "poi_name": "Hongya Cave",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.1
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Pragmatic traveller with a fixed dinner booking.",
+          "style": "Wants a direct answer, not a new full itinerary."
+        },
+        "complete_instruction": "I am at Three Gorges Museum at 16:25. I want to ride the Yangtze River Cableway and maybe see Hongya Cave, but I must reach Jiefangbei hotpot by 19:00.",
+        "hidden_constraints": ["19:00 dinner is hard deadline", "Cableway has queue risk", "Hongya Cave is optional"],
+        "disclosure_plan": [
+          "First ask whether the plan is feasible.",
+          "If asked what is fixed, say the 19:00 hotpot booking cannot move.",
+          "If asked priority, say cableway is more important than Hongya Cave."
+        ]
+      },
+      "first_user_message": "I am at Three Gorges Museum now. Can I still ride the Yangtze River Cableway and get to my Jiefangbei hotpot dinner by 7 pm?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": ["get_route", "get_poi_detail"],
+        "state_assertions": [
+          "Agent checks route or timing instead of giving a blind yes",
+          "Agent treats the 19:00 dinner as a hard deadline",
+          "Agent clearly recommends whether to include or skip Hongya Cave"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "deadline_recognized", "dimension": "reasoning", "rubric": "Agent recognizes 19:00 dinner as a hard deadline."},
+          {"key": "route_checked", "dimension": "tool", "rubric": "Agent calls get_route for at least one relevant leg involving current location, cableway, Hongya Cave, or dinner area."},
+          {"key": "poi_detail_or_queue_risk", "dimension": "tool", "rubric": "Agent checks POI detail or explicitly accounts for cableway visit/queue risk."},
+          {"key": "direct_feasibility_answer", "dimension": "interaction", "rubric": "Final reply gives a clear feasible/risky/not feasible conclusion."},
+          {"key": "optional_stop_handled", "dimension": "reasoning", "rubric": "Agent treats Hongya Cave as optional and does not let it endanger the dinner deadline."}
+        ]
+      },
+      "failure_tags": ["missed_deadline", "no_route_check", "unclear_feasibility"]
+    },
+    {
+      "id": "companion_guangzhou_001",
+      "city": "Guangzhou",
+      "city_zh": "广州",
+      "task_type": "nearby_food_search",
+      "complexity": {
+        "reasoning": ["dietary_constraint", "distance_preference", "family_suitability"],
+        "tool": ["retrieve_candidates", "score_candidates"],
+        "interaction": ["recommendation_with_constraints"]
+      },
+      "initial_state": {
+        "city": "Guangzhou",
+        "current_time": "2026-09-05T08:35:00+08:00",
+        "current_location": "Yongqing Fang",
+        "base_location": "Hotel near Shamian Island",
+        "party": {"adults": 2, "elderly": 1, "children": 1},
+        "food_constraints": ["light taste", "no caffeine for one traveller"],
+        "remaining_plan": [
+          {
+            "poi_name": "Yongqing Fang",
+            "time_slot": "morning",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Shamian Island",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 2.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Dependent user travelling with family.",
+          "style": "Asks the agent to choose rather than listing many options."
+        },
+        "complete_instruction": "Find a nearby Cantonese breakfast or dim sum option near Yongqing Fang. It should be suitable for an elderly person and a child, have light taste options, and avoid caffeine-heavy recommendations.",
+        "hidden_constraints": ["nearby matters more than popularity", "family-friendly and light taste", "avoid caffeine"],
+        "disclosure_plan": [
+          "First ask for breakfast nearby.",
+          "If agent asks about restrictions, mention elderly, child, light taste, and no caffeine."
+        ]
+      },
+      "first_user_message": "We are near Yongqing Fang and want breakfast. Can you pick a nearby dim sum place for my family?",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": ["retrieve_candidates", "score_candidates"],
+        "state_assertions": [
+          "Agent searches within Guangzhou/Yongqing Fang context",
+          "Agent ranks candidates using family and food constraints",
+          "Final answer provides 1 to 3 options, not a long undifferentiated list"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "retrieve_food_candidates", "dimension": "tool", "rubric": "Agent calls retrieve_candidates for nearby dim sum or Cantonese breakfast in Guangzhou."},
+          {"key": "score_with_constraints", "dimension": "tool", "rubric": "Agent calls score_candidates with context including family suitability, nearby preference, or food constraints."},
+          {"key": "respect_food_constraints", "dimension": "reasoning", "rubric": "Final recommendation mentions light taste or avoids caffeine-heavy choices."},
+          {"key": "recommend_few_options", "dimension": "interaction", "rubric": "Agent gives 1 to 3 concrete options with reasons."},
+          {"key": "no_cross_city_result", "dimension": "reasoning", "rubric": "Agent does not recommend places outside Guangzhou."}
+        ]
+      },
+      "failure_tags": ["unranked_search", "ignores_diet", "too_many_options", "wrong_city"]
+    },
+    {
+      "id": "companion_shenzhen_001",
+      "city": "Shenzhen",
+      "city_zh": "深圳",
+      "task_type": "emergency_power_and_help",
+      "complexity": {
+        "reasoning": ["lost_companion", "phone_power_risk", "location_resolution"],
+        "tool": ["resolve_location", "resolve_emergency_resources"],
+        "interaction": ["urgent_but_not_medical"]
+      },
+      "initial_state": {
+        "city": "Shenzhen",
+        "current_time": "2026-10-03T20:10:00+08:00",
+        "current_location": "",
+        "base_location": "Hotel near OCT Loft",
+        "party": {"adults": 2, "elderly": 0, "children": 0},
+        "remaining_plan": [
+          {
+            "poi_name": "Window of the World",
+            "time_slot": "evening",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Nervous traveller with low phone battery.",
+          "style": "Gives partial location and expects immediate next steps."
+        },
+        "complete_instruction": "I am at Window of the World in Shenzhen. My phone battery is almost dead and I cannot find my friend. I need a safe meeting/help point and charging option.",
+        "hidden_constraints": ["not a sightseeing search", "need power/help resources", "location must be resolved from user text"],
+        "disclosure_plan": [
+          "First say phone is almost dead and friend is missing at Window of the World.",
+          "If asked, say the city is Shenzhen and you can still send one or two messages."
+        ]
+      },
+      "first_user_message": "I am at Window of the World, my phone is almost dead and I cannot find my friend. Help me quickly.",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": ["resolve_location", "resolve_emergency_resources"],
+        "state_assertions": [
+          "Agent resolves Window of the World within Shenzhen city context",
+          "Agent treats this as power/help emergency",
+          "Final answer suggests a meeting/help point and battery-saving next step"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "resolve_location_with_city", "dimension": "tool", "rubric": "Agent calls resolve_location and scopes Window of the World to Shenzhen."},
+          {"key": "classify_power_help_emergency", "dimension": "reasoning", "rubric": "Agent classifies the message as emergency/help or power, not a normal search."},
+          {"key": "call_emergency_resources", "dimension": "tool", "rubric": "Agent calls resolve_emergency_resources for charging/help resources."},
+          {"key": "battery_saving_action", "dimension": "interaction", "rubric": "Final reply includes a concrete battery-saving or one-message coordination action."},
+          {"key": "meeting_point", "dimension": "reasoning", "rubric": "Final reply proposes a safe, easy-to-find meeting or help point."}
+        ]
+      },
+      "failure_tags": ["normal_search_for_power", "no_location_resolution", "no_meeting_plan"]
+    },
+    {
+      "id": "companion_hangzhou_001",
+      "city": "Hangzhou",
+      "city_zh": "杭州",
+      "task_type": "rainy_day_family_replan",
+      "complexity": {
+        "reasoning": ["weather_branch", "elderly_mobility", "indoor_mixed_alternative"],
+        "tool": ["get_weather_now", "replan_itinerary"],
+        "interaction": ["implicit_family_constraint"]
+      },
+      "initial_state": {
+        "city": "Hangzhou",
+        "current_time": "2026-06-20T12:40:00+08:00",
+        "current_location": "West Lake",
+        "base_location": "Hotel near Hubin Pedestrian Street",
+        "party": {"adults": 2, "elderly": 2, "children": 0},
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "West Lake",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0,
+            "walking_km": 3.0,
+            "mobility_level": "high"
+          },
+          {
+            "poi_name": "China National Tea Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 4.2,
+            "walking_km": 0.8,
+            "mobility_level": "low"
+          },
+          {
+            "poi_name": "Qinghefang",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 2.0,
+            "walking_km": 1.2,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Careful family trip organizer.",
+          "style": "Explains constraints and expects an adjusted plan."
+        },
+        "complete_instruction": "It may rain around West Lake. My parents are elderly and cannot walk too much. Replan the afternoon so it is safer, preferably indoor or low-walk, while keeping a Hangzhou local experience.",
+        "hidden_constraints": ["elderly walking load matters", "do not insist on full West Lake loop", "indoor or mixed local experience preferred"],
+        "disclosure_plan": [
+          "First mention rain and elderly parents.",
+          "If asked priority, say a local Hangzhou feel is more important than checking every West Lake spot."
+        ]
+      },
+      "first_user_message": "It looks like rain near West Lake, and my parents cannot walk too much. Can you replan the afternoon?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["get_weather_now", "replan_itinerary"],
+        "state_assertions": [
+          "Replan constraints include prefer_indoor or mobility_risk high",
+          "High-walking outdoor West Lake loop is removed, shortened, deferred, or made conditional",
+          "New plan keeps at least one local Hangzhou experience"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "weather_checked", "dimension": "tool", "rubric": "Agent checks weather before committing to a rain-based replan."},
+          {"key": "mobility_constraint_used", "dimension": "reasoning", "rubric": "Agent accounts for elderly walking limitations in replan constraints."},
+          {"key": "call_replan", "dimension": "tool", "rubric": "Agent calls replan_itinerary."},
+          {"key": "reduce_high_walk_outdoor", "dimension": "reasoning", "rubric": "The plan reduces or avoids the high-walking outdoor West Lake loop."},
+          {"key": "keep_local_experience", "dimension": "interaction", "rubric": "Final reply keeps a Hangzhou-specific experience such as tea culture, museum, lake-area light activity, or historic street."}
+        ]
+      },
+      "failure_tags": ["ignores_mobility", "weather_guess", "keeps_high_walk_plan"]
+    },
+    {
+      "id": "companion_xian_001",
+      "city": "Xian",
+      "city_zh": "西安",
+      "task_type": "deadline_replan_after_completion",
+      "complexity": {
+        "reasoning": ["completed_node_memory", "train_deadline", "time_budget"],
+        "tool": ["replan_itinerary", "get_route"],
+        "interaction": ["do_not_repeat_completed_stop"]
+      },
+      "initial_state": {
+        "city": "Xian",
+        "current_time": "2026-04-30T15:10:00+08:00",
+        "current_location": "City Wall",
+        "base_location": "Hotel near Bell Tower",
+        "party": {"adults": 2, "elderly": 0, "children": 0},
+        "destination_deadlines": [
+          {"name": "Xian North Railway Station", "deadline": "2026-04-30T18:30:00+08:00"}
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "City Wall",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Shaanxi History Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 5.0
+          },
+          {
+            "poi_name": "Muslim Quarter",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Efficient traveller before a train departure.",
+          "style": "Mentions what is already completed and asks for a realistic plan."
+        },
+        "complete_instruction": "We just finished the City Wall. Our train from Xian North is at 18:30. We have about 3 hours, including getting to the station, and we want one worthwhile stop or food break without missing the train.",
+        "hidden_constraints": ["City Wall is completed and must not be repeated", "train deadline is hard", "only one safe stop is acceptable"],
+        "disclosure_plan": [
+          "First say City Wall is finished and train is at 18:30.",
+          "If asked priority, say not missing the train is more important than squeezing in a museum."
+        ]
+      },
+      "first_user_message": "We finished City Wall. Our train leaves Xian North at 18:30. Can you replan the last 3 hours?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["replan_itinerary"],
+        "tools_should_call": ["get_route"],
+        "state_assertions": [
+          "City Wall is recorded in completed_nodes",
+          "time_budget_hours equals 3",
+          "new plan does not include City Wall",
+          "final reply warns about station transfer buffer"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "record_completed_city_wall", "dimension": "interaction", "rubric": "Agent records City Wall as completed before replanning."},
+          {"key": "extract_train_deadline", "dimension": "reasoning", "rubric": "Agent recognizes 18:30 train departure as a hard deadline."},
+          {"key": "extract_three_hours", "dimension": "reasoning", "rubric": "Agent extracts a 3-hour total time budget."},
+          {"key": "call_replan", "dimension": "tool", "rubric": "Agent calls replan_itinerary with completed_nodes including City Wall."},
+          {"key": "no_repeat_completed_stop", "dimension": "reasoning", "rubric": "Final plan does not repeat City Wall."},
+          {"key": "station_buffer", "dimension": "interaction", "rubric": "Final reply leaves time for transfer/security before the train."}
+        ]
+      },
+      "failure_tags": ["repeat_completed_node", "missed_deadline", "overpacked_plan"]
+    },
+    {
+      "id": "companion_xiamen_001",
+      "city": "Xiamen",
+      "city_zh": "厦门",
+      "task_type": "skip_high_mobility_stop",
+      "complexity": {
+        "reasoning": ["ferry_delay", "skip_node", "mobility_constraint"],
+        "tool": ["replan_itinerary"],
+        "interaction": ["user_explicit_skip"]
+      },
+      "initial_state": {
+        "city": "Xiamen",
+        "current_time": "2026-05-18T14:05:00+08:00",
+        "current_location": "Gulangyu Ferry Terminal",
+        "base_location": "Hotel near Zhongshan Road",
+        "party": {"adults": 2, "elderly": 1, "children": 0},
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "Gulangyu",
+            "time_slot": "afternoon",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0,
+            "walking_km": 3.0,
+            "mobility_level": "high"
+          },
+          {
+            "poi_name": "Sunlight Rock",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.4,
+            "walking_km": 1.5,
+            "mobility_level": "high"
+          },
+          {
+            "poi_name": "Zhongshan Road Pedestrian Street",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 2.5,
+            "walking_km": 0.8,
+            "mobility_level": "low"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Tired traveller with an elderly companion.",
+          "style": "Explicitly says what to skip and wants a less exhausting fallback."
+        },
+        "complete_instruction": "The ferry was delayed, and the elderly traveller is tired. Skip Sunlight Rock and avoid long walks. Keep the rest of the day easy and get us back toward Zhongshan Road if possible.",
+        "hidden_constraints": ["Sunlight Rock must be skipped", "avoid high walking load", "evening should move back toward hotel/Zhongshan Road"],
+        "disclosure_plan": [
+          "First mention ferry delay and tired elderly traveller.",
+          "Explicitly say to skip Sunlight Rock.",
+          "If asked priority, say easy return toward Zhongshan Road matters most."
+        ]
+      },
+      "first_user_message": "The Gulangyu ferry was delayed and the elderly person is tired. Skip Sunlight Rock and make the rest easier.",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["replan_itinerary"],
+        "state_assertions": [
+          "Sunlight Rock is included in skipped_nodes or avoid_pois",
+          "mobility_risk high is used in replan constraints",
+          "new plan avoids high-mobility stops where possible"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "extract_skip_node", "dimension": "interaction", "rubric": "Agent extracts Sunlight Rock as an explicit skipped stop."},
+          {"key": "use_mobility_constraint", "dimension": "reasoning", "rubric": "Agent accounts for elderly tiredness/high mobility risk."},
+          {"key": "call_replan", "dimension": "tool", "rubric": "Agent calls replan_itinerary with skipped_nodes or constraints reflecting the skip."},
+          {"key": "avoid_sunlight_rock", "dimension": "reasoning", "rubric": "Final plan does not include Sunlight Rock."},
+          {"key": "easy_return_plan", "dimension": "interaction", "rubric": "Final reply suggests an easier route or return toward Zhongshan Road/hotel instead of more climbing."}
+        ]
+      },
+      "failure_tags": ["ignores_skip", "mobility_ignored", "overwalks_elderly"]
+    },
+    {
+      "id": "companion_nanjing_001",
+      "city": "Nanjing",
+      "city_zh": "南京",
+      "task_type": "closing_time_and_indoor_replan",
+      "complexity": {
+        "reasoning": ["closing_time", "rain_indoor", "respectful_site_choice"],
+        "tool": ["get_weather_now", "get_poi_detail", "replan_itinerary"],
+        "interaction": ["avoid_overpacking"]
+      },
+      "initial_state": {
+        "city": "Nanjing",
+        "current_time": "2026-11-14T15:50:00+08:00",
+        "current_location": "Confucius Temple Nanjing",
+        "base_location": "Hotel near Xinjiekou",
+        "party": {"adults": 2, "elderly": 0, "children": 0},
+        "remaining_plan": [
+          {
+            "poi_name": "Confucius Temple Nanjing",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Nanjing Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "indoor",
+            "distance_km": 5.2,
+            "closing_time": "17:00"
+          },
+          {
+            "poi_name": "Qinhuai River Night Cruise",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.6
+          },
+          {
+            "poi_name": "Memorial Hall of the Victims in Nanjing Massacre",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 7.0,
+            "closing_time": "17:30"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Calm traveller who wants a realistic plan in bad weather.",
+          "style": "Accepts tradeoffs if the agent explains why."
+        },
+        "complete_instruction": "It is late afternoon at Confucius Temple and it may rain. I wanted Nanjing Museum, but if it is too close to closing, do not force it. Prefer indoor, realistic, and not rushed.",
+        "hidden_constraints": ["check closing risk", "prefer indoor due to rain", "avoid overpacking late afternoon"],
+        "disclosure_plan": [
+          "First mention late afternoon and possible rain.",
+          "If agent asks what matters, say Nanjing Museum was desired but should not be rushed near closing."
+        ]
+      },
+      "first_user_message": "It is almost 4 pm at Confucius Temple and it may rain. Can you adjust the rest so it is realistic and not rushed?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": ["get_weather_now", "replan_itinerary"],
+        "tools_should_call": ["get_poi_detail"],
+        "state_assertions": [
+          "Agent considers rain or indoor preference",
+          "Agent does not force Nanjing Museum if closing-time risk makes it unrealistic",
+          "Final answer explains what is kept, deferred, or skipped"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {"key": "weather_checked", "dimension": "tool", "rubric": "Agent checks weather before making a rain-based adjustment."},
+          {"key": "closing_risk_considered", "dimension": "reasoning", "rubric": "Agent considers the 16:00 current time and museum closing risk."},
+          {"key": "poi_detail_checked", "dimension": "tool", "rubric": "Agent checks get_poi_detail or otherwise uses available detail for time/venue feasibility."},
+          {"key": "call_replan", "dimension": "tool", "rubric": "Agent calls replan_itinerary with indoor/time feasibility constraints."},
+          {"key": "avoid_overpacking", "dimension": "interaction", "rubric": "Final reply avoids an overpacked plan and clearly explains deferred or skipped stops."}
+        ]
+      },
+      "failure_tags": ["closing_time_ignored", "weather_guess", "overpacked_late_day"]
+    }
+  ]
+}

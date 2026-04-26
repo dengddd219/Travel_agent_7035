@@ -25,6 +25,50 @@ EXCLUDED_CANDIDATE_KEYWORDS = {
     "公交站",
 }
 
+CITY_BIAS_ALIASES = {
+    "beijing": "北京",
+    "peking": "北京",
+    "shanghai": "上海",
+    "chengdu": "成都",
+    "chongqing": "重庆",
+    "guangzhou": "广州",
+    "shenzhen": "深圳",
+    "hangzhou": "杭州",
+    "nanjing": "南京",
+    "xian": "西安",
+    "xi'an": "西安",
+    "hong kong": "香港",
+    "hongkong": "香港",
+    "tokyo": "东京",
+}
+
+CITY_NAME_HINTS = {
+    "北京",
+    "北京市",
+    "上海",
+    "上海市",
+    "广州",
+    "广州市",
+    "深圳",
+    "深圳市",
+    "成都",
+    "成都市",
+    "重庆",
+    "重庆市",
+    "杭州",
+    "杭州市",
+    "南京",
+    "南京市",
+    "西安",
+    "西安市",
+    "香港",
+    "东京",
+    "武汉",
+    "武汉市",
+    *CITY_BIAS_ALIASES.keys(),
+    *CITY_BIAS_ALIASES.values(),
+}
+
 
 def _haversine_meters(a: tuple[float, float], b: tuple[float, float]) -> int:
     lat1, lon1 = a
@@ -52,15 +96,61 @@ def _coord_text(item: dict[str, Any]) -> str:
     return f"{lon:.6f},{lat:.6f}"
 
 
+def _city_field_text(value: Any) -> str:
+    if isinstance(value, list):
+        return " ".join(str(item).strip() for item in value if str(item).strip())
+    return str(value or "").strip()
+
+
+def _city_match_tokens(city_bias: str) -> set[str]:
+    normalized = _normalize_city_bias(city_bias)
+    compact = normalized.strip()
+    tokens = {compact.lower()}
+    if compact.endswith("市"):
+        tokens.add(compact[:-1].lower())
+    return {token for token in tokens if token}
+
+
 def _matches_city(item: dict[str, Any], city_bias: str) -> bool:
+    """Match POI/geocode results against the current itinerary city.
+
+    Do not use formatted_address here: street names can contain another city name
+    and same-name POIs often exist across cities.
+    """
     if not city_bias:
         return True
-    city_text = city_bias.strip().lower()
+    city_tokens = _city_match_tokens(city_bias)
     haystack = " ".join(
-        str(item.get(field, "")).strip().lower()
-        for field in ("city", "cityname", "pname", "district", "adname", "formatted_address")
+        _city_field_text(item.get(field)).lower()
+        for field in ("city", "cityname", "pname", "province", "district", "adname")
     )
-    return city_text in haystack
+    return any(token in haystack for token in city_tokens)
+
+
+def _normalize_city_bias(city_bias: str) -> str:
+    value = city_bias.strip()
+    return CITY_BIAS_ALIASES.get(value.lower(), value)
+
+
+def _query_has_city_hint(query: str) -> bool:
+    lowered = query.lower()
+    return any(str(city).lower() in lowered for city in CITY_NAME_HINTS if city)
+
+
+def _query_with_city_bias(query: str, city_bias: str) -> str:
+    clean_query = query.strip()
+    normalized_city = _normalize_city_bias(city_bias).strip()
+    if not clean_query or not normalized_city or _query_has_city_hint(clean_query):
+        return clean_query
+    return f"{normalized_city}{clean_query}"
+
+
+def _city_from_item(item: dict[str, Any], fallback_city: str) -> str:
+    for field in ("city", "cityname", "pname", "province"):
+        value = _city_field_text(item.get(field))
+        if value:
+            return value
+    return fallback_city
 
 
 def _is_excluded_candidate(item: dict[str, Any]) -> bool:
@@ -94,22 +184,24 @@ def resolve_location(
             "source": "fallback",
         }
 
-    city_bias = (city_bias or settings.default_city).strip()
-    params = {"key": settings.amap_api_key, "address": query.strip(), "city": city_bias}
+    clean_query = query.strip()
+    city_bias = _normalize_city_bias(city_bias or settings.default_city)
+    biased_query = _query_with_city_bias(clean_query, city_bias)
+    params = {"key": settings.amap_api_key, "address": biased_query, "city": city_bias}
     response = requests.get(AMAP_GEOCODE_URL, params=params, timeout=settings.request_timeout_s)
     response.raise_for_status()
     payload = response.json()
     geocodes = payload.get("geocodes") or []
     filtered_geocodes = [item for item in geocodes if _matches_city(item, city_bias)]
-    if filtered_geocodes or geocodes:
-        item = (filtered_geocodes or geocodes)[0]
+    if filtered_geocodes:
+        item = filtered_geocodes[0]
         coords = _extract_coords(item.get("location", ""))
         lat, lon = coords or (0.0, 0.0)
         return {
-            "name": query.strip(),
-            "address": item.get("formatted_address", query.strip()),
-            "city": item.get("city") or settings.default_city,
-            "district": item.get("district") or item.get("city") or settings.default_city,
+            "name": clean_query,
+            "address": item.get("formatted_address", clean_query),
+            "city": _city_from_item(item, city_bias),
+            "district": item.get("district") or _city_from_item(item, city_bias),
             "lat": lat,
             "lon": lon,
             "adcode": item.get("adcode", ""),
@@ -118,8 +210,9 @@ def resolve_location(
 
     params = {
         "key": settings.amap_api_key,
-        "keywords": query.strip(),
+        "keywords": biased_query,
         "city": city_bias,
+        "citylimit": "true",
         "offset": 3,
         "page": 1,
         "extensions": "all",
@@ -128,7 +221,7 @@ def resolve_location(
     response.raise_for_status()
     payload = response.json()
     pois = payload.get("pois") or []
-    pois = [item for item in pois if _matches_city(item, city_bias)] or pois
+    pois = [item for item in pois if _matches_city(item, city_bias)]
     if not pois:
         raise ValueError(f"No location result found for '{query}'.")
 
@@ -136,10 +229,10 @@ def resolve_location(
     coords = _extract_coords(item.get("location", ""))
     lat, lon = coords or (0.0, 0.0)
     return {
-        "name": item.get("name", query.strip()),
-        "address": item.get("address", query.strip()),
-        "city": item.get("cityname") or settings.default_city,
-        "district": item.get("adname") or item.get("pname") or settings.default_city,
+        "name": item.get("name", clean_query),
+        "address": item.get("address", clean_query),
+        "city": _city_from_item(item, city_bias),
+        "district": item.get("adname") or item.get("pname") or city_bias,
         "lat": lat,
         "lon": lon,
         "adcode": item.get("adcode", ""),
@@ -157,11 +250,13 @@ def retrieve_candidates(
     settings = settings or Settings.from_env()
     if not settings.has_amap_key:
         return []
+    city = _normalize_city_bias(city)
 
     params = {
         "key": settings.amap_api_key,
-        "keywords": query.strip(),
-        "city": city.strip() or settings.default_city,
+        "keywords": _query_with_city_bias(query.strip(), city),
+        "city": city.strip() or _normalize_city_bias(settings.default_city),
+        "citylimit": "true",
         "offset": max(1, min(limit, 10)),
         "page": 1,
         "extensions": "all",
@@ -272,3 +367,63 @@ def get_route(
         "instruction": instruction or "Amap route result.",
         "provider": "amap",
     }
+
+
+def fetch_poi_detail_from_amap(
+    name: str,
+    city: str = "",
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Query Amap v3/place/text (extensions=all) for open_hours and ticket_price.
+
+    Uses biz_ext.open_time for opening hours and biz_ext.cost for price,
+    consistent with how the main travel planner (poi.py) queries Amap.
+    Returns a partial dict; callers should merge with static fallback data.
+    """
+    import re
+
+    settings = settings or Settings.from_env()
+    if not settings.has_amap_key:
+        return {"source": "fallback"}
+
+    params = {
+        "key": settings.amap_api_key,
+        "keywords": _query_with_city_bias(name.strip(), city or settings.default_city),
+        "city": (city or settings.default_city).strip(),
+        "citylimit": "true",
+        "offset": 1,
+        "page": 1,
+        "extensions": "all",
+    }
+    try:
+        response = requests.get(AMAP_PLACE_TEXT_URL, params=params, timeout=settings.request_timeout_s)
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return {"source": "fallback"}
+
+    pois = payload.get("pois") or []
+    if not pois:
+        return {"source": "fallback"}
+
+    item = pois[0]
+    biz_ext = item.get("biz_ext") or {}
+
+    open_hours = biz_ext.get("open_time") or ""
+
+    ticket_price: float | None = None
+    cost_raw = biz_ext.get("cost") or item.get("cost") or ""
+    if cost_raw:
+        nums = re.findall(r"\d+(?:\.\d+)?", str(cost_raw))
+        if nums:
+            try:
+                ticket_price = float(nums[0])
+            except Exception:
+                pass
+
+    result: dict[str, Any] = {"source": "amap"}
+    if open_hours:
+        result["open_hours"] = open_hours
+    if ticket_price is not None:
+        result["ticket_price"] = ticket_price
+    return result

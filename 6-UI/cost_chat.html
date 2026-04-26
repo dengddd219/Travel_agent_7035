@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Travel Planner — Chat</title>
+
+  <!-- ── 高德地图安全配置（必须先于 SDK 加载）── -->
+  <script>
+    window._AMapSecurityConfig = { securityJsCode: "e2c040536221ecd4d3eab231ca808ab0" };
+  </script>
+  <script>
+    (function () {
+      var key = "26ccf17bc50eebb55ff05c56d4c096d6";
+      var s = document.createElement("script");
+      s.src = "https://webapi.amap.com/maps?v=2.0&key=" + key +
+              "&plugin=AMap.Scale,AMap.ToolBar,AMap.Walking,AMap.Driving,AMap.Transfer";
+      s.async = true;
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --nav-h: 52px;
+      --chat-w: 420px;
+      --bg: #F7F6F3;
+      --white: #ffffff;
+      --border: rgba(15, 23, 42, 0.09);
+      --accent: #7c3aed;
+      --accent-light: #ede9fe;
+      --accent-hover: #6d28d9;
+      --user-bg: rgba(205, 179, 255, 0.42);
+      --ai-bg: #f1f5f9;
+      --text: #1a1a2e;
+      --muted: #64748b;
+      --shadow: 0 4px 24px rgba(15,23,42,0.07);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', 'PingFang SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+      z-index: 200;
+      box-shadow: 0 1px 6px rgba(15,23,42,0.05);
+    }
+
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); font-size: 13px;
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      transition: background 0.15s;
+      border: none; background: transparent; cursor: pointer;
+    }
+    .nav-back:hover { background: #f1f5f9; color: var(--text); }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 7px;
+      font-weight: 800; font-size: 15px; color: var(--accent);
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #fff;
+    }
+
+    .nav-divider { width: 1px; height: 20px; background: var(--border); }
+    .nav-title { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-new-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      font-size: 13px; color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .nav-new-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: var(--chat-w) 1fr;
+      height: calc(100vh - var(--nav-h));
+      margin-top: var(--nav-h);
+    }
+
+    /* ═══════════════════════════════════
+       LEFT — Chat panel
+    ═══════════════════════════════════ */
+    .chat-panel {
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .chat-scroll-area {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 8px;
+      scroll-behavior: smooth;
+    }
+    .chat-scroll-area::-webkit-scrollbar { width: 4px; }
+    .chat-scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+
+    /* Chat header */
+    .chat-header {
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chat-header-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .online-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; background: #22c55e;
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+      flex-shrink: 0;
+    }
+    .chat-header-name { font-size: 14px; font-weight: 700; }
+    .chat-header-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Message list */
+    .messages {
+      flex: 0 0 auto;
+      min-height: 0;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg-row { display: flex; gap: 7px; max-width: 100%; }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .msg-row.assistant .msg-avatar { background: linear-gradient(135deg,#7c3aed,#0ea5e9); color:#fff; }
+    .msg-row.user      .msg-avatar { background: #e5e7eb; color: #374151; }
+
+    .msg-bubble {
+      max-width: calc(100% - 42px);
+      padding: 9px 13px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+    .msg-row.user .msg-bubble {
+      background: var(--user-bg);
+      border-bottom-right-radius: 4px;
+    }
+    .msg-row.assistant .msg-bubble {
+      background: var(--ai-bg);
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* Markdown inside bubble */
+    .msg-bubble h1,.msg-bubble h2,.msg-bubble h3 { font-weight: 700; margin: 8px 0 4px; }
+    .msg-bubble h1 { font-size: 1.1em; }
+    .msg-bubble h2 { font-size: 1.05em; }
+    .msg-bubble h3 { font-size: 1em; }
+    .msg-bubble p  { margin-bottom: 5px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble strong { color: var(--accent); }
+    .msg-bubble ul,
+    .msg-bubble ol  { padding-left: 16px; margin: 4px 0; }
+    .msg-bubble li  { margin-bottom: 3px; }
+    .msg-bubble br  { display: block; content: ""; margin-bottom: 3px; }
+
+    /* Typing dots */
+    .typing-row .msg-bubble {
+      display: flex; align-items: center; gap: 4px;
+      padding: 10px 14px; min-width: 52px;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .18s; }
+    .dot:nth-child(3) { animation-delay: .36s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); opacity:.4; }
+      30%          { transform: translateY(-5px); opacity:1; }
+    }
+
+    /* Error bubble */
+    .msg-bubble.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+    /* Tool-log toggle */
+    .tool-log-toggle {
+      margin-top: 8px;
+      font-size: 11.5px;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      user-select: none;
+    }
+    .tool-log-box {
+      display: none;
+      margin-top: 5px;
+      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: var(--muted);
+      max-height: 140px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+    .tool-log-box.open { display: block; }
+
+    /* Suggestion chips */
+    .suggestions {
+      padding: 6px 12px 10px;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      flex-shrink: 0;
+    }
+    .chip {
+      padding: 5px 11px;
+      border-radius: 20px;
+      border: 1px solid rgba(124,58,237,.3);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 12px; cursor: pointer;
+      transition: all .15s; white-space: nowrap;
+    }
+    .chip:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Input area */
+    .input-area {
+      padding: 10px 12px 13px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .input-row { display: flex; gap: 7px; align-items: flex-end; }
+    .input-box {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 9px 13px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--text);
+      resize: none; outline: none;
+      line-height: 1.45;
+      max-height: 110px;
+      overflow-y: auto;
+      transition: border-color .15s;
+    }
+    .input-box:focus { border-color: var(--accent); }
+    .input-box::placeholder { color: #94a3b8; }
+
+    .send-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s;
+    }
+    .send-btn:hover:not(:disabled)  { background: var(--accent-hover); }
+    .send-btn:active:not(:disabled) { transform: scale(.93); }
+    .send-btn:disabled { background: #c4b5fd; cursor: not-allowed; }
+    .send-btn svg { width: 15px; height: 15px; }
+
+    .input-hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 5px; }
+
+    /* Cost summary */
+    .cost-panel {
+      margin: 0 12px 10px;
+      border: 1px solid rgba(124,58,237,.16);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(14,165,233,.12), transparent 42%),
+        linear-gradient(180deg, #fcfbff 0%, #f7f5ff 100%);
+      box-shadow: 0 10px 28px rgba(124,58,237,.08);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cost-toggle {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .cost-kicker {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .cost-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .cost-subtitle {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .cost-toggle-side {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .cost-total-badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(124,58,237,.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .cost-toggle-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(124,58,237,.16);
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(15,23,42,.05);
+    }
+
+    .cost-body {
+      padding: 0 16px 16px;
+      display: grid;
+      gap: 12px;
+      max-height: 520px;
+      opacity: 1;
+      overflow: hidden;
+      transition: max-height .22s ease, opacity .18s ease, padding-top .18s ease;
+    }
+
+    .cost-body.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .cost-overview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .cost-metric {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.8);
+      border: 1px solid rgba(15,23,42,.06);
+    }
+
+    .cost-metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .cost-metric-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .cost-metric-caption {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #8b5cf6;
+    }
+
+    .cost-tags,
+    .cost-source-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .cost-tag,
+    .cost-source-item {
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .cost-tag {
+      background: rgba(124,58,237,.1);
+      color: var(--accent);
+      border: 1px solid rgba(124,58,237,.12);
+    }
+
+    .cost-source-item {
+      background: rgba(241,245,249,.95);
+      color: #475569;
+      border: 1px solid rgba(15,23,42,.08);
+    }
+
+    .cost-detail-card {
+      padding: 12px 13px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(15,23,42,.06);
+    }
+
+    .cost-detail-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 9px;
+    }
+
+    .cost-detail-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .cost-detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .cost-detail-row span:first-child {
+      color: var(--muted);
+    }
+
+    .cost-detail-row span:last-child {
+      color: var(--text);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .cost-notes {
+      display: grid;
+      gap: 6px;
+    }
+
+    .cost-note {
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: rgba(248,250,252,.96);
+      border: 1px solid rgba(15,23,42,.06);
+      font-size: 12px;
+      line-height: 1.45;
+      color: #475569;
+    }
+
+    /* ═══════════════════════════════════
+       RIGHT — Map panel
+    ═══════════════════════════════════ */
+    .map-panel {
+      position: relative;
+      background: #eef4f7;
+      display: flex; flex-direction: column;
+      height: 100%; overflow: hidden;
+    }
+
+    .map-toolbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 42px;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 8px;
+      z-index: 10;
+    }
+    .map-toolbar-title { font-size: 13px; font-weight: 700; }
+    .map-toolbar-spacer { flex: 1; }
+
+    #route-mode-controls { display: flex; gap: 5px; }
+    #route-mode-controls button {
+      padding: 3px 9px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px; cursor: pointer;
+      color: var(--muted); transition: all .15s;
+    }
+    #route-mode-controls button:hover,
+    #route-mode-controls button.active {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+    }
+
+    #map-container {
+      width: 100%; height: 100%;
+      padding-top: 42px;
+    }
+
+    #map-status {
+      position: absolute;
+      left: 12px; bottom: 12px;
+      max-width: min(400px, calc(100% - 24px));
+      z-index: 10;
+      padding: 7px 11px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      font-size: 12px; color: var(--muted);
+      box-shadow: var(--shadow);
+      pointer-events: none;
+    }
+
+    /* Map placeholder */
+    .map-placeholder {
+      position: absolute;
+      inset: 42px 0 0 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+      background: linear-gradient(135deg,#f0f4ff,#f4f0ff);
+      z-index: 5;
+      transition: opacity .4s;
+    }
+    .map-placeholder.hidden { opacity: 0; pointer-events: none; }
+    .map-placeholder-icon { font-size: 52px; opacity: .3; }
+    .map-placeholder-text {
+      text-align: center; max-width: 200px;
+      line-height: 1.55; color: var(--muted); font-size: 14px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      :root { --chat-w: 100vw; }
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+      .chat-panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .cost-toggle { align-items: flex-start; }
+      .cost-toggle-side { flex-direction: column; align-items: flex-end; gap: 7px; }
+      .cost-overview { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ── -->
+  <nav class="nav">
+    <a class="nav-back" href="/">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      back
+    </a>
+    <div class="nav-divider"></div>
+    <a class="nav-logo" href="/">
+      <div class="nav-logo-icon">✈</div>
+      AI Travel Planner
+    </a>
+    <span class="nav-title" id="nav-city"></span>
+    <div class="nav-spacer"></div>
+    <button class="nav-new-btn" onclick="newChat()">+ New chat</button>
+  </nav>
+
+  <!-- ── Layout ── -->
+  <div class="layout">
+
+    <!-- LEFT: Chat -->
+    <section class="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-row">
+          <div class="online-dot"></div>
+          <span class="chat-header-name">Travel Planning Agent</span>
+        </div>
+        <div class="chat-header-sub">Multi-turn · Real-time itinerary · AMap route display</div>
+      </div>
+
+      <div class="chat-scroll-area" id="chat-scroll-area">
+        <div class="messages" id="messages"></div>
+
+        <section class="cost-panel" id="cost-panel">
+          <button class="cost-toggle" id="cost-toggle" type="button" onclick="toggleCostPanel()">
+            <div>
+              <div class="cost-kicker">Cost Summary</div>
+              <div class="cost-title" id="cost-title">预算摘要</div>
+              <div class="cost-subtitle" id="cost-subtitle">等待行程预算数据…</div>
+            </div>
+            <div class="cost-toggle-side">
+              <span class="cost-total-badge" id="cost-total-badge">--</span>
+              <span class="cost-toggle-icon" id="cost-toggle-icon">−</span>
+            </div>
+          </button>
+
+          <div class="cost-body" id="cost-body">
+            <div class="cost-tags" id="cost-tags"></div>
+            <div class="cost-overview" id="cost-overview"></div>
+
+            <div class="cost-detail-card">
+              <div class="cost-detail-title">参考明细</div>
+              <div class="cost-detail-grid" id="cost-detail-grid"></div>
+            </div>
+
+            <div class="cost-detail-card">
+              <div class="cost-detail-title">数据来源</div>
+              <div class="cost-source-list" id="cost-source-list"></div>
+            </div>
+
+            <div class="cost-notes" id="cost-notes"></div>
+          </div>
+        </section>
+
+        <!-- Quick chips (hidden after first send) -->
+        <div class="suggestions" id="suggestions">
+          <div class="chip" onclick="quickSend('I want to visit Shanghai for 3 days, I love food and art')">🏙️ Shanghai 3D</div>
+          <div class="chip" onclick="quickSend('Plan a 4-day family trip to Beijing')">🏯 Beijing 4D</div>
+          <div class="chip" onclick="quickSend('5-day foodie trip to Chengdu, mid-range budget')">🐼 Chengdu 5D</div>
+          <div class="chip" onclick="quickSend('2-day coastal trip to Xiamen')">🌊 Xiamen 2D</div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area">
+        <div class="input-row">
+          <textarea id="user-input" class="input-box" rows="1"
+            placeholder="Continue the conversation, e.g.: make day 2 more relaxed…"
+            onkeydown="handleKey(event)"
+            oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/>
+              <path d="m21.854 2.147-10.94 10.939"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Map -->
+    <section class="map-panel">
+      <div class="map-toolbar">
+        <span class="map-toolbar-title">🗺️ Route Map</span>
+        <div class="map-toolbar-spacer"></div>
+        <div id="route-mode-controls"></div>
+      </div>
+
+      <div id="map-container"></div>
+      <div id="map-status">Waiting for itinerary…</div>
+
+      <div class="map-placeholder" id="map-placeholder">
+        <div class="map-placeholder-icon">🗺️</div>
+        <div class="map-placeholder-text">Tell me your travel plans<br>The route will appear here once the itinerary is ready</div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 地图组件（从 server 静态目录引用；map.js 暴露 window.renderTravelMap） -->
+  <script src="/static/map_UI/map.js"></script>
+
+  <script>
+    /* ═══════════════════════════════════
+       State
+    ═══════════════════════════════════ */
+    let conversationId   = null;
+    let conversationState = null;
+    let isWaiting        = false;
+    let mapInitialized   = false;
+
+    /* ═══════════════════════════════════
+       DOM helpers
+    ═══════════════════════════════════ */
+    const msgList = document.getElementById('messages');
+    const chatScrollArea = document.getElementById('chat-scroll-area');
+    const sendBtn = document.getElementById('send-btn');
+    const costPanel = document.getElementById('cost-panel');
+    const costBody = document.getElementById('cost-body');
+    const costTitle = document.getElementById('cost-title');
+    const costSubtitle = document.getElementById('cost-subtitle');
+    const costTotalBadge = document.getElementById('cost-total-badge');
+    const costTags = document.getElementById('cost-tags');
+    const costOverview = document.getElementById('cost-overview');
+    const costDetailGrid = document.getElementById('cost-detail-grid');
+    const costSourceList = document.getElementById('cost-source-list');
+    const costNotes = document.getElementById('cost-notes');
+    const costToggleIcon = document.getElementById('cost-toggle-icon');
+    let costPanelOpen = true;
+
+    function scrollBottom() {
+      chatScrollArea.scrollTop = chatScrollArea.scrollHeight;
+    }
+
+    /* ── Markdown renderer ── */
+    function md(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm,  '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,   '<em>$1</em>')
+        .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
+        .replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>')
+        .replace(/\n\n+/g,'</p><p>')
+        .replace(/\n/g,'<br>')
+        .replace(/^(?!<[hup])/,'<p>').replace(/(?<![>])$/,'</p>');
+    }
+
+    /* ── Append a message bubble ── */
+    function appendMsg(role, html, toolLogs) {
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + role;
+
+      const av = document.createElement('div');
+      av.className = 'msg-avatar';
+      av.textContent = role === 'assistant' ? '✈' : 'User';
+
+      const bub = document.createElement('div');
+      bub.className = 'msg-bubble';
+      bub.innerHTML = html;
+
+      // Tool-log toggle (assistant only, when logs exist)
+      if (role === 'assistant' && toolLogs && toolLogs.length) {
+        const toggle = document.createElement('div');
+        toggle.className = 'tool-log-toggle';
+        toggle.textContent = `▶ View tool call logs (${toolLogs.length})`;
+        const box = document.createElement('div');
+        box.className = 'tool-log-box';
+        box.textContent = toolLogs.map(l =>
+          `[${l.tool || l.name || ''}] ${JSON.stringify(l).slice(0,160)}`
+        ).join('\n');
+        toggle.onclick = () => {
+          box.classList.toggle('open');
+          toggle.textContent = box.classList.contains('open')
+            ? `▼ Hide tool call logs (${toolLogs.length})`
+            : `▶ View tool call logs (${toolLogs.length})`;
+        };
+        bub.appendChild(toggle);
+        bub.appendChild(box);
+      }
+
+      row.appendChild(av);
+      row.appendChild(bub);
+      msgList.appendChild(row);
+      scrollBottom();
+      return row;
+    }
+
+    /* ── Typing indicator ── */
+    function showTyping() {
+      const row = document.createElement('div');
+      row.className = 'msg-row assistant typing-row';
+      row.id = 'typing-row';
+      const av = document.createElement('div');
+      av.className = 'msg-avatar';
+      av.textContent = '✈';
+      const bub = document.createElement('div');
+      bub.className = 'msg-bubble';
+      bub.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+      row.appendChild(av);
+      row.appendChild(bub);
+      msgList.appendChild(row);
+      scrollBottom();
+    }
+    function removeTyping() {
+      const el = document.getElementById('typing-row');
+      if (el) el.remove();
+    }
+
+    /* ═══════════════════════════════════
+       Map rendering
+    ═══════════════════════════════════ */
+    function renderMap(mapPayload) {
+      if (!mapPayload || !mapPayload.days || !mapPayload.days.length) return;
+
+      document.getElementById('map-placeholder').classList.add('hidden');
+
+      const city = mapPayload.city || guessCity(mapPayload);
+
+      function tryRender() {
+        if (!window.AMap || !window.renderTravelMap) {
+          setTimeout(tryRender, 200);
+          return;
+        }
+        window.renderTravelMap(mapPayload, {
+          containerId:  'map-container',
+          city:         city,
+          modeSelector: '#route-mode-controls',
+          statusSelector: '#map-status',
+        });
+        mapInitialized = true;
+      }
+      tryRender();
+    }
+
+    function guessCity(mapPayload) {
+      // Try to guess city from first stop's district or area
+      try {
+        return mapPayload.days[0].area || 'Shanghai';
+      } catch (e) { return 'Shanghai'; }
+    }
+
+    function toggleCostPanel(forceOpen) {
+      costPanelOpen = typeof forceOpen === 'boolean' ? forceOpen : !costPanelOpen;
+      costBody.classList.toggle('collapsed', !costPanelOpen);
+      costToggleIcon.textContent = costPanelOpen ? '−' : '+';
+    }
+
+    function resetCostPanel() {
+      costBody.classList.remove('collapsed');
+      costToggleIcon.textContent = '−';
+      costPanelOpen = true;
+      costTitle.textContent = '预算摘要';
+      costSubtitle.textContent = '页面已准备好，等待 cost 组预算数据接入…';
+      costTotalBadge.textContent = '--';
+      costTags.innerHTML = '<span class="cost-tag">默认展开</span><span class="cost-tag">支持收起</span>';
+      renderMetricCards([
+        { label: '总预算', value: '--', caption: '收到行程后自动更新' },
+        { label: '机票预算', value: '--', caption: '往返价格汇总' },
+        { label: '酒店预算', value: '--', caption: '住宿总价估算' },
+        { label: '餐饮 / 交通', value: '-- / --', caption: '日常开销拆分' }
+      ]);
+      renderDetailRows([
+        { label: '去程机票单价', value: '--' },
+        { label: '返程机票单价', value: '--' },
+        { label: '酒店每晚参考价', value: '--' },
+        { label: '餐饮每天参考价', value: '--' },
+        { label: '本地交通参考总价', value: '--' }
+      ]);
+      costSourceList.innerHTML = '<span class="cost-source-item">等待预算接口返回</span>';
+      costNotes.innerHTML = '<div class="cost-note">这块卡片现在会始终显示在左侧聊天区下方。拿到 `budget` 或 `cost` 数据后，会自动替换成真实预算内容。</div>';
+    }
+
+    function formatBudgetValue(value) {
+      if (value == null || value === '') return '--';
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return '¥' + Math.round(value).toLocaleString('en-US');
+      }
+      const text = String(value).trim();
+      if (!text) return '--';
+      const numeric = Number(text.replace(/[^\d.-]/g, ''));
+      if (Number.isFinite(numeric) && !text.includes('-')) {
+        return '¥' + Math.round(numeric).toLocaleString('en-US');
+      }
+      return text.startsWith('¥') ? text : text;
+    }
+
+    function humanizeBudgetLevel(level) {
+      const mapping = {
+        low: '轻预算',
+        medium: '中等预算',
+        high: '高预算',
+        auto: '自动匹配'
+      };
+      return mapping[level] || level || '';
+    }
+
+    function humanizeSource(key, value) {
+      const keyMap = {
+        outbound_flight_source: '去程机票',
+        return_flight_source: '返程机票',
+        hotel_source: '酒店抓取',
+        hotel_budget_source: '酒店预算',
+        outbound_budget_source: '去程预算',
+        return_budget_source: '返程预算',
+        cost_reference_city: '参考城市'
+      };
+      const valueMap = {
+        realtime: '实时数据',
+        missing: '暂无结果',
+        mirrored_from_return: '按返程镜像估算',
+        mirrored_from_outbound: '按去程镜像估算',
+        ctrip_hotel_scraper: '携程实时抓取',
+        hotel_playwright_scraper: '携程登录态抓取',
+        hotel_init_data: '携程页面解析',
+        local_cost_reference: '本地成本参考',
+        mock_data: '模拟数据'
+      };
+      return `${keyMap[key] || key}: ${valueMap[value] || value}`;
+    }
+
+    function findCostPayload(data) {
+      const containers = [
+        data,
+        data && data.itinerary_json,
+        data && data.itinerary_json && data.itinerary_json.trip_plan,
+        data && data.itinerary_json && data.itinerary_json.travel_info,
+        data && data.trip_plan,
+        data && data.travel_info,
+        data && data.conversation_state,
+        data && data.conversation_state && data.conversation_state.trip_plan,
+        data && data.conversation_state && data.conversation_state.travel_info
+      ].filter(Boolean);
+
+      for (const container of containers) {
+        if (container.budget && typeof container.budget === 'object') {
+          return { kind: 'trip', payload: container.budget, container };
+        }
+      }
+
+      for (const container of containers) {
+        if (container.cost && typeof container.cost === 'object') {
+          return { kind: 'estimate', payload: container.cost, container };
+        }
+      }
+
+      for (const container of containers) {
+        if (container['总预算'] || container['总计最低']) {
+          return {
+            kind: container['总预算'] ? 'trip' : 'estimate',
+            payload: container,
+            container
+          };
+        }
+      }
+
+      return null;
+    }
+
+    function renderMetricCards(items) {
+      costOverview.innerHTML = items.map(item => `
+        <div class="cost-metric">
+          <div class="cost-metric-label">${escapeHtml(item.label)}</div>
+          <div class="cost-metric-value">${escapeHtml(item.value)}</div>
+          ${item.caption ? `<div class="cost-metric-caption">${escapeHtml(item.caption)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderDetailRows(rows) {
+      if (!rows.length) {
+        costDetailGrid.innerHTML = '<div class="cost-detail-row"><span>暂无明细</span><span>等待接口返回</span></div>';
+        return;
+      }
+      costDetailGrid.innerHTML = rows.map(row => `
+        <div class="cost-detail-row">
+          <span>${escapeHtml(row.label)}</span>
+          <span>${escapeHtml(row.value)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderCostPanel(costData) {
+      if (!costData || !costData.payload) return;
+
+      const payload = costData.payload;
+      const container = costData.container || {};
+      const tripTitle = payload.destination_city || container.destination_city || container.city || '当前行程';
+      toggleCostPanel(costPanelOpen);
+
+      if (costData.kind === 'trip') {
+        const totalBudget = formatBudgetValue(payload['总预算']);
+        const travelMeta = [
+          payload.departure_city || container.departure_city,
+          payload.destination_city || container.destination_city,
+        ].filter(Boolean).join(' → ');
+        const subtitleParts = [
+          travelMeta,
+          payload.depart_date && payload.return_date ? `${payload.depart_date} - ${payload.return_date}` : '',
+          payload.travel_days ? `${payload.travel_days} 天` : '',
+          payload.hotel_nights ? `${payload.hotel_nights} 晚` : ''
+        ].filter(Boolean);
+
+        costTitle.textContent = `${tripTitle}费用摘要`;
+        costSubtitle.textContent = subtitleParts.join(' · ') || '综合预算已根据机票、酒店和餐饮生成';
+        costTotalBadge.textContent = totalBudget;
+
+        const tags = [
+          payload.budget_level ? humanizeBudgetLevel(payload.budget_level) : '',
+          payload.adults ? `${payload.adults} 位旅客` : ''
+        ].filter(Boolean);
+        costTags.innerHTML = tags.map(tag => `<span class="cost-tag">${escapeHtml(tag)}</span>`).join('');
+
+        renderMetricCards([
+          { label: '总预算', value: totalBudget, caption: '机票 + 酒店 + 餐饮 + 本地交通' },
+          { label: '机票预算', value: formatBudgetValue(payload['机票预算']), caption: '往返合计' },
+          { label: '酒店预算', value: formatBudgetValue(payload['酒店预算']), caption: '住宿总价' },
+          { label: '餐饮 / 交通', value: `${formatBudgetValue(payload['餐饮预算'])} / ${formatBudgetValue(payload['本地交通预算'])}`, caption: '日常开销估算' }
+        ]);
+
+        const details = [];
+        const detailPayload = payload['预算明细'] || {};
+        if (detailPayload['去程机票单价'] != null) details.push({ label: '去程机票单价', value: formatBudgetValue(detailPayload['去程机票单价']) });
+        if (detailPayload['返程机票单价'] != null) details.push({ label: '返程机票单价', value: formatBudgetValue(detailPayload['返程机票单价']) });
+        if (detailPayload['酒店每晚参考价'] != null) details.push({ label: '酒店每晚参考价', value: formatBudgetValue(detailPayload['酒店每晚参考价']) });
+        if (detailPayload['餐饮每天参考价'] != null) details.push({ label: '餐饮每天参考价', value: formatBudgetValue(detailPayload['餐饮每天参考价']) });
+        if (detailPayload['本地交通参考总价'] != null) details.push({ label: '本地交通参考总价', value: formatBudgetValue(detailPayload['本地交通参考总价']) });
+        renderDetailRows(details);
+
+        const sources = Object.entries(payload['数据来源'] || {})
+          .filter(([, value]) => value != null && value !== '')
+          .map(([key, value]) => humanizeSource(key, value));
+        costSourceList.innerHTML = sources.length
+          ? sources.map(source => `<span class="cost-source-item">${escapeHtml(source)}</span>`).join('')
+          : '<span class="cost-source-item">等待数据来源</span>';
+
+        const notes = Array.isArray(payload['说明']) ? payload['说明'] : [];
+        costNotes.innerHTML = notes.length
+          ? notes.map(note => `<div class="cost-note">${escapeHtml(note)}</div>`).join('')
+          : '<div class="cost-note">当前预算优先使用实时机酒数据，缺失字段会自动回落到本地城市参考价。</div>';
+        return;
+      }
+
+      const totalMin = payload['总计最低'];
+      const totalMax = payload['总计最高'];
+      const rangeText = totalMin != null && totalMax != null
+        ? `${formatBudgetValue(totalMin)} - ${formatBudgetValue(totalMax)}`
+        : '--';
+      const city = container.city || container.destination_city || tripTitle;
+      const days = container.days || container.travel_days;
+
+      costTitle.textContent = `${city}费用预估`;
+      costSubtitle.textContent = [city, days ? `${days} 天行程` : '', container.budget_level ? humanizeBudgetLevel(container.budget_level) : ''].filter(Boolean).join(' · ');
+      costTotalBadge.textContent = rangeText;
+      costTags.innerHTML = '<span class="cost-tag">估算模式</span><span class="cost-tag">本地参考价</span>';
+
+      renderMetricCards([
+        { label: '总费用范围', value: rangeText, caption: '基础住宿 / 餐饮 / 交通' },
+        { label: '酒店每晚', value: payload['酒店每晚'] || '--', caption: '住宿区间' },
+        { label: '餐饮每天', value: payload['餐饮每天'] || '--', caption: '饮食区间' },
+        { label: '交通合计', value: payload['交通合计'] || '--', caption: '本地通勤' }
+      ]);
+
+      renderDetailRows([
+        { label: '酒店每晚', value: payload['酒店每晚'] || '--' },
+        { label: '餐饮每天', value: payload['餐饮每天'] || '--' },
+        { label: '交通合计', value: payload['交通合计'] || '--' },
+        { label: '总计最低', value: formatBudgetValue(totalMin) },
+        { label: '总计最高', value: formatBudgetValue(totalMax) }
+      ]);
+
+      costSourceList.innerHTML = '<span class="cost-source-item">费用参考: 本地城市成本库</span>';
+      costNotes.innerHTML = '<div class="cost-note">这组数据来自 cost 组的基础估算接口，适合在实时机票或酒店价格尚未完整返回时快速给出预算范围。</div>';
+    }
+
+    /* ═══════════════════════════════════
+       API call
+    ═══════════════════════════════════ */
+    async function callApi(message) {
+      const body = {
+        message,
+        conversation_id:    conversationId,
+        conversation_state: conversationState,
+      };
+
+      const res = await fetch('/api/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Server error ${res.status}: ${txt}`);
+      }
+
+      return res.json();
+    }
+
+    /* ═══════════════════════════════════
+       Send message
+    ═══════════════════════════════════ */
+    async function sendMessage() {
+      if (isWaiting) return;
+      const input = document.getElementById('user-input');
+      const text  = input.value.trim();
+      if (!text) return;
+
+      // Hide chips after first interaction
+      document.getElementById('suggestions').style.display = 'none';
+
+      appendMsg('user', escapeHtml(text));
+      input.value = '';
+      autoResize(input);
+
+      isWaiting = true;
+      sendBtn.disabled = true;
+      showTyping();
+
+      try {
+        const data = await callApi(text);
+
+        removeTyping();
+
+        // Persist multi-turn state
+        conversationId    = data.conversation_id;
+        conversationState = data.conversation_state;
+
+        // Update nav title with detected city
+        if (data.itinerary_json && data.itinerary_json.city) {
+          document.getElementById('nav-city').textContent =
+            '· ' + data.itinerary_json.city;
+        }
+
+        // Render AI reply
+        appendMsg('assistant', md(data.report || '(No response)'), data.tool_logs);
+
+        // Render cost summary when structured budget data is available
+        const costPayload = findCostPayload(data);
+        if (costPayload) {
+          renderCostPanel(costPayload);
+        }
+
+        // Render map
+        if (data.map_payload) {
+          renderMap(data.map_payload);
+        }
+
+      } catch (err) {
+        removeTyping();
+        const bub = appendMsg('assistant', '');
+        bub.querySelector('.msg-bubble').classList.add('error');
+        bub.querySelector('.msg-bubble').textContent = 'Error: ' + err.message;
+      } finally {
+        isWaiting = false;
+        sendBtn.disabled = false;
+      }
+    }
+
+    function quickSend(text) {
+      document.getElementById('user-input').value = text;
+      sendMessage();
+    }
+
+    /* ═══════════════════════════════════
+       Keyboard & UI helpers
+    ═══════════════════════════════════ */
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\n/g,'<br>');
+    }
+
+    /* ── New chat ── */
+    function newChat() {
+      conversationId    = null;
+      conversationState = null;
+      msgList.innerHTML = '';
+      resetCostPanel();
+      document.getElementById('suggestions').style.display = 'flex';
+      document.getElementById('map-placeholder').classList.remove('hidden');
+      document.getElementById('map-status').textContent = 'Waiting for itinerary…';
+      document.getElementById('nav-city').textContent = '';
+      appendMsg('assistant', md('Hi! I\'m your AI travel planning assistant.\n\nTell me where you want to go, how many days, and your travel style — I\'ll generate a detailed itinerary and show the route on the map.'));
+    }
+
+    /* ═══════════════════════════════════
+       Boot: read first query from URL
+    ═══════════════════════════════════ */
+    (function boot() {
+      resetCostPanel();
+      // Show welcome message
+      appendMsg('assistant', md('Hi! I\'m your AI travel planning assistant.\n\nTell me where you want to go, how many days, and your travel style — I\'ll generate a detailed itinerary and show the route on the map right.'));
+
+      // If user came from index.html with ?q=...
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('q');
+      if (q) {
+        document.getElementById('user-input').value = q;
+        // Slight delay so page is ready
+        setTimeout(sendMessage, 300);
+      }
+    })();
+  </script>
+</body>
+</html>

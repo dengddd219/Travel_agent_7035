@@ -1,0 +1,394 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Guangzhou",
+  "city_zh": "广州",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_guangzhou_001",
+      "city": "Guangzhou",
+      "city_zh": "广州",
+      "task_type": "nearby_food_search",
+      "complexity": {
+        "reasoning": [
+          "dietary_constraint",
+          "distance_preference",
+          "family_suitability"
+        ],
+        "tool": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "interaction": [
+          "recommendation_with_constraints"
+        ]
+      },
+      "initial_state": {
+        "city": "Guangzhou",
+        "current_time": "2026-09-05T08:35:00+08:00",
+        "current_location": "Yongqing Fang",
+        "base_location": "Hotel near Shamian Island",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 1
+        },
+        "food_constraints": [
+          "light taste",
+          "no caffeine for one traveller"
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Yongqing Fang",
+            "time_slot": "morning",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Shamian Island",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 2.0
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Dependent user travelling with family.",
+          "style": "Asks the agent to choose rather than listing many options.",
+          "age": "35-50",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Find a nearby Cantonese breakfast or dim sum option near Yongqing Fang. It should be suitable for an elderly person and a child, have light taste options, and avoid caffeine-heavy recommendations.",
+        "hidden_constraints": [
+          "nearby matters more than popularity",
+          "family-friendly and light taste",
+          "avoid caffeine"
+        ],
+        "disclosure_plan": [
+          "First ask for breakfast nearby.",
+          "If agent asks about restrictions, mention elderly, child, light taste, and no caffeine."
+        ]
+      },
+      "first_user_message": "We are near Yongqing Fang and want breakfast. Can you pick a nearby dim sum place for my family?",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "state_assertions": [
+          "Agent searches within Guangzhou/Yongqing Fang context",
+          "Agent ranks candidates using family and food constraints",
+          "Final answer provides 1 to 3 options, not a long undifferentiated list"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "retrieve_food_candidates",
+            "dimension": "tool",
+            "rubric": "Agent calls retrieve_candidates for nearby dim sum or Cantonese breakfast in Guangzhou."
+          },
+          {
+            "key": "score_with_constraints",
+            "dimension": "tool",
+            "rubric": "Agent calls score_candidates with context including family suitability, nearby preference, or food constraints."
+          },
+          {
+            "key": "respect_food_constraints",
+            "dimension": "reasoning",
+            "rubric": "Final recommendation mentions light taste or avoids caffeine-heavy choices."
+          },
+          {
+            "key": "recommend_few_options",
+            "dimension": "interaction",
+            "rubric": "Agent gives 1 to 3 concrete options with reasons."
+          },
+          {
+            "key": "no_cross_city_result",
+            "dimension": "reasoning",
+            "rubric": "Agent does not recommend places outside Guangzhou."
+          }
+        ]
+      },
+      "failure_tags": [
+        "unranked_search",
+        "ignores_diet",
+        "too_many_options",
+        "wrong_city"
+      ]
+    },
+    {
+      "id": "companion_guangzhou_002",
+      "city": "Guangzhou",
+      "city_zh": "广州",
+      "task_type": "weather_indoor_replan",
+      "complexity": {
+        "reasoning": [
+          "weather_branch",
+          "indoor_substitution",
+          "core_interest_preservation"
+        ],
+        "tool": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "conditional_plan"
+        ]
+      },
+      "initial_state": {
+        "city": "Guangzhou",
+        "current_time": "2026-07-01T14:00:00+08:00",
+        "current_location": "Guangdong Provincial Museum",
+        "base_location": "Hotel near Guangdong Provincial Museum",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Canton Tower",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Guangzhou Opera House",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 3.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Weather-sensitive traveller.",
+          "style": "Accepts tradeoffs if the reason is clear.",
+          "age": "28-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Rain may affect the plan. Avoid exposed outdoor activity and preserve Canton Tower night view.",
+        "hidden_constraints": [
+          "check weather before deciding",
+          "prefer indoor if raining",
+          "preserve Canton Tower night view"
+        ],
+        "disclosure_plan": [
+          "Mention rain/weather concern.",
+          "If asked priority, say Canton Tower night view matters most."
+        ]
+      },
+      "first_user_message": "The sky looks bad near Zhujiang New Town. Should I still do Canton Tower tonight or change the plan?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "state_assertions": [
+          "Weather is checked.",
+          "Indoor preference or conditional outdoor decision is used."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks Guangzhou weather."
+          },
+          {
+            "key": "indoor_constraint",
+            "dimension": "reasoning",
+            "rubric": "Agent turns rain into an indoor or conditional-outdoor constraint."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary."
+          },
+          {
+            "key": "preserve_core_interest",
+            "dimension": "interaction",
+            "rubric": "Final reply preserves Canton Tower night view."
+          },
+          {
+            "key": "avoid_exposed_outdoor",
+            "dimension": "reasoning",
+            "rubric": "Agent avoids or makes exposed outdoor stops conditional."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_guess",
+        "drops_core_interest",
+        "keeps_bad_weather_outdoor"
+      ]
+    },
+    {
+      "id": "companion_guangzhou_003",
+      "city": "Guangzhou",
+      "city_zh": "广州",
+      "task_type": "deadline_coordinate",
+      "complexity": {
+        "reasoning": [
+          "deadline",
+          "route_feasibility",
+          "optional_stop_tradeoff"
+        ],
+        "tool": [
+          "get_route",
+          "get_poi_detail"
+        ],
+        "interaction": [
+          "clear_go_or_skip"
+        ]
+      },
+      "initial_state": {
+        "city": "Guangzhou",
+        "current_time": "2026-07-01T16:00:00+08:00",
+        "current_location": "Shamian Island",
+        "base_location": "Hotel near Shamian Island",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 0
+        },
+        "destination_deadlines": [
+          {
+            "name": "Guangzhou South Railway Station",
+            "deadline": "2026-09-06T18:10:00+08:00"
+          }
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Yongqing Fang",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 2.5,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Guangzhou South Railway Station",
+            "time_slot": "evening",
+            "duration_hours": 0.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller with a fixed departure or reservation.",
+          "style": "Needs a conservative answer.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Decide whether Yongqing Fang can fit before Guangzhou South Railway Station at 2026-09-06T18:10:00+08:00. If risky, skip it.",
+        "hidden_constraints": [
+          "2026-09-06T18:10:00+08:00 is fixed",
+          "Yongqing Fang is optional",
+          "route and buffer matter"
+        ],
+        "disclosure_plan": [
+          "Ask whether the optional stop fits.",
+          "If asked, say the deadline cannot move."
+        ]
+      },
+      "first_user_message": "We are at Shamian. Train from Guangzhou South is 18:10. Can we still add Yongqing Fang?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": [
+          "get_route"
+        ],
+        "tools_should_call": [
+          "get_poi_detail"
+        ],
+        "state_assertions": [
+          "Deadline is treated as hard.",
+          "Route/time is checked.",
+          "Optional stop is skipped if risky."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "deadline_recognized",
+            "dimension": "reasoning",
+            "rubric": "Agent recognizes the fixed deadline."
+          },
+          {
+            "key": "route_checked",
+            "dimension": "tool",
+            "rubric": "Agent calls get_route for a relevant leg."
+          },
+          {
+            "key": "duration_or_buffer",
+            "dimension": "tool",
+            "rubric": "Agent checks or accounts for visit duration and buffer."
+          },
+          {
+            "key": "clear_recommendation",
+            "dimension": "interaction",
+            "rubric": "Final reply clearly says go or skip."
+          },
+          {
+            "key": "avoid_overpack",
+            "dimension": "reasoning",
+            "rubric": "Agent does not squeeze in the optional stop if it risks the deadline."
+          }
+        ]
+      },
+      "failure_tags": [
+        "missed_deadline",
+        "no_route_check",
+        "overpacked_plan"
+      ]
+    }
+  ]
+}
