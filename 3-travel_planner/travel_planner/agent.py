@@ -4,6 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import re
+import time
 from dataclasses import dataclass, field
 
 from .city_names import CITY_ALIASES, normalize_city_name, provider_city_name
@@ -1820,7 +1821,11 @@ class TravelPlanningAgent:
         strategy_queries = decomposition.get("strategy_queries") or [f"{city} {user_profile['travel_type']} itinerary"]
         geo_queries = decomposition.get("geo_queries") or [f"{city} landmark"]
 
+        tool_latencies: dict[str, int] = {}
+
+        _t0 = time.monotonic()
         tool_results["get_city_context"] = get_city_context(city, user_profile["travel_type"])
+        tool_latencies["get_city_context"] = int((time.monotonic() - _t0) * 1000)
         self._append_tool_log(
             tool_results,
             tool_name="get_city_context",
@@ -1830,6 +1835,7 @@ class TravelPlanningAgent:
         trace_tool_call("get_city_context", {"city": city, "travel_type": user_profile["travel_type"]}, tool_results["get_city_context"])
         _rag_queries = self._dedupe_queries(strategy_queries, limit=6)
         trace_rag_input(queries=_rag_queries, city=city, travel_type=user_profile["travel_type"], top_k=5)
+        _t0 = time.monotonic()
         with trace_step_timer("RAG retrieval"):
             tool_results["get_strategy_context"] = self._get_strategy_context(
                 city=city,
@@ -1837,6 +1843,7 @@ class TravelPlanningAgent:
                 travel_type=user_profile["travel_type"],
                 top_k=5,
             )
+        tool_latencies["get_strategy_context"] = int((time.monotonic() - _t0) * 1000)
         trace_rag_output(tool_results["get_strategy_context"])
         self._append_tool_log(
             tool_results,
@@ -1849,11 +1856,13 @@ class TravelPlanningAgent:
             },
             result=tool_results["get_strategy_context"],
         )
+        _t0 = time.monotonic()
         tool_results["get_weather_forecast"] = self._get_weather_forecast(
             city=city,
             trip_days=user_profile["trip_days"],
             start_date=user_profile.get("start_date", ""),
         )
+        tool_latencies["get_weather_forecast"] = int((time.monotonic() - _t0) * 1000)
         self._append_tool_log(
             tool_results,
             tool_name="get_weather_forecast",
@@ -1865,11 +1874,13 @@ class TravelPlanningAgent:
             result=tool_results["get_weather_forecast"],
         )
         trace_tool_call("get_weather_forecast", {"city": city, "trip_days": user_profile["trip_days"]}, tool_results["get_weather_forecast"])
+        _t0 = time.monotonic()
         tool_results["search_batch_pois"] = self._search_batch_pois(
             city=city,
             queries=self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10),
             limit_per_query=3,
         )
+        tool_latencies["search_batch_pois"] = int((time.monotonic() - _t0) * 1000)
         self._append_tool_log(
             tool_results,
             tool_name="search_batch_pois",
@@ -1881,12 +1892,14 @@ class TravelPlanningAgent:
             result=tool_results["search_batch_pois"],
         )
         trace_tool_call("search_batch_pois", {"city": city, "queries": self._dedupe_queries(geo_queries + user_profile.get("must_visit", []), limit=10)}, tool_results["search_batch_pois"])
+        _t0 = time.monotonic()
         tool_results["get_cost_summary"] = self._get_cost_summary(
             city=city,
             days=user_profile["trip_days"],
             budget_level=user_profile["budget_level"],
             user_budget=decomposition.get("condition_queries", {}).get("cost", {}).get("user_budget"),
         )
+        tool_latencies["get_cost_summary"] = int((time.monotonic() - _t0) * 1000)
         self._append_tool_log(
             tool_results,
             tool_name="get_cost_summary",
@@ -1900,12 +1913,14 @@ class TravelPlanningAgent:
         )
         trace_tool_call("get_cost_summary", {"city": city, "days": user_profile["trip_days"], "budget_level": user_profile["budget_level"]}, tool_results["get_cost_summary"])
         poi_names = [item["name"] for item in tool_results["search_batch_pois"].get("results", [])[:8]]
+        _t0 = time.monotonic()
         tool_results["get_travel_tips"] = self._get_travel_tips(
             city=city,
             poi_names=poi_names,
             travel_type=user_profile["travel_type"],
             interests=user_profile.get("interests", []),
         )
+        tool_latencies["get_travel_tips"] = int((time.monotonic() - _t0) * 1000)
         self._append_tool_log(
             tool_results,
             tool_name="get_travel_tips",
@@ -1918,6 +1933,12 @@ class TravelPlanningAgent:
             result=tool_results["get_travel_tips"],
         )
         trace_tool_call("get_travel_tips", {"city": city, "poi_names": poi_names, "travel_type": user_profile["travel_type"]}, tool_results["get_travel_tips"])
+        tool_results["_tool_latencies"] = tool_latencies
+        tool_results["_logs"].append({
+            "tool_name": "_tool_latencies",
+            "arguments": {},
+            "result_preview": json.dumps(tool_latencies),
+        })
         result = self._auto_finish(user_profile=user_profile, tool_results=tool_results)
         return user_profile, tool_results, result.plan or {}, result.answer
 

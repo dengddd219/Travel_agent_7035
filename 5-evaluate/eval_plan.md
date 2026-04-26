@@ -1,7 +1,73 @@
-# Travel Agent 7035 — 评测系统设计
+# Travel Agent 7035 — 评测系统设计-美团龙猫
 
 > 参考框架：《Agentic Design Patterns》理论体系 + 美团龙猫 VitaBench 工程实践。
 > 从理论到落地，分离线测试和在线追踪两条线，覆盖传统工程指标和 Agent 特有指标。
+
+---
+
+## 零、当前做了什么
+
+### 0.1 梳理现有评测状况
+
+- 确认 `1-rag_pipeline_delivery/rag/evaluate.py` 已有检索层评测：**HR@5 = 84%，MRR = 1.00**
+- 确认目前**没有** RAGAS 生成质量评测（Faithfulness、Answer Relevancy、Context Precision）
+- 明确了本文档（`eval_plan.md`）中还有哪些评测尚未实现
+
+---
+
+### 0.2 实现在线 Tracing（Travel Planner Agent）
+
+在 `backend/server.py` 和 `3-travel_planner/travel_planner/agent.py` 中实现了结构化日志落盘：
+
+**`agent.py`**：在 `_execute()` 的 6 个工具调用处各加 `time.monotonic()` 计时，将每个工具的耗时存入 `tool_latencies` dict，并以特殊 log entry `_tool_latencies` 注入 `tool_logs`。
+
+**`server.py`**：新增以下函数，在 `/api/chat` 端点记录完整 trace：
+
+- `_estimate_tokens(text)`：字符估算 Token 数（中文字符 /1.5，英文 /4）
+- `_write_eval_trace(record)`：非阻塞追加 JSON 行到 `eval_trace.jsonl`
+- `_build_trace_record(...)`：组装结构化 trace 记录
+
+端点用 `time.monotonic()` 包裹端到端延迟，从 `tool_logs` 提取 per-tool latencies，生成告警（延迟 >30s / 估算 Token >8000），写入 `5-evaluate/eval_trace.jsonl`。
+
+> **注**：Travel Planner Agent 当前走确定性路径（无真实 LLM 调用），Token 数为字符估算值，trace 记录中 `token_usage.note` 字段注明 `"estimated from character count, not from API usage field"`。
+
+---
+
+### 0.3 实现真实 Token 统计（Companion Agent）
+
+在 `7-companion-agent/` 的三个文件中实现了基于 API `usage` 字段的真实 Token 统计：
+
+**`models.py`**：`AgentTurnResult` 新增 `token_usage: dict` 字段。
+
+**`companion_agent.py`**：
+- `_run_llm_turn`：while 循环每次 LLM 调用后累加 `response.usage.prompt_tokens` + `response.usage.completion_tokens`，并记录 `llm_call_count`（每轮对话最多 8 次循环，每次独立累加）
+- `_run_fallback_turn`：统一返回全零 `token_usage`，标注 `"source": "fallback_no_llm"`
+
+**`api.py`**：新增 `_write_companion_trace()`，在 `/api/companion` 端点计时、提取 `token_usage`、生成告警，写入同一个 `5-evaluate/eval_trace.jsonl`（通过 `"agent": "companion"` 字段与 Travel Planner 的记录区分）。
+
+Companion Agent trace 记录格式示例：
+
+```json
+{
+  "timestamp": "2026-04-25T10:00:00Z",
+  "agent": "companion",
+  "conversation_id": "...",
+  "turn": 1,
+  "intent": "search",
+  "city": "北京",
+  "latency_ms": {"total": 2500},
+  "token_usage": {
+    "input_tokens": 850,
+    "output_tokens": 320,
+    "total_tokens": 1170,
+    "llm_call_count": 3,
+    "model": "gpt-4o",
+    "source": "api_usage_field"
+  },
+  "tool_call_count": 4,
+  "alerts": []
+}
+```
 
 ---
 

@@ -5,12 +5,14 @@ import re
 from typing import Any
 
 from config import Settings
+from constraint_extractor import get_known_pois, classify_intent, extract_constraints
 from models import AgentTurnResult, CompanionState
 from tools import (
     check_time_feasibility,
     classify_emergency_scene,
     get_route,
     get_weather_now,
+    replan_itinerary,
     resolve_emergency_resources,
     resolve_location,
     retrieve_candidates,
@@ -37,17 +39,16 @@ SYSTEM_PROMPT = """
 6. 应急类问题优先返回安全动作与回撤路径
 """
 
-KNOWN_BEIJING_POIS = [
-    "天安门广场",
-    "天安门",
-    "颐和园",
-    "故宫博物院",
-    "故宫",
-    "国家博物馆",
-    "中国美术馆",
-    "王府井",
-    "天坛",
-]
+TOOL_POLICY_PROMPT = """
+工具使用硬规则：
+1. 只要用户问题涉及当前位置、去哪、附近推荐、路线/时间是否来得及、天气变化或应急资源，就必须先调用至少一个工具，再给自然语言答复。
+2. 未调用工具前，不能假设实时位置、天气、路线、POI 或营业信息。
+3. 如果用户提到了地名、景点、商圈或“我在某地”，优先调用 `resolve_location`。
+4. 如果是找吃饭/找地方/找替代点位，先用 `retrieve_candidates`，必要时再补 `score_candidates` 和 `get_route`。
+5. 如果是时间协调，必须补 `get_route`，涉及景区时再补 `get_poi_detail`。
+6. 如果是下雨、天气变化或应急，优先调用 `get_weather_now` 或 `resolve_emergency_resources`。
+7. 如果已经有当天 `remaining_plan`，用户要求压缩、重排或保留核心体验时，调用 `replan_itinerary`，不要直接编造新行程。
+"""
 
 INDOOR_REPLAN_INCLUDE_KEYWORDS = [
     "博物馆",
@@ -121,6 +122,22 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "replan_itinerary",
+            "description": "Deterministically replan the selected day's remaining itinerary from CompanionState. This is the source of truth for itinerary mutation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "time_budget_hours": {"type": "number"},
+                    "completed_nodes": {"type": "array", "items": {"type": "string"}},
+                    "skipped_nodes": {"type": "array", "items": {"type": "string"}},
+                    "constraints": {"type": "object"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_route",
             "description": "Get route distance and duration between origin and destination.",
             "parameters": {
@@ -138,10 +155,13 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_poi_detail",
-            "description": "Get static detail for a scenic spot from local mock data.",
+            "description": "Get detail for a scenic spot: opening hours and ticket price (from Amap), plus accessible and recommended visit duration.",
             "parameters": {
                 "type": "object",
-                "properties": {"name": {"type": "string"}},
+                "properties": {
+                    "name": {"type": "string"},
+                    "city": {"type": "string", "description": "City name to narrow the Amap search, e.g. '北京'"},
+                },
                 "required": ["name"],
             },
         },
@@ -188,19 +208,31 @@ class CompanionAgent:
             "get_poi_detail": self._tool_get_poi_detail,
             "get_weather_now": self._tool_get_weather_now,
             "resolve_emergency_resources": self._tool_resolve_emergency_resources,
+            "replan_itinerary": self._tool_replan_itinerary,
         }
         self.client = None
         if self.settings.has_llm_credentials and OpenAI is not None:
-            if self.settings.is_azure_openai and AzureOpenAI is not None:
+            if self.settings.openai_base_url:
+                client_kwargs = {
+                    "api_key": self.settings.openai_api_key,
+                    "base_url": self.settings.openai_base_url,
+                    "timeout": self.settings.request_timeout_s,
+                }
+                self.client = OpenAI(**client_kwargs)
+            elif self.settings.is_azure_openai and AzureOpenAI is not None:
                 client_kwargs = {
                     "api_key": self.settings.openai_api_key,
                     "api_version": self.settings.openai_api_version,
+                    "timeout": self.settings.request_timeout_s,
                 }
                 if self.settings.azure_endpoint:
                     client_kwargs["azure_endpoint"] = self.settings.azure_endpoint
                 self.client = AzureOpenAI(**client_kwargs)
             else:
-                client_kwargs = {"api_key": self.settings.openai_api_key}
+                client_kwargs = {
+                    "api_key": self.settings.openai_api_key,
+                    "timeout": self.settings.request_timeout_s,
+                }
                 if self.settings.openai_base_url:
                     client_kwargs["base_url"] = self.settings.openai_base_url
                 self.client = OpenAI(**client_kwargs)
@@ -208,10 +240,15 @@ class CompanionAgent:
     def run_turn(self, user_input: str, state: CompanionState | None = None) -> AgentTurnResult:
         state = state or CompanionState(city=self.settings.default_city)
         state.update_time()
+        self._apply_structured_constraints(user_input, state)
         state.add_turn("user", user_input)
+        self._apply_progress_updates(user_input, state)
 
         try:
-            if self.client is not None:
+            task_result = self._maybe_handle_task_flow(user_input, state)
+            if task_result is not None:
+                result = task_result
+            elif self.client is not None:
                 try:
                     result = self._run_llm_turn(user_input=user_input, state=state)
                 except Exception as llm_exc:
@@ -239,22 +276,229 @@ class CompanionAgent:
         result.state = state
         return result
 
+    def _apply_structured_constraints(self, user_input: str, state: CompanionState) -> None:
+        extracted = extract_constraints(user_input, previous_state=state.to_dict())
+        state.intent = extracted.get("intent", state.intent)
+        state.current_goal = extracted.get("current_goal", state.current_goal)
+        state.avoid_pois = extracted.get("avoid_pois", state.avoid_pois)
+        state.prefer_indoor = bool(extracted.get("prefer_indoor", state.prefer_indoor))
+        state.party = extracted.get("party", state.party)
+        state.budget_level = extracted.get("budget_level", state.budget_level)
+        state.food_constraints = extracted.get("food_constraints", state.food_constraints)
+        state.mobility_risk = extracted.get("mobility_risk", state.mobility_risk)
+        state.weather_preference = extracted.get("weather_preference", state.weather_preference)
+        state.replan_reason = extracted.get("replan_reason", state.replan_reason)
+
+    def _apply_progress_updates(self, user_input: str, state: CompanionState) -> None:
+        completed_markers = ["finished", "completed", "done with", "逛完", "玩完", "已经去了", "已经看完"]
+        skipped_markers = ["skip", "skipped", "do not want to go", "don't want to go", "不想去", "不去了", "跳过", "放弃"]
+        lowered = user_input.lower()
+        mentioned = self._mentioned_plan_nodes(user_input, state)
+
+        if any(marker in lowered or marker in user_input for marker in completed_markers):
+            for name in mentioned:
+                if name not in state.completed_nodes:
+                    state.completed_nodes.append(name)
+                if name in state.skipped_nodes:
+                    state.skipped_nodes.remove(name)
+
+        if any(marker in lowered or marker in user_input for marker in skipped_markers):
+            for name in mentioned:
+                if name not in state.skipped_nodes:
+                    state.skipped_nodes.append(name)
+                if name in state.completed_nodes:
+                    state.completed_nodes.remove(name)
+
+    def _mentioned_plan_nodes(self, user_input: str, state: CompanionState) -> list[str]:
+        lowered = user_input.lower()
+        matches: list[str] = []
+        for node in state.remaining_plan:
+            name = str(node.get("poi_name") or node.get("name") or "").strip()
+            if name and name.lower() in lowered:
+                matches.append(name)
+        return matches
+
+    def _maybe_handle_task_flow(self, user_input: str, state: CompanionState) -> AgentTurnResult | None:
+        if state.clarification_pending:
+            return self._resume_pending_task(user_input, state)
+
+        intent = self._classify_intent(user_input)
+        if intent != "replan" or not state.remaining_plan:
+            return None
+
+        task = self._create_replan_task(user_input, state)
+        tool_logs: list[dict[str, Any]] = []
+        if not state.current_location:
+            self._extract_current_location(user_input, state, tool_logs)
+        if not state.current_location:
+            state.current_task = task
+            state.task_status = "needs_clarification"
+            state.clarification_pending = "current_location"
+            state.clarification_resume_intent = "replan"
+            return AgentTurnResult(
+                reply="我可以帮你重排当天剩余行程。先告诉我你们现在在哪里，例如“我在酒店/颐和园门口”。",
+                intent="replan",
+                warnings=["缺少当前位置，已暂停重排任务。"],
+            )
+
+        state.current_task = task
+        return self._execute_task(state, tool_logs=tool_logs)
+
+    def _create_replan_task(self, user_input: str, state: CompanionState) -> dict[str, Any]:
+        time_budget = self._extract_time_budget_hours(user_input) or state.time_budget_hours
+        if time_budget is not None:
+            state.time_budget_hours = time_budget
+        task = {
+            "intent": "replan",
+            "original_input": user_input,
+            "time_budget_hours": time_budget,
+            "completed_nodes": list(state.completed_nodes),
+            "skipped_nodes": list(state.skipped_nodes),
+            "constraints": self._replan_constraints(state, time_budget),
+        }
+        state.task_stack.append(task)
+        state.subtasks = [
+            {"name": "read_remaining_plan", "status": "done"},
+            {"name": "filter_completed_and_skipped", "status": "pending"},
+            {"name": "fit_time_budget", "status": "pending"},
+            {"name": "validate_plan", "status": "pending"},
+        ]
+        state.task_status = "running"
+        return task
+
+    def _resume_pending_task(self, user_input: str, state: CompanionState) -> AgentTurnResult:
+        tool_logs: list[dict[str, Any]] = []
+        if state.clarification_pending == "current_location":
+            location = self._extract_current_location(user_input, state, tool_logs)
+            if not location:
+                return AgentTurnResult(
+                    reply="我还需要你们现在的具体位置，才能继续重排。可以直接说“我在酒店”或“我在颐和园门口”。",
+                    intent=state.clarification_resume_intent or state.intent or "replan",
+                    warnings=["仍缺少当前位置。"],
+                    tool_logs=tool_logs,
+                )
+            state.clarification_pending = None
+
+        resume_intent = state.clarification_resume_intent or (state.current_task or {}).get("intent")
+        state.clarification_resume_intent = None
+        if resume_intent == "replan" and state.current_task:
+            return self._execute_task(state, tool_logs=tool_logs)
+        return AgentTurnResult(
+            reply="当前位置已经更新。我还没有可恢复的重排任务，请再告诉我你想怎么调整今天的行程。",
+            intent=resume_intent or "search",
+            tool_logs=tool_logs,
+        )
+
+    def _execute_task(self, state: CompanionState, tool_logs: list[dict[str, Any]]) -> AgentTurnResult:
+        task = state.current_task or {}
+        if task.get("intent") != "replan":
+            return AgentTurnResult(
+                reply="当前任务类型暂时不能自动执行。",
+                intent=str(task.get("intent") or "unknown"),
+                warnings=["unsupported_task"],
+                tool_logs=tool_logs,
+            )
+
+        time_budget = task.get("time_budget_hours") or state.time_budget_hours
+        result = replan_itinerary(
+            remaining_plan=state.remaining_plan,
+            current_location=state.current_location,
+            time_budget_hours=time_budget,
+            completed_nodes=state.completed_nodes,
+            skipped_nodes=state.skipped_nodes,
+            constraints=task.get("constraints") or self._replan_constraints(state, time_budget),
+        )
+        tool_logs.append(
+            {
+                "tool": "replan_itinerary",
+                "arguments": {
+                    "time_budget_hours": time_budget,
+                    "completed_nodes": state.completed_nodes,
+                    "skipped_nodes": state.skipped_nodes,
+                },
+                "preview": result.get("summary", "")[:500],
+            }
+        )
+
+        state.remaining_plan = list(result.get("new_plan") or [])
+        state.deferred_nodes = [
+            str(node.get("poi_name") or node.get("name") or "")
+            for node in result.get("deferred_nodes", [])
+            if node.get("poi_name") or node.get("name")
+        ]
+        state.self_check_results.append(
+            {
+                "final": result.get("self_check", {}),
+                "history": result.get("self_check_history", []),
+                "retry_count": result.get("retry_count", 0),
+            }
+        )
+        state.task_status = "completed" if result.get("status") == "ok" else str(result.get("status") or "completed")
+        state.subtasks = [
+            {"name": "read_remaining_plan", "status": "done"},
+            {"name": "filter_completed_and_skipped", "status": "done"},
+            {"name": "fit_time_budget", "status": "done"},
+            {"name": "validate_plan", "status": "done"},
+        ]
+        state.current_task = None
+
+        plan_names = [str(node.get("poi_name") or node.get("name") or "") for node in result.get("new_plan", [])]
+        reply = result.get("summary") or "已完成当天剩余行程重排。"
+        if plan_names:
+            reply += " 新顺序：" + " -> ".join(plan_names) + "。"
+        if result.get("warnings"):
+            reply += " 风险提示：" + "；".join(result["warnings"])
+        return AgentTurnResult(
+            reply=reply,
+            intent="replan",
+            cards=[{"plan_type": "replanned_itinerary", **result}],
+            tool_logs=tool_logs,
+            warnings=list(result.get("warnings") or []),
+        )
+
+    def _replan_constraints(self, state: CompanionState, time_budget_hours: float | None) -> dict[str, Any]:
+        return {
+            "avoid_pois": list(state.avoid_pois),
+            "prefer_indoor": state.prefer_indoor,
+            "mobility_risk": state.mobility_risk,
+            "current_time": state.current_time,
+            "time_budget_hours": time_budget_hours,
+        }
+
+    def _extract_time_budget_hours(self, text: str) -> float | None:
+        patterns = [
+            r"(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b",
+            r"(\d+(?:\.\d+)?)\s*(?:小时|小時|个小时)",
+        ]
+        lowered = text.lower()
+        for pattern in patterns:
+            match = re.search(pattern, lowered)
+            if match:
+                try:
+                    return float(match.group(1))
+                except ValueError:
+                    return None
+        return None
+
     def _run_llm_turn(self, user_input: str, state: CompanionState) -> AgentTurnResult:
-        messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": TOOL_POLICY_PROMPT},
+        ]
         messages.extend(state.turn_history[-10:])
 
         tool_logs: list[dict[str, Any]] = []
         llm_call_count = 0
         total_input_tokens = 0
         total_output_tokens = 0
+        require_tool_first = self._should_require_tool_first(user_input, state)
 
         while True:
             response = self.client.chat.completions.create(
                 model=self.settings.openai_model,
                 messages=messages,
                 tools=TOOL_SCHEMAS,
-                tool_choice="auto",
-                temperature=0.2,
+                tool_choice="required" if require_tool_first and not tool_logs else "auto",
             )
             llm_call_count += 1
 
@@ -351,6 +595,41 @@ class CompanionAgent:
     def _tool_score_candidates(self, arguments: dict[str, Any], state: CompanionState) -> Any:
         return score_candidates(arguments["candidates"], arguments["context"])
 
+    def _tool_replan_itinerary(self, arguments: dict[str, Any], state: CompanionState) -> Any:
+        time_budget = arguments.get("time_budget_hours") or state.time_budget_hours
+        if time_budget is not None:
+            state.time_budget_hours = float(time_budget)
+
+        completed_nodes = arguments.get("completed_nodes") or state.completed_nodes
+        skipped_nodes = arguments.get("skipped_nodes") or state.skipped_nodes
+        constraints = self._replan_constraints(state, state.time_budget_hours)
+        constraints.update(arguments.get("constraints") or {})
+
+        result = replan_itinerary(
+            remaining_plan=state.remaining_plan,
+            current_location=state.current_location,
+            time_budget_hours=state.time_budget_hours,
+            completed_nodes=completed_nodes,
+            skipped_nodes=skipped_nodes,
+            constraints=constraints,
+        )
+        state.completed_nodes = list(completed_nodes)
+        state.skipped_nodes = list(skipped_nodes)
+        state.remaining_plan = list(result.get("new_plan") or [])
+        state.deferred_nodes = [
+            str(node.get("poi_name") or node.get("name") or "")
+            for node in result.get("deferred_nodes", [])
+            if node.get("poi_name") or node.get("name")
+        ]
+        state.self_check_results.append(
+            {
+                "final": result.get("self_check", {}),
+                "history": result.get("self_check_history", []),
+                "retry_count": result.get("retry_count", 0),
+            }
+        )
+        return {"source_of_truth": "replan_itinerary", **result}
+
     def _tool_get_route(self, arguments: dict[str, Any], state: CompanionState) -> Any:
         return get_route(
             origin=arguments["origin"],
@@ -360,7 +639,11 @@ class CompanionAgent:
         )
 
     def _tool_get_poi_detail(self, arguments: dict[str, Any], state: CompanionState) -> Any:
-        return get_poi_detail(arguments["name"])
+        return get_poi_detail(
+            arguments["name"],
+            city=arguments.get("city") or state.city or "",
+            settings=self.settings,
+        )
 
     def _tool_get_weather_now(self, arguments: dict[str, Any], state: CompanionState) -> Any:
         weather = get_weather_now(arguments["city"], settings=self.settings)
@@ -377,16 +660,32 @@ class CompanionAgent:
 
     def _classify_intent(self, text: str) -> str:
         lowered = text.strip().lower()
-        if any(token in lowered for token in ["下雨", "关闭", "换吗", "能换", "排队", "不想去了"]):
+        if any(token in lowered for token in ["replan", "reschedule", "reroute", "only have", "hours left"]):
             return "replan"
-        if any(token in lowered for token in ["来得及", "时间够吗", "赶得上", "最晚几点"]):
-            return "coordinate"
-        if any(token in lowered for token in ["腿疼", "走不动", "受伤", "尿急", "网吧", "迷路", "求助", "回酒店"]):
-            return "emergency"
-        return "search"
+        return classify_intent(text)
+
+    def _should_require_tool_first(self, text: str, state: CompanionState) -> bool:
+        intent = self._classify_intent(text)
+        if intent not in {"search", "coordinate", "replan", "emergency"}:
+            return False
+
+        if state.current_location:
+            return True
+
+        if re.search(r"(?:我在|我们在|在).{1,20}", text):
+            return True
+
+        if self._extract_mentioned_poi(text):
+            return True
+
+        return bool(self._extract_destinations(text))
 
     def _extract_current_location(self, text: str, state: CompanionState, tool_logs: list[dict[str, Any]]) -> dict[str, Any] | None:
-        match = re.search(r"(?:我在|我们在|在)(.+?)(?:，|,|。|想|要|还|逛|吃|走不动|腿疼|下雨|$)", text)
+        match = re.search(
+            r"(?:我在|我们在|在|i am at|i'm at|we are at|we're at)(.+?)(?:，|,|。|\.|想|要|还|逛|吃|走不动|腿疼|下雨|$)",
+            text,
+            flags=re.IGNORECASE,
+        )
         query = match.group(1).strip() if match else state.current_location
         if not query:
             return None
@@ -409,9 +708,9 @@ class CompanionAgent:
         if any(token in text for token in ["小孩", "孩子", "亲子"]):
             state.party["children"] = max(1, int(state.party.get("children", 0) or 0))
 
-    def _extract_destinations(self, text: str) -> list[str]:
+    def _extract_destinations(self, text: str, city: str = "") -> list[str]:
         ordered_matches: list[tuple[int, str]] = []
-        for poi_name in KNOWN_BEIJING_POIS:
+        for poi_name in get_known_pois(city):
             index = text.find(poi_name)
             if index >= 0:
                 ordered_matches.append((index, poi_name))
@@ -437,9 +736,9 @@ class CompanionAgent:
                 results.append(value)
         return results
 
-    def _extract_mentioned_poi(self, text: str) -> str | None:
+    def _extract_mentioned_poi(self, text: str, city: str = "") -> str | None:
         ordered_matches: list[tuple[int, str]] = []
-        for poi_name in KNOWN_BEIJING_POIS:
+        for poi_name in get_known_pois(city):
             index = text.find(poi_name)
             if index >= 0:
                 ordered_matches.append((index, poi_name))
@@ -452,6 +751,7 @@ class CompanionAgent:
         self,
         candidates: list[dict[str, Any]],
         target_poi_name: str | None,
+        state: CompanionState,
     ) -> list[dict[str, Any]]:
         filtered: list[dict[str, Any]] = []
         target_name = (target_poi_name or "").strip()
@@ -461,6 +761,8 @@ class CompanionAgent:
             haystack = f"{name} {type_text}"
 
             if target_name and (name == target_name or target_name in name):
+                continue
+            if any(poi_name and (name == poi_name or poi_name in name) for poi_name in state.avoid_pois):
                 continue
             if any(keyword in haystack for keyword in INDOOR_REPLAN_EXCLUDE_KEYWORDS):
                 continue
@@ -477,6 +779,11 @@ class CompanionAgent:
             "current_time": state.current_time,
             "remaining_plan": state.remaining_plan,
             "current_location": current_location,
+            "avoid_pois": state.avoid_pois,
+            "prefer_indoor": state.prefer_indoor,
+            "budget_level": state.budget_level,
+            "food_constraints": state.food_constraints,
+            "mobility_risk": state.mobility_risk,
         }
 
     def _adjust_stay_duration_for_party(self, base_duration_min: int, state: CompanionState, poi_name: str) -> int:
@@ -520,8 +827,133 @@ class CompanionAgent:
 
         return warnings
 
+    def _build_coordinate_alternatives(
+        self,
+        state: CompanionState,
+        cards: list[dict[str, Any]],
+        warnings: list[str],
+    ) -> list[dict[str, Any]]:
+        if not cards:
+            return []
+
+        first = cards[0]
+        alternatives: list[dict[str, Any]] = []
+        alternatives.append(
+            {
+                "plan_type": "alternative",
+                "title": "方案A：只保留第一站",
+                "summary": f"优先只去 `{first['destination']['name']}`，减少跨城区移动和连续大景点负担。",
+                "reason": "当前安排偏赶时，先保住第一站通常更稳。",
+            }
+        )
+
+        if len(cards) > 1:
+            last = cards[-1]
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案B：直接去后面的大景点",
+                    "summary": f"放弃前面的顺路点，直接去 `{last['destination']['name']}`，把主要游览时间留给核心景点。",
+                    "reason": "对老人/小孩同行时，少切换、少折返通常体验更好。",
+                }
+            )
+
+        if warnings:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案C：缩短当天目标",
+                    "summary": "今天只完成一个大景点，另一个顺延到明天或改成附近室内点。",
+                    "reason": "当前风险提示说明体力或时间都偏紧。",
+                }
+            )
+        return alternatives[:3]
+
+    def _build_replan_alternatives(
+        self,
+        state: CompanionState,
+        target_poi_name: str | None,
+        primary: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        alternatives: list[dict[str, Any]] = []
+        if primary:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案A：切换到最近室内替代",
+                    "summary": f"放弃 `{target_poi_name or '原目标'}`，改去 `{primary[0].get('name', '')}`。",
+                    "reason": "保持当天节奏不散，同时规避下雨带来的体验下降。",
+                }
+            )
+        if len(primary) > 1:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案B：去第二候选并压缩行程",
+                    "summary": f"如果第一候选排队或不合适，可改去 `{primary[1].get('name', '')}`，并减少今天的其他室外活动。",
+                    "reason": "保留机动性，避免把全部决策押在一个点位上。",
+                }
+            )
+        alternatives.append(
+            {
+                "plan_type": "alternative",
+                "title": "方案C：直接回到商场/综合体休整",
+                "summary": "如果同行人已经明显疲劳，就不要强行补替代点，优先就近休整或吃饭。",
+                "reason": "雨天临时改计划时，休整本身也是合理选择。",
+            }
+        )
+        return alternatives[:3]
+
+    def _build_emergency_alternatives(
+        self,
+        resources: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        alternatives: list[dict[str, Any]] = []
+        primary = resources.get("primary_actions", []) or []
+        backup = resources.get("backup_actions", []) or []
+
+        if primary:
+            first = primary[0]
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案A：就近处置",
+                    "summary": f"先去 `{first.get('name', '')}` 做当前最短路径处理。",
+                    "reason": "适合症状不重但需要马上处理的情况。",
+                }
+            )
+
+        return_to_base = next((item for item in primary if item.get("action_type") == "return_to_base"), None)
+        if return_to_base:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案B：直接回撤",
+                    "summary": f"停止后续游览，直接回 `{return_to_base.get('name', '集合点')}` 休息。",
+                    "reason": "如果老人/伤者已经无法继续步行，这是更稳的处理方式。",
+                }
+            )
+        elif backup:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": "方案B：升级到更稳妥资源",
+                    "summary": f"如果就近点不适合，改去 `{backup[0].get('name', '')}`。",
+                    "reason": "适合需要更完整医疗/补给条件的情况。",
+                }
+            )
+
+        alternatives.append(
+            {
+                "plan_type": "alternative",
+                "title": "方案C：分流同行人",
+                "summary": "由一名同行者陪同处理，其他人就近等待或提前结束行程。",
+                "reason": "应急处理中，先把行动职责拆开通常更稳。",
+            }
+        )
+        return alternatives[:3]
+
     def _handle_search(self, user_input: str, state: CompanionState, tool_logs: list[dict[str, Any]]) -> AgentTurnResult:
-        self._extract_constraints(user_input, state)
         current_location = self._extract_current_location(user_input, state, tool_logs)
         if not current_location:
             return AgentTurnResult(
@@ -564,7 +996,7 @@ class CompanionAgent:
 
     def _handle_coordinate(self, user_input: str, state: CompanionState, tool_logs: list[dict[str, Any]]) -> AgentTurnResult:
         current_location = self._extract_current_location(user_input, state, tool_logs)
-        destinations = self._extract_destinations(user_input)
+        destinations = self._extract_destinations(user_input, city=state.city or "")
         if not current_location or not destinations:
             return AgentTurnResult(
                 reply="我需要知道你现在的位置和接下来要去的点位，才能判断时间是否来得及。",
@@ -634,7 +1066,17 @@ class CompanionAgent:
             reply += " 但这组安排我不建议直接执行。风险提示：" + "；".join(all_warnings)
         else:
             reply += " 目前看整体可行。"
-        return AgentTurnResult(reply=reply, intent="coordinate", cards=cards, tool_logs=tool_logs, warnings=all_warnings)
+        alternatives = self._build_coordinate_alternatives(state, cards, all_warnings)
+        if alternatives:
+            reply += " 你可以这样改："
+            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:2])
+        return AgentTurnResult(
+            reply=reply,
+            intent="coordinate",
+            cards=cards + alternatives,
+            tool_logs=tool_logs,
+            warnings=all_warnings,
+        )
 
     def _handle_replan(self, user_input: str, state: CompanionState, tool_logs: list[dict[str, Any]]) -> AgentTurnResult:
         current_location = self._extract_current_location(user_input, state, tool_logs)
@@ -645,7 +1087,7 @@ class CompanionAgent:
             "lon": state.current_coords[1] if state.current_coords else 0.0,
         }
 
-        target_poi_name = self._extract_mentioned_poi(user_input)
+        target_poi_name = self._extract_mentioned_poi(user_input, city=state.city or "")
         target_location = current_location
         if target_poi_name:
             try:
@@ -666,7 +1108,7 @@ class CompanionAgent:
             state,
             tool_logs,
         )
-        candidates = self._filter_replan_candidates(candidates, target_poi_name)
+        candidates = self._filter_replan_candidates(candidates, target_poi_name, state)
         ranking = self._run_tool_call(
             "score_candidates",
             {"candidates": candidates, "context": self._context_payload(state, target_location)},
@@ -686,7 +1128,16 @@ class CompanionAgent:
             reply += " 我先排除了原目标和明显室外点位，但当前没有找到足够好的室内替代，建议改查附近商场或大型博物馆。"
         if weather.get("suggestions"):
             reply += " " + weather["suggestions"][0]
-        return AgentTurnResult(reply=reply, intent="replan", cards=primary, tool_logs=tool_logs)
+        alternatives = self._build_replan_alternatives(state, target_poi_name, primary)
+        if alternatives:
+            reply += " 可执行替代："
+            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:2])
+        return AgentTurnResult(
+            reply=reply,
+            intent="replan",
+            cards=primary + alternatives,
+            tool_logs=tool_logs,
+        )
 
     def _handle_emergency(self, user_input: str, state: CompanionState, tool_logs: list[dict[str, Any]]) -> AgentTurnResult:
         current_location = self._extract_current_location(user_input, state, tool_logs)
@@ -718,7 +1169,13 @@ class CompanionAgent:
             tool_logs,
         )
         primary = resources.get("primary_actions", [])
-        if primary:
+        immediate_action = resources.get("immediate_action") or {}
+        evacuation_plan = resources.get("evacuation_plan") or {}
+        group_split_plan = resources.get("group_split_plan") or {}
+
+        if immediate_action:
+            reply = f"先别继续赶路。{immediate_action.get('summary', '')}"
+        elif primary:
             first = primary[0]
             reply = f"先别继续赶路。优先处理 `{first.get('action_type', '')}`：`{first.get('name', '')}`。"
         else:
@@ -727,4 +1184,41 @@ class CompanionAgent:
             reply += " " + resources["safety_notes"][0]
         warnings = resources.get("warnings", [])
         cards = primary + resources.get("backup_actions", [])
-        return AgentTurnResult(reply=reply, intent="emergency", cards=cards, tool_logs=tool_logs, warnings=warnings)
+        alternatives = []
+        if immediate_action:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": immediate_action.get("title", "立即动作"),
+                    "summary": immediate_action.get("summary", ""),
+                    "reason": immediate_action.get("reason", ""),
+                }
+            )
+        if evacuation_plan:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": evacuation_plan.get("title", "回撤方案"),
+                    "summary": evacuation_plan.get("summary", ""),
+                    "reason": evacuation_plan.get("reason", ""),
+                }
+            )
+        if group_split_plan:
+            alternatives.append(
+                {
+                    "plan_type": "alternative",
+                    "title": group_split_plan.get("title", "同行人分工"),
+                    "summary": group_split_plan.get("summary", ""),
+                    "reason": group_split_plan.get("reason", ""),
+                }
+            )
+        if alternatives:
+            reply += " 接下来建议："
+            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:3])
+        return AgentTurnResult(
+            reply=reply,
+            intent="emergency",
+            cards=cards + alternatives,
+            tool_logs=tool_logs,
+            warnings=warnings,
+        )

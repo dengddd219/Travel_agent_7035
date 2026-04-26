@@ -1,0 +1,225 @@
+=== Turn 1 ===
+User: 我在王府井，逛了一上午，找个午饭，小孩不吃辣，不喜欢北京菜，预算高一点
+Intent: search
+Reply: 优先推荐你先看 `THE WOODS餐厅(王府井澳门中心店)`。它距离约 207 米，评分约 4.6，价格级别 2。我也保留了 5 个候选供你比较。
+Cards:
+[
+  {
+    "name": "THE WOODS餐厅(王府井澳门中心店)",
+    "category": "diner",
+    "type_text": "餐饮服务;外国餐厅;西餐厅(综合风味)|餐饮服务;咖啡厅;咖啡厅|餐饮服务;休闲餐饮场所;休闲餐饮场所",
+    "address": "王府井东街8号澳门中心商场一层L111号铺位",
+    "district": "东城区",
+    "lat": 39.915041,
+    "lon": 116.413588,
+    "rating": 4.6,
+    "price_level": 2,
+    "estimated_cost": 131.0,
+    "open_hours": "10:00-21:00 10:00-21:00",
+    "phone": "18516996023",
+    "distance_m": 207,
+    "tags": [],
+    "source": [
+      "amap_text"
+    ],
+    "score": 6.8,
+    "ranking_reason": "距离约 207 米，评分约 4.6，价格级别 2"
+  },
+  {
+    "name": "52+餐厅(王府井喜悦店)",
+    "category": "diner",
+    "type_text": "餐饮服务;外国餐厅;日本料理|餐饮服务;外国餐厅;意式菜品餐厅",
+    "address": "王府井大街301号7层",
+    "district": "东城区",
+    "lat": 39.910274,
+    "lon": 116.410765,
+    "rating": 4.6,
+    "price_level": 6,
+    "estimated_cost": 422.0,
+    "open_hours": "10:30-22:00",
+    "phone": "13910108897",
+    "distance_m": 577,
+    "tags": [],
+    "source": [
+      "amap_text"
+    ],
+    "score": 6.3,
+    "ranking_reason": "距离约 577 米，评分约 4.6，价格级别 6"
+  },
+  {
+    "name": "南京大牌档(王府井银泰in88店)",
+    "category": "diner",
+    "type_text": "餐饮服务;中餐厅;中餐厅",
+    "address": "王府井大街88号王府井银泰in88内4楼",
+    "district": "东城区",
+    "lat": 39.916493,
+    "lon": 116.411492,
+    "rating": 4.6,
+    "price_level": 1,
+    "estimated_cost": 68.0,
+    "open_hours": "10:00-22:00",
+    "phone": "010-59785111",
+    "distance_m": 117,
+    "tags": [],
+    "source": [
+      "amap_text"
+    ],
+    "score": 5.8,
+    "ranking_reason": "距离约 117 米，评分约 4.6，价格级别 1"
+  }
+]
+
+=== Turn 2 ===
+User: 下午还要去天安门和颐和园，时间够吗
+Intent: coordinate
+Reply: 路线已经帮你串起来了。 当前粗略时间线：天安门 路上约 18 分钟，建议至少预留 130 分钟，颐和园 路上约 51 分钟，建议至少预留 220 分钟。 但这组安排我不建议直接执行。风险提示：同行有老人或小孩时，下午连续安排两个大景点通常偏赶，体力负担较高。；按带小孩估算，这组安排后段更容易出现疲劳、催返或临时改计划。
+Cards:
+[
+  {
+    "destination": {
+      "name": "天安门",
+      "address": "北京市东城区天安门",
+      "city": "北京市",
+      "district": "东城区",
+      "lat": 39.909187,
+      "lon": 116.397463,
+      "adcode": "110101",
+      "source": "amap_geocode"
+    },
+    "route": {
+      "mode": "driving",
+      "distance_m": 2562,
+      "duration_min": 18,
+      "instruction": "沿金鱼胡同向东行驶226米右转 -> 向北行驶137米到达目的地",
+      "provider": "amap"
+    },
+    "poi_detail": {
+      "name": "天安门",
+      "open_hours": "全天开放",
+      "ticket_price": 0.0,
+      "accessible": true,
+      "recommended_duration_min": 90,
+      "tips": [
+        "广场区域步行量大",
+        "如遇恶劣天气应优先调整为室内点位"
+      ],
+      "source": "mock"
+    }
+  },
+  {
+    "destination": {
+      "name": "颐和园",
+      "address": "北京市海淀区颐和园",
+      "city": "北京市",
+      "district": "海淀区",
+      "lat": 39.999617,
+      "lon": 116.275179,
+      "adcode": "110108",
+      "source": "amap_geocode"
+    },
+    "route": {
+      "mode": "driving",
+      "distance_m": 23447,
+      "duration_min": 51,
+      "instruction": "向北行驶396米右转 -> 向东行驶535米到达目的地",
+      "provider": "amap"
+    },
+    "poi_detail": {
+      "name": "颐和园",
+      "open_hours": "06:00-19:00",
+      "ticket_price": 30.0,
+      "accessible": true,
+      "recommended_duration_min": 180,
+      "tips": [
+        "优先从东宫门进入",
+        "老人建议控制步行距离",
+        "雨天优先长廊区域"
+      ],
+      "source": "mock"
+    }
+  }
+]
+Warnings:
+[
+  "同行有老人或小孩时，下午连续安排两个大景点通常偏赶，体力负担较高。",
+  "按带小孩估算，这组安排后段更容易出现疲劳、催返或临时改计划。"
+]
+
+=== Turn 3 ===
+User: 下午突然下雨了，天安门广场不想淋雨，能换吗
+Intent: replan
+Reply: 你现场反馈已经在下雨，我优先按雨天策略重排。 实时天气接口当前显示 `阴`，这里只作辅助参考。 室内替代我优先建议 `中国国家博物馆`。 保留室内备选，优先完成室外核心点位。
+Cards:
+[
+  {
+    "name": "中国国家博物馆",
+    "category": "科教文化服务;博物馆;博物馆",
+    "type_text": "科教文化服务;博物馆;博物馆",
+    "address": "东长安街16号天安门广场东侧",
+    "district": "东城区",
+    "lat": 39.905374,
+    "lon": 116.401304,
+    "rating": 4.9,
+    "price_level": null,
+    "estimated_cost": null,
+    "open_hours": [],
+    "phone": "010-65116400",
+    "distance_m": 388,
+    "tags": [],
+    "source": [
+      "amap_text"
+    ],
+    "score": 6.95,
+    "ranking_reason": "距离约 388 米，评分约 4.9"
+  },
+  {
+    "name": "毛主席纪念堂(暂停开放)",
+    "category": "tour",
+    "type_text": "风景名胜;风景名胜;纪念馆",
+    "address": "前门东大街11号(天安门广场人民英雄纪念碑南面)",
+    "district": "东城区",
+    "lat": 39.902517,
+    "lon": 116.397815,
+    "rating": 4.6,
+    "price_level": null,
+    "estimated_cost": null,
+    "open_hours": [],
+    "phone": "010-65132277",
+    "distance_m": 74,
+    "tags": [],
+    "source": [
+      "amap_text"
+    ],
+    "score": 5.3,
+    "ranking_reason": "距离约 74 米，评分约 4.6"
+  }
+]
+
+=== Turn 4 ===
+User: 老人在颐和园走不动了
+Intent: emergency
+Reply: 先别继续赶路。优先处理 `医务室`：`北京康济诊所`。 如有明显外伤、剧烈疼痛或意识异常，应优先线下求助。
+Cards:
+[
+  {
+    "action_type": "医务室",
+    "name": "北京康济诊所",
+    "address": "裕祺隆园西1门旁(安河桥北地铁站B东北口步行300米)",
+    "distance_m": 1660,
+    "phone": []
+  },
+  {
+    "action_type": "医院",
+    "name": "中国中医科学院西苑医院",
+    "address": "西苑操场1号",
+    "distance_m": 1648,
+    "phone": "010-62835678;010-62835252"
+  },
+  {
+    "action_type": "药店",
+    "name": "德安康大药房(厢红旗店)",
+    "address": "厢红旗路东门外一号综合服务楼南门旁",
+    "distance_m": 1206,
+    "phone": "010-62887077;17699676976"
+  }
+]

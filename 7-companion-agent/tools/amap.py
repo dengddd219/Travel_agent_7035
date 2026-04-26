@@ -272,3 +272,62 @@ def get_route(
         "instruction": instruction or "Amap route result.",
         "provider": "amap",
     }
+
+
+def fetch_poi_detail_from_amap(
+    name: str,
+    city: str = "",
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Query Amap v3/place/text (extensions=all) for open_hours and ticket_price.
+
+    Uses biz_ext.open_time for opening hours and biz_ext.cost for price,
+    consistent with how the main travel planner (poi.py) queries Amap.
+    Returns a partial dict; callers should merge with static fallback data.
+    """
+    import re
+
+    settings = settings or Settings.from_env()
+    if not settings.has_amap_key:
+        return {"source": "fallback"}
+
+    params = {
+        "key": settings.amap_api_key,
+        "keywords": name.strip(),
+        "city": (city or settings.default_city).strip(),
+        "offset": 1,
+        "page": 1,
+        "extensions": "all",
+    }
+    try:
+        response = requests.get(AMAP_PLACE_TEXT_URL, params=params, timeout=settings.request_timeout_s)
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return {"source": "fallback"}
+
+    pois = payload.get("pois") or []
+    if not pois:
+        return {"source": "fallback"}
+
+    item = pois[0]
+    biz_ext = item.get("biz_ext") or {}
+
+    open_hours = biz_ext.get("open_time") or ""
+
+    ticket_price: float | None = None
+    cost_raw = biz_ext.get("cost") or item.get("cost") or ""
+    if cost_raw:
+        nums = re.findall(r"\d+(?:\.\d+)?", str(cost_raw))
+        if nums:
+            try:
+                ticket_price = float(nums[0])
+            except Exception:
+                pass
+
+    result: dict[str, Any] = {"source": "amap"}
+    if open_hours:
+        result["open_hours"] = open_hours
+    if ticket_price is not None:
+        result["ticket_price"] = ticket_price
+    return result

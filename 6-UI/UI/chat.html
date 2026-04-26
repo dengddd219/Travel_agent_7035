@@ -590,6 +590,40 @@
     }
 
     /* ── Responsive ── */
+    .companion-panel {
+      position: absolute;
+      right: 14px;
+      top: 56px;
+      width: min(380px, calc(100% - 28px));
+      max-height: calc(100% - 92px);
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,.96);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .companion-panel.visible { display: flex; }
+    .companion-head { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .companion-title { font-size: 13px; font-weight: 800; color: var(--text); }
+    .companion-subtitle { font-size: 11px; color: var(--muted); }
+    .companion-tabs { padding: 8px 10px; display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--border); }
+    .companion-tab { padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .companion-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .companion-plan { padding: 9px 12px; max-height: 160px; overflow-y: auto; border-bottom: 1px solid var(--border); display: grid; gap: 6px; }
+    .companion-stop { padding: 7px 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #eef2f7; font-size: 12px; line-height: 1.4; }
+    .companion-stop strong { display: block; color: var(--text); font-size: 12.5px; }
+    .companion-stop span { color: var(--muted); }
+    .companion-messages { padding: 9px 12px; max-height: 160px; overflow-y: auto; display: grid; gap: 7px; }
+    .companion-msg { padding: 7px 9px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; background: #f1f5f9; color: var(--text); }
+    .companion-msg.user { background: var(--accent); color: #fff; margin-left: 34px; }
+    .companion-input-row { padding: 9px 10px; display: flex; gap: 7px; border-top: 1px solid var(--border); }
+    .companion-input { flex: 1; min-height: 34px; max-height: 82px; resize: vertical; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font: inherit; font-size: 12.5px; outline: none; }
+    .companion-send { width: 40px; border: none; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 800; }
+
     @media (max-width: 700px) {
       :root { --chat-w: 100vw; }
       .layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
@@ -597,6 +631,7 @@
       .cost-toggle { align-items: flex-start; }
       .cost-toggle-side { flex-direction: column; align-items: flex-end; gap: 7px; }
       .cost-overview { grid-template-columns: 1fr; }
+      .companion-panel { top: 50px; right: 8px; width: calc(100% - 16px); max-height: calc(100% - 64px); }
     }
   </style>
 </head>
@@ -707,6 +742,20 @@
       <div id="map-container"></div>
       <div id="map-status">Waiting for itinerary…</div>
 
+      <div class="companion-panel" id="companion-panel">
+        <div class="companion-head">
+          <div class="companion-title">Companion Agent</div>
+          <div class="companion-subtitle" id="companion-subtitle">Select a day to ask live-trip questions</div>
+        </div>
+        <div class="companion-tabs" id="companion-tabs"></div>
+        <div class="companion-plan" id="companion-plan"></div>
+        <div class="companion-messages" id="companion-messages"></div>
+        <div class="companion-input-row">
+          <textarea class="companion-input" id="companion-input" rows="1" placeholder="e.g. We only have 4 hours, replan"></textarea>
+          <button class="companion-send" type="button" onclick="sendCompanionMessage()">-&gt;</button>
+        </div>
+      </div>
+
       <div class="map-placeholder" id="map-placeholder">
         <div class="map-placeholder-icon">🗺️</div>
         <div class="map-placeholder-text">Tell me your travel plans<br>The route will appear here once the itinerary is ready</div>
@@ -726,6 +775,11 @@
     let conversationState = null;
     let isWaiting        = false;
     let mapInitialized   = false;
+    let itineraryMeta    = null;
+    let itineraryDays    = [];
+    let poiMetaByName    = {};
+    let companionStateByDay = {};
+    let currentCompanionDayIndex = 0;
 
     /* ═══════════════════════════════════
        DOM helpers
@@ -744,6 +798,12 @@
     const costSourceList = document.getElementById('cost-source-list');
     const costNotes = document.getElementById('cost-notes');
     const costToggleIcon = document.getElementById('cost-toggle-icon');
+    const companionPanel = document.getElementById('companion-panel');
+    const companionTabs = document.getElementById('companion-tabs');
+    const companionPlan = document.getElementById('companion-plan');
+    const companionMessages = document.getElementById('companion-messages');
+    const companionInput = document.getElementById('companion-input');
+    const companionSubtitle = document.getElementById('companion-subtitle');
     let costPanelOpen = true;
 
     function scrollBottom() {
@@ -852,6 +912,135 @@
         mapInitialized = true;
       }
       tryRender();
+    }
+
+    function renderCompanionItinerary(itineraryJson) {
+      if (!itineraryJson || !Array.isArray(itineraryJson.days) || !itineraryJson.days.length) return;
+      itineraryMeta = itineraryJson;
+      itineraryDays = itineraryJson.days;
+      companionStateByDay = {};
+      poiMetaByName = Object.fromEntries(
+        (itineraryJson.selected_pois || [])
+          .filter(poi => poi && poi.name)
+          .map(poi => [String(poi.name).toLowerCase(), poi])
+      );
+
+      companionTabs.innerHTML = '';
+      itineraryDays.forEach((day, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'companion-tab';
+        btn.type = 'button';
+        btn.textContent = `Day ${day.day_index || idx + 1}`;
+        btn.onclick = () => selectCompanionDay(idx);
+        companionTabs.appendChild(btn);
+      });
+      companionPanel.classList.add('visible');
+      selectCompanionDay(0);
+    }
+
+    function selectCompanionDay(idx) {
+      currentCompanionDayIndex = idx;
+      const day = itineraryDays[idx];
+      if (!day) return;
+      [...companionTabs.querySelectorAll('.companion-tab')].forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+      });
+      if (!companionStateByDay[idx]) {
+        companionStateByDay[idx] = buildCompanionStateForDay(day);
+      }
+      companionSubtitle.textContent = `${itineraryMeta?.city || 'Current city'} · Day ${day.day_index || idx + 1}`;
+      renderCompanionPlan(companionStateByDay[idx].remaining_plan || []);
+      companionMessages.innerHTML = '';
+      appendCompanionMessage('assistant', 'This day plan is loaded. Ask about timing, rain, fatigue, or replanning.');
+    }
+
+    function buildCompanionStateForDay(day) {
+      return {
+        city: itineraryMeta?.city || '',
+        remaining_plan: (day.items || []).map((item, idx) => normalizeCompanionNode(item, idx)),
+        completed_nodes: [],
+        skipped_nodes: [],
+        deferred_nodes: [],
+        turn_history: [],
+      };
+    }
+
+    function normalizeCompanionNode(item, idx) {
+      const poi = poiMetaByName[String(item.poi_name || '').toLowerCase()] || {};
+      const duration = Number(item.duration_hours ?? poi.duration_hours ?? 1.5);
+      const distanceM = Number(item.arrival_distance_m || 0);
+      return {
+        ...poi,
+        poi_name: item.poi_name || poi.name || '',
+        time_slot: item.time_slot || '',
+        duration_hours: Number.isFinite(duration) ? duration : 1.5,
+        category: item.category || poi.category || '',
+        district: item.district || poi.district || '',
+        indoor_outdoor: item.indoor_outdoor || poi.indoor_outdoor || 'mixed',
+        est_cost: Number(item.est_cost ?? poi.ticket_price ?? 0) || 0,
+        transport_hint: item.transport_hint || '',
+        priority: Number(item.priority ?? poi.priority ?? Math.max(1, 5 - idx)) || 1,
+        must_visit: Boolean(item.must_visit || idx === 0),
+        lat: poi.lat,
+        lon: poi.lon,
+        address: poi.address || '',
+        opening_hours: item.opening_hours || poi.open_hours || poi.opening_hours || '',
+        distance_km: distanceM > 0 ? distanceM / 1000 : undefined,
+      };
+    }
+
+    function renderCompanionPlan(plan) {
+      if (!plan || !plan.length) {
+        companionPlan.innerHTML = '<div class="companion-stop">No remaining stops for this day.</div>';
+        return;
+      }
+      companionPlan.innerHTML = plan.map((node, idx) => `
+        <div class="companion-stop">
+          <strong>${idx + 1}. ${escapeHtml(node.poi_name || node.name || 'Unnamed stop')}</strong>
+          <span>${escapeHtml(node.time_slot || 'anytime')} · ${escapeHtml(String(node.duration_hours || 1.5))}h · ${escapeHtml(node.indoor_outdoor || 'mixed')}</span>
+        </div>
+      `).join('');
+    }
+
+    function appendCompanionMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = `companion-msg ${role === 'user' ? 'user' : 'assistant'}`;
+      div.textContent = text;
+      companionMessages.appendChild(div);
+      companionMessages.scrollTop = companionMessages.scrollHeight;
+    }
+
+    async function sendCompanionMessage() {
+      const message = companionInput.value.trim();
+      if (!message) return;
+      const state = companionStateByDay[currentCompanionDayIndex];
+      if (!state) return;
+
+      companionInput.value = '';
+      appendCompanionMessage('user', message);
+      appendCompanionMessage('assistant', 'Working on it...');
+      const pending = companionMessages.lastElementChild;
+      try {
+        const res = await fetch('/api/companion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            conversation_id: `${conversationId || 'local'}-day-${currentCompanionDayIndex + 1}`,
+            conversation_state: state,
+          }),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Server error ${res.status}: ${txt}`);
+        }
+        const data = await res.json();
+        companionStateByDay[currentCompanionDayIndex] = data.conversation_state || state;
+        pending.textContent = data.reply || '(No response)';
+        renderCompanionPlan((data.conversation_state || state).remaining_plan || []);
+      } catch (err) {
+        pending.textContent = 'Companion error: ' + err.message;
+      }
     }
 
     function guessCity(mapPayload) {
@@ -1092,6 +1281,10 @@
           renderMap(data.map_payload);
         }
 
+        if (data.itinerary_json && data.itinerary_json.days) {
+          renderCompanionItinerary(data.itinerary_json);
+        }
+
       } catch (err) {
         removeTyping();
         const bub = appendMsg('assistant', '');
@@ -1111,6 +1304,15 @@
     /* ═══════════════════════════════════
        Keyboard & UI helpers
     ═══════════════════════════════════ */
+    if (companionInput) {
+      companionInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendCompanionMessage();
+        }
+      });
+    }
+
     function handleKey(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -1124,7 +1326,7 @@
     }
 
     function escapeHtml(str) {
-      return str
+      return String(str ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/\n/g,'<br>');
     }
@@ -1139,6 +1341,15 @@
       document.getElementById('map-placeholder').classList.remove('hidden');
       document.getElementById('map-status').textContent = 'Waiting for itinerary…';
       document.getElementById('nav-city').textContent = '';
+      itineraryMeta = null;
+      itineraryDays = [];
+      poiMetaByName = {};
+      companionStateByDay = {};
+      currentCompanionDayIndex = 0;
+      companionPanel.classList.remove('visible');
+      companionTabs.innerHTML = '';
+      companionPlan.innerHTML = '';
+      companionMessages.innerHTML = '';
       appendMsg('assistant', md('Hi! I\'m your AI travel planning assistant.\n\nTell me where you want to go, how many days, and your travel style — I\'ll generate a detailed itinerary and show the route on the map.'));
     }
 
