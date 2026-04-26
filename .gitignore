@@ -37,6 +37,7 @@ __MACOSX/
 # Logs and test caches
 *.log
 logs/
+5-evaluate/companion_eval_runs/
 .pytest_cache/
 .coverage
 htmlcov/

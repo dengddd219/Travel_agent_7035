@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import sys
 import json
+import os
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
 # Allow importing travel_planner from the sibling directory
+sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "3-travel_planner"))
 # Allow importing the companion agent module from its sibling directory
 sys.path.insert(0, str(Path(__file__).parent.parent / "7-companion-agent"))
@@ -30,6 +32,7 @@ from travel_planner.ui_backend import (
 from travel_planner.config import Settings
 from companion_agent import CompanionAgent
 from models import CompanionState
+from token_costing import estimated_token_usage, estimate_token_count, post_trace_webhook, with_token_cost
 
 # ── App setup ────────────────────────────────────────────────────────────────
 
@@ -52,6 +55,19 @@ app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 settings = Settings.from_env()
 store = InMemoryConversationStore()
 
+
+@app.on_event("startup")
+def _print_trace_startup_banner() -> None:
+    print("", flush=True)
+    print("=" * 78, flush=True)
+    print("Travel backend started", flush=True)
+    print("-" * 78, flush=True)
+    print(f"TRACE_AGENT={os.getenv('TRACE_AGENT', '')!r}", flush=True)
+    print(f"DEBUG_AGENT={os.getenv('DEBUG_AGENT', '')!r}", flush=True)
+    print(f"TRACE_FULL={os.getenv('TRACE_FULL', '')!r}", flush=True)
+    print(f"TRACE_PREVIEW_CHARS={os.getenv('TRACE_PREVIEW_CHARS', '')!r}", flush=True)
+    print(f"TRACE_RAG_CHUNKS={os.getenv('TRACE_RAG_CHUNKS', '')!r}", flush=True)
+
 # ── Eval trace ────────────────────────────────────────────────────────────────
 
 EVAL_TRACE_PATH = Path(__file__).parent.parent / "5-evaluate" / "eval_trace.jsonl"
@@ -61,12 +77,45 @@ _ALERT_THRESHOLDS = {
     "estimated_total_tokens": 8_000,
 }
 
+_TRACE_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _trace_enabled() -> bool:
+    return (
+        os.getenv("TRACE_AGENT", "").strip().lower() in _TRACE_TRUTHY
+        or os.getenv("DEBUG_AGENT", "").strip().lower() in _TRACE_TRUTHY
+    )
+
+
+def _trace_preview(value: object) -> str:
+    try:
+        text = json.dumps(value, ensure_ascii=False, indent=2)
+    except Exception:
+        text = str(value)
+    if os.getenv("TRACE_FULL", "").strip().lower() in _TRACE_TRUTHY:
+        return text
+    try:
+        limit = int(os.getenv("TRACE_PREVIEW_CHARS", "3000").strip() or "3000")
+    except ValueError:
+        limit = 3000
+    return text if limit <= 0 or len(text) <= limit else text[:limit].rstrip() + "..."
+
+
+def _trace_backend_event(title: str, payload: dict) -> None:
+    if not _trace_enabled():
+        return
+    print("", flush=True)
+    print("=" * 78, flush=True)
+    print(title, flush=True)
+    print("-" * 78, flush=True)
+    for key, value in payload.items():
+        print(f"{key}: {_trace_preview(value)}", flush=True)
+
 
 def _estimate_tokens(text: str) -> int:
-    """Rough token estimate: Chinese chars ~1.5 char/token, others ~4 char/token."""
-    chinese = sum(1 for ch in text if "一" <= ch <= "鿿")
-    others = len(text) - chinese
-    return int(chinese / 1.5 + others / 4)
+    """Local token estimate used when provider usage is unavailable."""
+    token_count, _source = estimate_token_count(text, settings.foundry_deployment)
+    return token_count
 
 
 def _write_eval_trace(record: dict) -> None:
@@ -75,6 +124,7 @@ def _write_eval_trace(record: dict) -> None:
         EVAL_TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
         with EVAL_TRACE_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        post_trace_webhook(record)
     except Exception:
         pass  # never let tracing crash the main request
 
@@ -91,11 +141,14 @@ def _build_trace_record(
     trip_days: int,
     alerts: list[str],
 ) -> dict:
-    input_tokens = _estimate_tokens(user_message)
-    output_tokens = _estimate_tokens(report)
-    total_tokens = input_tokens + output_tokens
+    token_usage = estimated_token_usage(
+        user_message,
+        report,
+        model=settings.foundry_deployment,
+    )
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "agent": "travel_planner",
         "conversation_id": conversation_id,
         "turn": turn,
         "city": city,
@@ -104,12 +157,7 @@ def _build_trace_record(
             "total": total_ms,
             "per_tool": tool_latencies,
         },
-        "token_usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "total_tokens": total_tokens,
-            "note": "estimated from character count, not from API usage field",
-        },
+        "token_usage": token_usage,
         "tool_call_count": len(tool_latencies),
         "alerts": alerts,
     }
@@ -141,6 +189,7 @@ class ChatResponse(BaseModel):
     map_payload: dict
     hotel_recommendations: dict
     cost_summary: dict = Field(default_factory=dict)
+    plan_cost_summary: dict = Field(default_factory=dict)
     needs_clarification: bool = False
     missing_profile_slots: list[str] = Field(default_factory=list)
     pending_profile_slots: list[str] = Field(default_factory=list)
@@ -170,10 +219,10 @@ class CompanionResponse(BaseModel):
 
 @app.get("/")
 def serve_index():
-    chat = FRONTEND_DIR / "chat.html"
-    if not chat.exists():
-        raise HTTPException(status_code=404, detail="chat.html not found")
-    return FileResponse(str(chat))
+    index = FRONTEND_DIR / "index.html"
+    if not index.exists():
+        raise HTTPException(status_code=404, detail="index.html not found")
+    return FileResponse(str(index))
 
 
 @app.get("/chat")
@@ -184,12 +233,34 @@ def serve_chat():
     return FileResponse(str(chat))
 
 
+@app.get("/api/trace-test")
+def trace_test():
+    print("", flush=True)
+    print("=" * 78, flush=True)
+    print("TRACE TEST HIT", flush=True)
+    print("-" * 78, flush=True)
+    print("If you can see this line in the terminal, browser traffic reaches this uvicorn process.", flush=True)
+    return {
+        "ok": True,
+        "message": "trace test printed to uvicorn terminal",
+        "trace_agent": os.getenv("TRACE_AGENT", ""),
+    }
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     import traceback
     agent = get_agent()
 
     t_start = time.monotonic()
+    _trace_backend_event(
+        "Backend request | /api/chat",
+        {
+            "message": req.message,
+            "conversation_id": req.conversation_id,
+            "has_conversation_state": req.conversation_state is not None,
+        },
+    )
     try:
         if req.conversation_id and req.conversation_state:
             state = deserialize_conversation_state(req.conversation_state)
@@ -238,6 +309,19 @@ def chat(req: ChatRequest):
         )
         _write_eval_trace(trace)
 
+        _trace_backend_event(
+            "Backend response | /api/chat",
+            {
+                "conversation_id": payload["conversation_id"],
+                "turn": turn,
+                "total_ms": total_ms,
+                "needs_clarification": payload.get("needs_clarification", False),
+                "missing_profile_slots": payload.get("missing_profile_slots", []),
+                "tool_log_count": len(payload["tool_logs"]),
+                "tool_logs": payload["tool_logs"],
+                "report_preview": payload.get("report", ""),
+            },
+        )
         return ChatResponse(
             conversation_id=payload["conversation_id"],
             conversation_state=payload["conversation_state"],
@@ -246,6 +330,7 @@ def chat(req: ChatRequest):
             map_payload=payload["map_payload"],
             hotel_recommendations=payload["hotel_recommendations"],
             cost_summary=payload.get("cost_summary", {}),
+            plan_cost_summary=payload.get("plan_cost_summary", {}),
             needs_clarification=payload.get("needs_clarification", False),
             missing_profile_slots=payload.get("missing_profile_slots", []),
             pending_profile_slots=payload.get("pending_profile_slots", []),
@@ -253,16 +338,61 @@ def chat(req: ChatRequest):
         )
     except Exception as e:
         tb = traceback.format_exc()
+        _trace_backend_event(
+            "Backend error | /api/chat",
+            {"error": str(e), "traceback": tb},
+        )
         raise HTTPException(status_code=500, detail={"error": str(e), "traceback": tb})
 
 
 @app.post("/api/companion", response_model=CompanionResponse)
 def companion(req: CompanionRequest):
+    _trace_backend_event(
+        "Backend request | /api/companion",
+        {
+            "message": req.message,
+            "conversation_id": req.conversation_id,
+            "has_conversation_state": req.conversation_state is not None,
+        },
+    )
     try:
         agent = get_companion_agent()
         state = CompanionState.from_dict(req.conversation_state)
+        t_start = time.monotonic()
         result = agent.run_turn(req.message, state=state)
+        total_ms = int((time.monotonic() - t_start) * 1000)
         next_state = result.state or state
+        token_usage = with_token_cost(result.token_usage or {}, model=agent.settings.openai_model)
+        alerts = []
+        if total_ms > _ALERT_THRESHOLDS["total_latency_ms"]:
+            alerts.append(f"HIGH_LATENCY: {total_ms}ms > {_ALERT_THRESHOLDS['total_latency_ms']}ms")
+        if token_usage.get("total_tokens", 0) > _ALERT_THRESHOLDS["estimated_total_tokens"]:
+            alerts.append(f"HIGH_TOKEN: {token_usage['total_tokens']} tokens")
+        _write_eval_trace(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "agent": "companion",
+                "conversation_id": req.conversation_id or "local-companion",
+                "turn": len(next_state.turn_history) // 2,
+                "intent": result.intent,
+                "city": next_state.city,
+                "latency_ms": {"total": total_ms},
+                "token_usage": token_usage,
+                "tool_call_count": len(result.tool_logs),
+                "alerts": alerts,
+            }
+        )
+        _trace_backend_event(
+            "Backend response | /api/companion",
+            {
+                "conversation_id": req.conversation_id or "local-companion",
+                "intent": result.intent,
+                "tool_log_count": len(result.tool_logs),
+                "tool_logs": result.tool_logs,
+                "warnings": result.warnings,
+                "reply": result.reply,
+            },
+        )
         return CompanionResponse(
             conversation_id=req.conversation_id or "local-companion",
             conversation_state=next_state.to_dict(),
@@ -272,12 +402,16 @@ def companion(req: CompanionRequest):
             tool_logs=result.tool_logs if req.debug else [],
             warnings=result.warnings,
             error=result.error,
-            token_usage=result.token_usage or {},
+            token_usage=token_usage,
         )
     except Exception as e:
         import traceback
 
         tb = traceback.format_exc()
+        _trace_backend_event(
+            "Backend error | /api/companion",
+            {"error": str(e), "traceback": tb},
+        )
         raise HTTPException(status_code=500, detail={"error": str(e), "traceback": tb})
 
 

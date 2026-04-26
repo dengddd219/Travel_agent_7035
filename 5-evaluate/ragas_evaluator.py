@@ -27,11 +27,12 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parents[1]
 _RAG_RETRIVAL = _ROOT / "2-rag-retrival"
 _RAG_PIPELINE = _ROOT / "1-rag_pipeline_delivery"
-for _p in [str(_RAG_RETRIVAL), str(_RAG_PIPELINE)]:
+for _p in [str(_ROOT), str(_RAG_RETRIVAL), str(_RAG_PIPELINE)]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 from search_notes import search_notes  # noqa: E402
+from token_costing import aggregate_token_usage, token_usage_from_response_usage, with_token_cost  # noqa: E402
 
 # ── Azure OpenAI 客户端 ───────────────────────────────────────────────────────
 try:
@@ -217,12 +218,7 @@ def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str
         max_tokens=500,
     )
     answer = (resp.choices[0].message.content or "").strip()
-    usage = {}
-    if resp.usage:
-        usage = {
-            "input_tokens": resp.usage.prompt_tokens,
-            "output_tokens": resp.usage.completion_tokens,
-        }
+    usage = token_usage_from_response_usage(resp.usage, model=_DEPLOYMENT)
     return answer, usage
 
 
@@ -253,12 +249,7 @@ def _judge(client, query: str, context_chunks: list[str], answer: str, ground_tr
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         scores = json.loads(m.group()) if m else {}
 
-    usage = {}
-    if resp.usage:
-        usage = {
-            "input_tokens": resp.usage.prompt_tokens,
-            "output_tokens": resp.usage.completion_tokens,
-        }
+    usage = token_usage_from_response_usage(resp.usage, model=_DEPLOYMENT)
     return {"scores": scores, "token_usage": usage, "raw_judge_output": raw}
 
 
@@ -272,6 +263,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
     results = []
     total_input_tokens = 0
     total_output_tokens = 0
+    all_token_usages = []
 
     for i, case in enumerate(cases):
         cid = case["id"]
@@ -293,6 +285,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
         gen_ms = int((time.monotonic() - t0) * 1000)
         total_input_tokens += gen_usage.get("input_tokens", 0)
         total_output_tokens += gen_usage.get("output_tokens", 0)
+        all_token_usages.append(gen_usage)
         print(f"  生成: {len(answer)} 字 ({gen_ms}ms)", flush=True)
 
         # Step 3: Judge
@@ -301,6 +294,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
         judge_ms = int((time.monotonic() - t0) * 1000)
         total_input_tokens += judge_result["token_usage"].get("input_tokens", 0)
         total_output_tokens += judge_result["token_usage"].get("output_tokens", 0)
+        all_token_usages.append(judge_result["token_usage"])
 
         scores = judge_result["scores"]
         faithfulness = scores.get("faithfulness", 0.0)
@@ -335,6 +329,11 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
                 "generate": gen_ms,
                 "judge": judge_ms,
             },
+            "token_usage": aggregate_token_usage(
+                [gen_usage, judge_result["token_usage"]],
+                model=_DEPLOYMENT,
+                source="rag_case",
+            ),
         })
 
         if delay_s > 0 and i < len(cases) - 1:
@@ -358,11 +357,19 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
             "context_precision": round(avg_precision, 4),
             "overall": round(avg_all, 4),
         },
-        "token_usage": {
-            "total_input_tokens": total_input_tokens,
-            "total_output_tokens": total_output_tokens,
-            "total_tokens": total_input_tokens + total_output_tokens,
-        },
+        "token_usage": with_token_cost(
+            {
+                "total_input_tokens": total_input_tokens,
+                "total_output_tokens": total_output_tokens,
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
+                "total_tokens": total_input_tokens + total_output_tokens,
+                "llm_call_count": sum(item.get("llm_call_count", 0) for item in all_token_usages),
+                "model": _DEPLOYMENT,
+                "source": "ragas_evaluator",
+            },
+            model=_DEPLOYMENT,
+        ),
         "thresholds": {
             "faithfulness": {"target": 0.7, "pass": avg_faithfulness >= 0.7},
             "answer_relevancy": {"target": 0.7, "pass": avg_relevancy >= 0.7},
@@ -400,6 +407,8 @@ def print_report(summary: dict) -> None:
     print()
 
     tok = summary["token_usage"]
+    cost = tok.get("estimated_cost", {})
+    print(f"  Cost estimate: ${cost.get('total_usd', 0):.6f} / CNY {cost.get('total_cny', 0):.4f}")
     print(f"  Token 消耗: 输入 {tok['total_input_tokens']}  输出 {tok['total_output_tokens']}  合计 {tok['total_tokens']}")
 
     # 逐条明细

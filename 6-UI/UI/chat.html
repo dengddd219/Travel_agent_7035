@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Travel Planner — Chat</title>
+  <title>AI 旅行规划助手</title>
 
   <!-- ── 高德地图安全配置（必须先于 SDK 加载）── -->
   <script>
@@ -426,6 +426,7 @@
       font-weight: 800;
       color: var(--text);
       line-height: 1.1;
+      overflow-wrap: anywhere;
     }
 
     .cost-metric-caption {
@@ -496,6 +497,7 @@
       color: var(--text);
       font-weight: 700;
       text-align: right;
+      overflow-wrap: anywhere;
     }
 
     .cost-notes {
@@ -594,8 +596,9 @@
       position: absolute;
       right: 14px;
       top: 56px;
-      width: min(380px, calc(100% - 28px));
-      max-height: calc(100% - 92px);
+      width: min(480px, calc(100% - 28px));
+      height: calc(100% - 76px);
+      max-height: calc(100% - 76px);
       z-index: 20;
       display: none;
       flex-direction: column;
@@ -613,13 +616,52 @@
     .companion-tabs { padding: 8px 10px; display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--border); }
     .companion-tab { padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
     .companion-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .companion-plan { padding: 9px 12px; max-height: 160px; overflow-y: auto; border-bottom: 1px solid var(--border); display: grid; gap: 6px; }
+    .companion-plan { padding: 9px 12px; max-height: 220px; overflow-y: auto; border-bottom: 1px solid var(--border); display: grid; gap: 6px; flex-shrink: 0; }
     .companion-stop { padding: 7px 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #eef2f7; font-size: 12px; line-height: 1.4; }
     .companion-stop strong { display: block; color: var(--text); font-size: 12.5px; }
     .companion-stop span { color: var(--muted); }
-    .companion-messages { padding: 9px 12px; max-height: 160px; overflow-y: auto; display: grid; gap: 7px; }
-    .companion-msg { padding: 7px 9px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; background: #f1f5f9; color: var(--text); }
+    .companion-messages { padding: 10px 12px; flex: 1; min-height: 260px; overflow-y: auto; display: grid; align-content: start; gap: 9px; }
+    .companion-msg { padding: 9px 10px; border-radius: 10px; font-size: 12.5px; line-height: 1.55; background: #f1f5f9; color: var(--text); overflow-wrap: anywhere; }
     .companion-msg.user { background: var(--accent); color: #fff; margin-left: 34px; }
+    .companion-msg h1,.companion-msg h2,.companion-msg h3 { font-size: 12.8px; margin: 7px 0 3px; line-height: 1.35; }
+    .companion-msg p { margin: 0 0 6px; }
+    .companion-msg p:last-child { margin-bottom: 0; }
+    .companion-msg ul,.companion-msg ol { margin: 4px 0 6px; padding-left: 16px; }
+    .companion-msg li { margin-bottom: 3px; }
+    .companion-msg strong { color: var(--accent); }
+    .companion-msg.user { white-space: pre-wrap; }
+    .companion-thinking {
+      margin-top: 8px;
+      border-top: 1px solid rgba(15,23,42,.08);
+      padding-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .companion-thinking summary {
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      outline: none;
+    }
+    .companion-thinking summary::-webkit-details-marker { display: none; }
+    .companion-thinking summary::before { content: "▸ "; color: var(--accent); }
+    .companion-thinking[open] summary::before { content: "▾ "; }
+    .companion-thinking-body { margin-top: 6px; display: grid; gap: 5px; }
+    .companion-step { color: #94a3b8; }
+    .companion-step.active { color: var(--accent); font-weight: 700; }
+    .companion-step.done { color: #475569; }
+    .companion-tool-log {
+      margin-top: 6px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid var(--border);
+      max-height: 120px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
     .companion-input-row { padding: 9px 10px; display: flex; gap: 7px; border-top: 1px solid var(--border); }
     .companion-input { flex: 1; min-height: 34px; max-height: 82px; resize: vertical; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font: inherit; font-size: 12.5px; outline: none; }
     .companion-send { width: 40px; border: none; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 800; }
@@ -631,7 +673,8 @@
       .cost-toggle { align-items: flex-start; }
       .cost-toggle-side { flex-direction: column; align-items: flex-end; gap: 7px; }
       .cost-overview { grid-template-columns: 1fr; }
-      .companion-panel { top: 50px; right: 8px; width: calc(100% - 16px); max-height: calc(100% - 64px); }
+      .companion-panel { top: 50px; right: 8px; width: calc(100% - 16px); height: calc(100% - 64px); max-height: calc(100% - 64px); }
+      .companion-messages { min-height: 180px; }
     }
   </style>
 </head>
@@ -653,7 +696,7 @@
     </a>
     <span class="nav-title" id="nav-city"></span>
     <div class="nav-spacer"></div>
-    <button class="nav-new-btn" onclick="newChat()">+ New chat</button>
+    <button class="nav-new-btn" onclick="newChat()">+ 新对话</button>
   </nav>
 
   <!-- ── Layout ── -->
@@ -664,9 +707,9 @@
       <div class="chat-header">
         <div class="chat-header-row">
           <div class="online-dot"></div>
-          <span class="chat-header-name">Travel Planning Agent</span>
+          <span class="chat-header-name">旅行规划助手</span>
         </div>
-        <div class="chat-header-sub">Multi-turn · Real-time itinerary · AMap route display</div>
+        <div class="chat-header-sub">多轮对话 · 实时行程 · 高德路线展示</div>
       </div>
 
       <div class="chat-scroll-area" id="chat-scroll-area">
@@ -675,7 +718,7 @@
         <section class="cost-panel" id="cost-panel">
           <button class="cost-toggle" id="cost-toggle" type="button" onclick="toggleCostPanel()">
             <div>
-              <div class="cost-kicker">Cost Summary</div>
+              <div class="cost-kicker">预算摘要</div>
               <div class="cost-title" id="cost-title">预算摘要</div>
               <div class="cost-subtitle" id="cost-subtitle">等待行程预算数据…</div>
             </div>
@@ -690,7 +733,7 @@
             <div class="cost-overview" id="cost-overview"></div>
 
             <div class="cost-detail-card">
-              <div class="cost-detail-title">参考明细</div>
+              <div class="cost-detail-title">预算明细</div>
               <div class="cost-detail-grid" id="cost-detail-grid"></div>
             </div>
 
@@ -705,10 +748,10 @@
 
         <!-- Quick chips (hidden after first send) -->
         <div class="suggestions" id="suggestions">
-          <div class="chip" onclick="quickSend('I want to visit Shanghai for 3 days, I love food and art')">🏙️ Shanghai 3D</div>
-          <div class="chip" onclick="quickSend('Plan a 4-day family trip to Beijing')">🏯 Beijing 4D</div>
-          <div class="chip" onclick="quickSend('5-day foodie trip to Chengdu, mid-range budget')">🐼 Chengdu 5D</div>
-          <div class="chip" onclick="quickSend('2-day coastal trip to Xiamen')">🌊 Xiamen 2D</div>
+          <div class="chip" onclick="quickSend('上海三日游，我喜欢美食和艺术')">🏙️ 上海 3 天</div>
+          <div class="chip" onclick="quickSend('北京四天亲子游')">🏯 北京 4 天</div>
+          <div class="chip" onclick="quickSend('成都五天美食游，预算适中')">🐼 成都 5 天</div>
+          <div class="chip" onclick="quickSend('厦门两天海边轻松游')">🌊 厦门 2 天</div>
         </div>
       </div>
 
@@ -727,38 +770,38 @@
             </svg>
           </button>
         </div>
-        <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+        <div class="input-hint">回车发送 · Shift+Enter 换行</div>
       </div>
     </section>
 
     <!-- RIGHT: Map -->
     <section class="map-panel">
       <div class="map-toolbar">
-        <span class="map-toolbar-title">🗺️ Route Map</span>
+        <span class="map-toolbar-title">🗺️ 路线地图</span>
         <div class="map-toolbar-spacer"></div>
         <div id="route-mode-controls"></div>
       </div>
 
       <div id="map-container"></div>
-      <div id="map-status">Waiting for itinerary…</div>
+      <div id="map-status">等待生成行程…</div>
 
       <div class="companion-panel" id="companion-panel">
         <div class="companion-head">
-          <div class="companion-title">Companion Agent</div>
-          <div class="companion-subtitle" id="companion-subtitle">Select a day to ask live-trip questions</div>
+          <div class="companion-title">旅行中助手</div>
+          <div class="companion-subtitle" id="companion-subtitle">选择某一天，继续询问当天行程</div>
         </div>
         <div class="companion-tabs" id="companion-tabs"></div>
         <div class="companion-plan" id="companion-plan"></div>
         <div class="companion-messages" id="companion-messages"></div>
         <div class="companion-input-row">
-          <textarea class="companion-input" id="companion-input" rows="1" placeholder="e.g. We only have 4 hours, replan"></textarea>
+          <textarea class="companion-input" id="companion-input" rows="1" placeholder="例如：我们只剩 4 小时，帮我重排"></textarea>
           <button class="companion-send" type="button" onclick="sendCompanionMessage()">-&gt;</button>
         </div>
       </div>
 
       <div class="map-placeholder" id="map-placeholder">
         <div class="map-placeholder-icon">🗺️</div>
-        <div class="map-placeholder-text">Tell me your travel plans<br>The route will appear here once the itinerary is ready</div>
+      <div class="map-placeholder-text">告诉我你的旅行需求<br>行程生成后会在这里显示路线</div>
       </div>
     </section>
 
@@ -896,7 +939,7 @@
 
       document.getElementById('map-placeholder').classList.add('hidden');
 
-      const city = mapPayload.city || guessCity(mapPayload);
+      const city = mapPayload.city_zh || mapPayload.city || guessCity(mapPayload);
 
       function tryRender() {
         if (!window.AMap || !window.renderTravelMap) {
@@ -930,12 +973,37 @@
         const btn = document.createElement('button');
         btn.className = 'companion-tab';
         btn.type = 'button';
-        btn.textContent = `Day ${day.day_index || idx + 1}`;
+        btn.textContent = `第 ${day.day_index || idx + 1} 天`;
         btn.onclick = () => selectCompanionDay(idx);
         companionTabs.appendChild(btn);
       });
       companionPanel.classList.add('visible');
       selectCompanionDay(0);
+    }
+
+    function normalizeCompanionCityName(value) {
+      const text = String(value || '').trim();
+      const aliases = {
+        shanghai: '上海',
+        beijing: '北京',
+        chengdu: '成都',
+        chongqing: '重庆',
+        guangzhou: '广州',
+        shenzhen: '深圳',
+        hangzhou: '杭州',
+        nanjing: '南京',
+        xian: '西安',
+        "xi'an": '西安',
+        hongkong: '香港',
+        'hong kong': '香港',
+        tokyo: '东京'
+      };
+      return aliases[text.toLowerCase()] || text;
+    }
+
+    function currentCompanionCity() {
+      const navCity = document.getElementById('nav-city').textContent.replace(/^·\s*/, '');
+      return normalizeCompanionCityName(itineraryMeta?.city_zh || itineraryMeta?.city || navCity || '');
     }
 
     function selectCompanionDay(idx) {
@@ -948,15 +1016,15 @@
       if (!companionStateByDay[idx]) {
         companionStateByDay[idx] = buildCompanionStateForDay(day);
       }
-      companionSubtitle.textContent = `${itineraryMeta?.city || 'Current city'} · Day ${day.day_index || idx + 1}`;
+      companionSubtitle.textContent = `${currentCompanionCity() || '当前城市'} · 第 ${day.day_index || idx + 1} 天`;
       renderCompanionPlan(companionStateByDay[idx].remaining_plan || []);
       companionMessages.innerHTML = '';
-      appendCompanionMessage('assistant', 'This day plan is loaded. Ask about timing, rain, fatigue, or replanning.');
+      appendCompanionMessage('assistant', '这一天的行程已载入。你可以问时间是否来得及、下雨怎么调整、老人小孩体力问题，或直接让我重排。');
     }
 
     function buildCompanionStateForDay(day) {
       return {
-        city: itineraryMeta?.city || '',
+        city: currentCompanionCity(),
         remaining_plan: (day.items || []).map((item, idx) => normalizeCompanionNode(item, idx)),
         completed_nodes: [],
         skipped_nodes: [],
@@ -991,7 +1059,7 @@
 
     function renderCompanionPlan(plan) {
       if (!plan || !plan.length) {
-        companionPlan.innerHTML = '<div class="companion-stop">No remaining stops for this day.</div>';
+        companionPlan.innerHTML = '<div class="companion-stop">这一天暂时没有剩余站点。</div>';
         return;
       }
       companionPlan.innerHTML = plan.map((node, idx) => `
@@ -1005,9 +1073,79 @@
     function appendCompanionMessage(role, text) {
       const div = document.createElement('div');
       div.className = `companion-msg ${role === 'user' ? 'user' : 'assistant'}`;
-      div.textContent = text;
+      div.innerHTML = role === 'assistant' ? md(text) : escapeHtml(text);
       companionMessages.appendChild(div);
       companionMessages.scrollTop = companionMessages.scrollHeight;
+      return div;
+    }
+
+    const COMPANION_THINKING_STEPS = [
+      '确定意图中...',
+      '确认当前位置和城市...',
+      '检索候选或路线...',
+      '整理可执行回复...'
+    ];
+
+    function summarizeCompanionToolLogs(toolLogs) {
+      if (!toolLogs || !toolLogs.length) return '';
+      return toolLogs.map(log => {
+        const name = log.tool || log.name || 'tool';
+        const args = log.arguments ? JSON.stringify(log.arguments) : '';
+        const preview = log.preview || log.result_preview || '';
+        return `[${name}] ${args} ${preview}`.slice(0, 260);
+      }).join('\n');
+    }
+
+    function companionProcessHtml(activeIndex, toolLogs, done, open) {
+      const summary = done ? '已完成 · 查看执行过程' : COMPANION_THINKING_STEPS[activeIndex];
+      const stepHtml = COMPANION_THINKING_STEPS.map((label, idx) => {
+        const cls = done || idx < activeIndex ? 'done' : idx === activeIndex ? 'active' : '';
+        return `<div class="companion-step ${cls}">${idx + 1}. ${escapeHtml(label.replace('...', ''))}</div>`;
+      }).join('');
+      const logText = summarizeCompanionToolLogs(toolLogs);
+      const logHtml = logText
+        ? `<div class="companion-tool-log">${escapeHtml(logText)}</div>`
+        : '<div class="companion-step">等待后端返回工具摘要。</div>';
+      return `
+        <details class="companion-thinking" ${open ? 'open' : ''}>
+          <summary>${escapeHtml(summary)}</summary>
+          <div class="companion-thinking-body">
+            <div>这里展示执行步骤和工具摘要，不展示模型隐藏推理。</div>
+            ${stepHtml}
+            ${done ? logHtml : ''}
+          </div>
+        </details>
+      `;
+    }
+
+    function appendCompanionThinking() {
+      const div = document.createElement('div');
+      div.className = 'companion-msg assistant';
+      let activeIndex = 0;
+      const paint = () => {
+        const wasOpen = Boolean(div.querySelector('details')?.open);
+        div.innerHTML = companionProcessHtml(activeIndex, [], false, wasOpen);
+        companionMessages.scrollTop = companionMessages.scrollHeight;
+      };
+      paint();
+      const timer = setInterval(() => {
+        activeIndex = Math.min(activeIndex + 1, COMPANION_THINKING_STEPS.length - 1);
+        paint();
+      }, 1300);
+      companionMessages.appendChild(div);
+      companionMessages.scrollTop = companionMessages.scrollHeight;
+      return {
+        finish(reply, toolLogs) {
+          clearInterval(timer);
+          div.innerHTML = md(reply || '暂未生成回复') + companionProcessHtml(COMPANION_THINKING_STEPS.length - 1, toolLogs || [], true, false);
+          companionMessages.scrollTop = companionMessages.scrollHeight;
+        },
+        fail(message) {
+          clearInterval(timer);
+          div.textContent = message;
+          companionMessages.scrollTop = companionMessages.scrollHeight;
+        }
+      };
     }
 
     async function sendCompanionMessage() {
@@ -1018,8 +1156,7 @@
 
       companionInput.value = '';
       appendCompanionMessage('user', message);
-      appendCompanionMessage('assistant', 'Working on it...');
-      const pending = companionMessages.lastElementChild;
+      const pending = appendCompanionThinking();
       try {
         const res = await fetch('/api/companion', {
           method: 'POST',
@@ -1028,6 +1165,7 @@
             message,
             conversation_id: `${conversationId || 'local'}-day-${currentCompanionDayIndex + 1}`,
             conversation_state: state,
+            debug: true,
           }),
         });
         if (!res.ok) {
@@ -1036,10 +1174,10 @@
         }
         const data = await res.json();
         companionStateByDay[currentCompanionDayIndex] = data.conversation_state || state;
-        pending.textContent = data.reply || '(No response)';
+        pending.finish(data.reply || '暂未生成回复', data.tool_logs || []);
         renderCompanionPlan((data.conversation_state || state).remaining_plan || []);
       } catch (err) {
-        pending.textContent = 'Companion error: ' + err.message;
+        pending.fail('Companion error: ' + err.message);
       }
     }
 
@@ -1061,6 +1199,16 @@
       costBody.classList.remove('collapsed');
       costToggleIcon.textContent = '−';
       costPanelOpen = true;
+    }
+
+    function hasCompletedPlan(data) {
+      return Boolean(
+        data &&
+        !data.needs_clarification &&
+        data.itinerary_json &&
+        Array.isArray(data.itinerary_json.days) &&
+        data.itinerary_json.days.length
+      );
     }
 
     function formatBudgetValue(value) {
@@ -1111,10 +1259,34 @@
       return `${keyMap[key] || key}: ${valueMap[value] || value}`;
     }
 
+    function formatMoneyRange(range) {
+      if (!range || typeof range !== 'object') return '--';
+      const min = range.min;
+      const max = range.max;
+      if (min == null && max == null) return '--';
+      if (min != null && max != null && Number(min) !== Number(max)) {
+        return `${formatBudgetValue(min)} - ${formatBudgetValue(max)}`;
+      }
+      return formatBudgetValue(min != null ? min : max);
+    }
+
     function findCostPayload(data) {
-      // 优先读后端直接暴露的 cost_summary 字段
-      if (data && data.cost_summary && typeof data.cost_summary === 'object' && data.cost_summary.totals) {
-        return { kind: 'estimate', payload: data.cost_summary, container: data.cost_summary };
+      if (!hasCompletedPlan(data)) return null;
+
+      // 优先展示绑定最终行程的成本聚合；兜底展示 4-cost 城市预算摘要。
+      const planCost = data.plan_cost_summary;
+      if (planCost && typeof planCost === 'object' && planCost.totals) {
+        return { kind: 'plan', payload: planCost, container: planCost };
+      }
+
+      const directCost = data.cost_summary;
+      const nestedCost = data.itinerary_json &&
+        data.itinerary_json.conditions_context &&
+        data.itinerary_json.conditions_context.cost_summary;
+      const costSummary = directCost && directCost.totals ? directCost : nestedCost;
+
+      if (costSummary && typeof costSummary === 'object' && costSummary.totals) {
+        return { kind: 'estimate', payload: costSummary, container: costSummary };
       }
       return null;
     }
@@ -1142,8 +1314,89 @@
       `).join('');
     }
 
+    function renderPlanCostPanel(costData) {
+      const p = costData.payload;
+      const totals = p.totals || {};
+      const breakdown = p.breakdown || {};
+      const itinerary = p.itinerary_costs || {};
+      const guide = p.guide_alignment || {};
+      const hotel = p.hotel_context || {};
+
+      const city = p.city || '当前城市';
+      const days = p.days || '';
+      const budgetLabel = humanizeBudgetLevel(p.budget_level || 'medium');
+      const totalRange = formatMoneyRange(totals);
+      const guideCount = Number(guide.guide_aligned_count || 0);
+
+      costTitle.textContent = `${city} 行程费用摘要`;
+      costSubtitle.textContent = [
+        days ? `${days} 天行程` : '',
+        budgetLabel,
+        guideCount ? `${guideCount} 个攻略命中点` : ''
+      ].filter(Boolean).join(' · ');
+      costTotalBadge.textContent = totalRange;
+
+      const tags = [
+        budgetLabel,
+        '最终行程',
+        guideCount ? `攻略命中 ${guideCount}` : '',
+        hotel.recommended_areas && hotel.recommended_areas.length ? `住 ${hotel.recommended_areas[0]}` : ''
+      ].filter(Boolean);
+      costTags.innerHTML = tags.map(tag => `<span class="cost-tag">${escapeHtml(tag)}</span>`).join('');
+
+      renderMetricCards([
+        { label: '总费用范围', value: totalRange, caption: '酒店 + 餐饮 + 交通 + 景点门票' },
+        { label: '景点门票', value: formatBudgetValue(totals.attraction_tickets), caption: '来自最终每天 POI' },
+        { label: '攻略命中门票', value: formatBudgetValue(totals.guide_aligned_attraction_tickets), caption: '攻略/RAG 证据命中的 POI' },
+        { label: '路线交通', value: formatMoneyRange(breakdown.local_transport_total), caption: `${itinerary.route_distance_km || 0} km · ${itinerary.route_duration_min || 0} min` }
+      ]);
+
+      const rows = [
+        { label: '城市基础预算', value: `${formatBudgetValue(totals.base_min)} - ${formatBudgetValue(totals.base_max)}` },
+        { label: '酒店合计', value: formatMoneyRange(breakdown.hotel_total) },
+        { label: '餐饮合计', value: formatMoneyRange(breakdown.food_total) },
+        { label: '本地交通', value: formatMoneyRange(breakdown.local_transport_total) },
+        { label: '景点门票', value: formatMoneyRange(breakdown.attraction_tickets) },
+        { label: '住宿晚数', value: itinerary.hotel_nights ? `${itinerary.hotel_nights} 晚` : '--' }
+      ];
+
+      (itinerary.daily || []).slice(0, 5).forEach(day => {
+        rows.push({
+          label: `第 ${day.day_index || '?'} 天`,
+          value: `门票 ${formatBudgetValue(day.attraction_cost)} · 路线 ${day.route_distance_km || 0} km`
+        });
+      });
+      renderDetailRows(rows);
+
+      const sources = Array.isArray(p.sources) ? p.sources : [];
+      costSourceList.innerHTML = sources.length
+        ? sources.map(source => `<span class="cost-source-item">${escapeHtml(source)}</span>`).join('')
+        : '<span class="cost-source-item">最终行程成本聚合</span>';
+
+      const guideRefs = Array.isArray(guide.guide_references) ? guide.guide_references : [];
+      const notes = Array.isArray(p.pricing_notes) ? p.pricing_notes.slice(0, 3) : [];
+      if (guideRefs.length) {
+        notes.push(`攻略依据：${guideRefs.slice(0, 2).join('；')}`);
+      }
+      if (itinerary.paid_items && itinerary.paid_items.length) {
+        notes.push(`已计入付费点：${itinerary.paid_items.slice(0, 4).map(item => item.poi_name).join('、')}`);
+      }
+      costNotes.innerHTML = notes.length
+        ? notes.map(note => `<div class="cost-note">${escapeHtml(note)}</div>`).join('')
+        : '<div class="cost-note">预算已根据最终行程中的景点、路线和住宿区域聚合。</div>';
+
+      costPanel.classList.add('visible');
+      toggleCostPanel(true);
+      scrollBottom();
+    }
+
     function renderCostPanel(costData) {
       if (!costData || !costData.payload) return;
+
+      if (costData.kind === 'plan') {
+        renderPlanCostPanel(costData);
+        return;
+      }
 
       const p = costData.payload;   // cost_summary object from backend
       const totals   = p.totals   || {};
@@ -1206,6 +1459,7 @@
       // 有数据才显示
       costPanel.classList.add('visible');
       toggleCostPanel(true);
+      scrollBottom();
     }
 
     /* ═══════════════════════════════════
@@ -1243,6 +1497,7 @@
 
       // Hide chips after first interaction
       document.getElementById('suggestions').style.display = 'none';
+      resetCostPanel();
 
       appendMsg('user', escapeHtml(text));
       input.value = '';
@@ -1267,8 +1522,13 @@
             '· ' + data.itinerary_json.city;
         }
 
+        if (data.map_payload && (data.map_payload.city_zh || data.map_payload.city)) {
+          document.getElementById('nav-city').textContent =
+            '· ' + (data.map_payload.city_zh || data.map_payload.city);
+        }
+
         // Render AI reply
-        appendMsg('assistant', md(data.report || '(No response)'), data.tool_logs);
+        appendMsg('assistant', md(data.report || '暂未生成回复'), data.tool_logs);
 
         // Render cost summary when structured budget data is available
         const costPayload = findCostPayload(data);
@@ -1339,7 +1599,7 @@
       resetCostPanel();
       document.getElementById('suggestions').style.display = 'flex';
       document.getElementById('map-placeholder').classList.remove('hidden');
-      document.getElementById('map-status').textContent = 'Waiting for itinerary…';
+      document.getElementById('map-status').textContent = '等待生成行程…';
       document.getElementById('nav-city').textContent = '';
       itineraryMeta = null;
       itineraryDays = [];
@@ -1350,7 +1610,7 @@
       companionTabs.innerHTML = '';
       companionPlan.innerHTML = '';
       companionMessages.innerHTML = '';
-      appendMsg('assistant', md('Hi! I\'m your AI travel planning assistant.\n\nTell me where you want to go, how many days, and your travel style — I\'ll generate a detailed itinerary and show the route on the map.'));
+      appendMsg('assistant', md('你好，我是你的 AI 旅行规划助手。\n\n告诉我想去哪里、玩几天、偏好什么风格，我会为你生成详细行程，并在右侧地图显示路线。'));
     }
 
     /* ═══════════════════════════════════
@@ -1359,7 +1619,7 @@
     (function boot() {
       resetCostPanel();
       // Show welcome message
-      appendMsg('assistant', md('Hi! I\'m your AI travel planning assistant.\n\nTell me where you want to go, how many days, and your travel style — I\'ll generate a detailed itinerary and show the route on the map right.'));
+      appendMsg('assistant', md('你好，我是你的 AI 旅行规划助手。\n\n告诉我想去哪里、玩几天、偏好什么风格，我会为你生成详细行程，并在右侧地图显示路线。'));
 
       // If user came from index.html with ?q=...
       const params = new URLSearchParams(window.location.search);

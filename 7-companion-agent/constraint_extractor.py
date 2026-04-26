@@ -71,11 +71,11 @@ def get_known_pois(city: str) -> list[str]:
 
 def classify_intent(text: str) -> str:
     lowered = text.strip().lower()
-    if any(token in lowered for token in ["下雨", "关闭", "换吗", "能换", "排队", "不想去了", "淋雨"]):
+    if any(token in lowered for token in ["下雨", "关闭", "换吗", "能换", "排队", "不想去了", "淋雨", "重排", "重新安排", "调整行程", "改行程", "只剩", "剩下", "来不及"]):
         return "replan"
     if any(token in lowered for token in ["来得及", "时间够吗", "赶得上", "最晚几点"]):
         return "coordinate"
-    if any(token in lowered for token in ["腿疼", "走不动", "受伤", "尿急", "网吧", "迷路", "求助", "回酒店"]):
+    if any(token in lowered for token in ["腿疼", "走不动", "受伤", "摔跤", "摔倒", "摔了", "摔伤", "跌倒", "跌跤", "尿急", "网吧", "迷路", "求助", "回酒店"]):
         return "emergency"
     return "search"
 
@@ -120,7 +120,7 @@ def _extract_party_updates(text: str) -> dict[str, int]:
 
 
 def _extract_mobility_risk(text: str) -> str:
-    if any(token in text for token in ["走不动", "腿疼", "受伤", "摔倒", "头晕", "不舒服"]):
+    if any(token in text for token in ["走不动", "腿疼", "受伤", "摔跤", "摔倒", "摔了", "摔伤", "跌倒", "跌跤", "头晕", "不舒服"]):
         return "high"
     if any(token in text for token in ["有点累", "累了", "老人", "带小孩"]):
         return "medium"

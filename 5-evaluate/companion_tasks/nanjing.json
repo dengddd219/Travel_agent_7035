@@ -1,0 +1,387 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Nanjing",
+  "city_zh": "南京",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_nanjing_001",
+      "city": "Nanjing",
+      "city_zh": "南京",
+      "task_type": "closing_time_and_indoor_replan",
+      "complexity": {
+        "reasoning": [
+          "closing_time",
+          "rain_indoor",
+          "respectful_site_choice"
+        ],
+        "tool": [
+          "get_weather_now",
+          "get_poi_detail",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "avoid_overpacking"
+        ]
+      },
+      "initial_state": {
+        "city": "Nanjing",
+        "current_time": "2026-11-14T15:50:00+08:00",
+        "current_location": "Confucius Temple Nanjing",
+        "base_location": "Hotel near Xinjiekou",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Confucius Temple Nanjing",
+            "time_slot": "afternoon",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0
+          },
+          {
+            "poi_name": "Nanjing Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 2.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "indoor",
+            "distance_km": 5.2,
+            "closing_time": "17:00"
+          },
+          {
+            "poi_name": "Qinhuai River Night Cruise",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.6
+          },
+          {
+            "poi_name": "Memorial Hall of the Victims in Nanjing Massacre",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 7.0,
+            "closing_time": "17:30"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Calm traveller who wants a realistic plan in bad weather.",
+          "style": "Accepts tradeoffs if the agent explains why.",
+          "age": "30-45",
+          "patience": "high",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "It is late afternoon at Confucius Temple and it may rain. I wanted Nanjing Museum, but if it is too close to closing, do not force it. Prefer indoor, realistic, and not rushed.",
+        "hidden_constraints": [
+          "check closing risk",
+          "prefer indoor due to rain",
+          "avoid overpacking late afternoon"
+        ],
+        "disclosure_plan": [
+          "First mention late afternoon and possible rain.",
+          "If agent asks what matters, say Nanjing Museum was desired but should not be rushed near closing."
+        ]
+      },
+      "first_user_message": "It is almost 4 pm at Confucius Temple and it may rain. Can you adjust the rest so it is realistic and not rushed?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "tools_should_call": [
+          "get_poi_detail"
+        ],
+        "state_assertions": [
+          "Agent considers rain or indoor preference",
+          "Agent does not force Nanjing Museum if closing-time risk makes it unrealistic",
+          "Final answer explains what is kept, deferred, or skipped"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks weather before making a rain-based adjustment."
+          },
+          {
+            "key": "closing_risk_considered",
+            "dimension": "reasoning",
+            "rubric": "Agent considers the 16:00 current time and museum closing risk."
+          },
+          {
+            "key": "poi_detail_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks get_poi_detail or otherwise uses available detail for time/venue feasibility."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary with indoor/time feasibility constraints."
+          },
+          {
+            "key": "avoid_overpacking",
+            "dimension": "interaction",
+            "rubric": "Final reply avoids an overpacked plan and clearly explains deferred or skipped stops."
+          }
+        ]
+      },
+      "failure_tags": [
+        "closing_time_ignored",
+        "weather_guess",
+        "overpacked_late_day"
+      ]
+    },
+    {
+      "id": "companion_nanjing_002",
+      "city": "Nanjing",
+      "city_zh": "南京",
+      "task_type": "lost_child_help",
+      "complexity": {
+        "reasoning": [
+          "lost_person",
+          "safe_meeting_point"
+        ],
+        "tool": [
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "immediate_protocol"
+        ]
+      },
+      "initial_state": {
+        "city": "Nanjing",
+        "current_time": "2026-11-15T19:30:00+08:00",
+        "current_location": "Confucius Temple Nanjing",
+        "base_location": "Hotel near Xinjiekou",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 1
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Confucius Temple Nanjing",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Panicked parent in crowded area.",
+          "style": "Urgent and emotional.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "At Confucius Temple, I cannot find my child in the crowd. Need immediate safety protocol and official help point.",
+        "hidden_constraints": [
+          "lost child emergency",
+          "crowd risk",
+          "official staff/help point"
+        ],
+        "disclosure_plan": [
+          "First report child missing at Confucius Temple."
+        ]
+      },
+      "first_user_message": "At Confucius Temple, I cannot find my child in the crowd. Help me now.",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_emergency_resources"
+        ],
+        "state_assertions": [
+          "Lost child handled as emergency.",
+          "Final reply gives immediate protocol."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "classify_lost_child",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies lost child as emergency/help."
+          },
+          {
+            "key": "call_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources."
+          },
+          {
+            "key": "immediate_protocol",
+            "dimension": "interaction",
+            "rubric": "Final reply gives immediate safety steps."
+          },
+          {
+            "key": "crowd_safety",
+            "dimension": "reasoning",
+            "rubric": "Agent accounts for crowded environment."
+          },
+          {
+            "key": "no_sightseeing",
+            "dimension": "interaction",
+            "rubric": "Agent does not continue normal itinerary advice."
+          }
+        ]
+      },
+      "failure_tags": [
+        "misclassified_search",
+        "no_staff_help",
+        "continues_plan"
+      ]
+    },
+    {
+      "id": "companion_nanjing_003",
+      "city": "Nanjing",
+      "city_zh": "南京",
+      "task_type": "night_cruise_weather_coordinate",
+      "complexity": {
+        "reasoning": [
+          "weather",
+          "night_activity_optional"
+        ],
+        "tool": [
+          "get_weather_now",
+          "get_route"
+        ],
+        "interaction": [
+          "backup_plan"
+        ]
+      },
+      "initial_state": {
+        "city": "Nanjing",
+        "current_time": "2026-11-15T18:10:00+08:00",
+        "current_location": "Nanjing Museum",
+        "base_location": "Hotel near Xinjiekou",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Qinhuai River Night Cruise",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 5.5,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Confucius Temple Nanjing",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 5.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller deciding on night cruise.",
+          "style": "Wants weather-aware risk advice.",
+          "age": "28-42",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "I want Qinhuai River night cruise, but if rain is likely or transfer is too much from Nanjing Museum, give a safer backup.",
+        "hidden_constraints": [
+          "cruise is weather-sensitive",
+          "route from museum matters",
+          "backup around Confucius Temple acceptable"
+        ],
+        "disclosure_plan": [
+          "Ask whether to do cruise tonight from museum."
+        ]
+      },
+      "first_user_message": "From Nanjing Museum, should we still do the Qinhuai River night cruise tonight?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": [
+          "get_weather_now",
+          "get_route"
+        ],
+        "state_assertions": [
+          "Weather and route checked.",
+          "Backup proposed if risky."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks Nanjing weather."
+          },
+          {
+            "key": "route_checked",
+            "dimension": "tool",
+            "rubric": "Agent calls get_route from museum to cruise/Confucius Temple area."
+          },
+          {
+            "key": "weather_sensitive",
+            "dimension": "reasoning",
+            "rubric": "Agent treats night cruise as weather-sensitive."
+          },
+          {
+            "key": "clear_recommendation",
+            "dimension": "interaction",
+            "rubric": "Final reply clearly recommends do/defer/backup."
+          },
+          {
+            "key": "backup_nearby",
+            "dimension": "reasoning",
+            "rubric": "Backup remains practical and nearby."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_guess",
+        "no_route",
+        "no_backup"
+      ]
+    }
+  ]
+}

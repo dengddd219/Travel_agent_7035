@@ -45,8 +45,8 @@ def test_replan_fits_four_hour_budget_and_preserves_core_pois():
     assert result["status"] == "ok"
     assert total_hours <= 4
     assert "Summer Palace" in names
-    assert "Nanluoguxiang" not in names
-    assert any(node["poi_name"] == "Nanluoguxiang" for node in result["deferred_nodes"])
+    assert "Nanluoguxiang" in names
+    assert any(node["poi_name"] == "National Museum" for node in result["deferred_nodes"])
 
 
 def test_replan_removes_completed_nodes():

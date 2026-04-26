@@ -1,0 +1,366 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Chongqing",
+  "city_zh": "重庆",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_chongqing_001",
+      "city": "Chongqing",
+      "city_zh": "重庆",
+      "task_type": "timing_feasibility",
+      "complexity": {
+        "reasoning": [
+          "deadline",
+          "route_duration",
+          "queue_risk"
+        ],
+        "tool": [
+          "get_route",
+          "get_poi_detail"
+        ],
+        "interaction": [
+          "clear_yes_no_feasibility"
+        ]
+      },
+      "initial_state": {
+        "city": "Chongqing",
+        "current_time": "2026-08-18T16:25:00+08:00",
+        "current_location": "Three Gorges Museum",
+        "base_location": "Hotel near Jiefangbei",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "destination_deadlines": [
+          {
+            "name": "Hotpot dinner near Jiefangbei",
+            "deadline": "2026-08-18T19:00:00+08:00"
+          }
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Yangtze River Cableway",
+            "time_slot": "afternoon",
+            "duration_hours": 0.75,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 4.0,
+            "queue_risk": "high"
+          },
+          {
+            "poi_name": "Hongya Cave",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.1
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Pragmatic traveller with a fixed dinner booking.",
+          "style": "Wants a direct answer, not a new full itinerary.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "I am at Three Gorges Museum at 16:25. I want to ride the Yangtze River Cableway and maybe see Hongya Cave, but I must reach Jiefangbei hotpot by 19:00.",
+        "hidden_constraints": [
+          "19:00 dinner is hard deadline",
+          "Cableway has queue risk",
+          "Hongya Cave is optional"
+        ],
+        "disclosure_plan": [
+          "First ask whether the plan is feasible.",
+          "If asked what is fixed, say the 19:00 hotpot booking cannot move.",
+          "If asked priority, say cableway is more important than Hongya Cave."
+        ]
+      },
+      "first_user_message": "I am at Three Gorges Museum now. Can I still ride the Yangtze River Cableway and get to my Jiefangbei hotpot dinner by 7 pm?",
+      "expected_trajectory": {
+        "required_intent": "coordinate",
+        "tools_must_call": [
+          "get_route",
+          "get_poi_detail"
+        ],
+        "state_assertions": [
+          "Agent checks route or timing instead of giving a blind yes",
+          "Agent treats the 19:00 dinner as a hard deadline",
+          "Agent clearly recommends whether to include or skip Hongya Cave"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "deadline_recognized",
+            "dimension": "reasoning",
+            "rubric": "Agent recognizes 19:00 dinner as a hard deadline."
+          },
+          {
+            "key": "route_checked",
+            "dimension": "tool",
+            "rubric": "Agent calls get_route for at least one relevant leg involving current location, cableway, Hongya Cave, or dinner area."
+          },
+          {
+            "key": "poi_detail_or_queue_risk",
+            "dimension": "tool",
+            "rubric": "Agent checks POI detail or explicitly accounts for cableway visit/queue risk."
+          },
+          {
+            "key": "direct_feasibility_answer",
+            "dimension": "interaction",
+            "rubric": "Final reply gives a clear feasible/risky/not feasible conclusion."
+          },
+          {
+            "key": "optional_stop_handled",
+            "dimension": "reasoning",
+            "rubric": "Agent treats Hongya Cave as optional and does not let it endanger the dinner deadline."
+          }
+        ]
+      },
+      "failure_tags": [
+        "missed_deadline",
+        "no_route_check",
+        "unclear_feasibility"
+      ]
+    },
+    {
+      "id": "companion_chongqing_002",
+      "city": "Chongqing",
+      "city_zh": "重庆",
+      "task_type": "emergency_mobility",
+      "complexity": {
+        "reasoning": [
+          "mobility_risk",
+          "safe_exit"
+        ],
+        "tool": [
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "group_split_or_fallback"
+        ]
+      },
+      "initial_state": {
+        "city": "Chongqing",
+        "current_time": "2026-07-01T20:00:00+08:00",
+        "current_location": "Hongya Cave",
+        "base_location": "Hotel near Jiefangbei",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 0
+        },
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "Hongya Cave",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "high"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Stressed traveller with elderly companion.",
+          "style": "Needs a safe exit plan.",
+          "age": "35-55",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "At Hongya Cave, an elderly companion has a mobility problem. Handle stairs and crowd risk and find rest/exit/help.",
+        "hidden_constraints": [
+          "stairs and crowd risk",
+          "need exit/rest/help",
+          "do not continue attraction plan"
+        ],
+        "disclosure_plan": [
+          "First say the elderly companion cannot continue at Hongya Cave."
+        ]
+      },
+      "first_user_message": "At Hongya Cave, the elderly person cannot handle the stairs and crowd. What now?",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_emergency_resources"
+        ],
+        "state_assertions": [
+          "Agent prioritizes rest/exit/help.",
+          "Agent avoids continuing sightseeing."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "classify_mobility_emergency",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies as mobility/emergency."
+          },
+          {
+            "key": "call_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources."
+          },
+          {
+            "key": "risk_accounted",
+            "dimension": "reasoning",
+            "rubric": "Agent accounts for stairs and crowd risk."
+          },
+          {
+            "key": "exit_or_rest",
+            "dimension": "interaction",
+            "rubric": "Final reply gives exit/rest/help guidance."
+          },
+          {
+            "key": "no_continue_tour",
+            "dimension": "interaction",
+            "rubric": "Agent does not recommend continuing sightseeing first."
+          }
+        ]
+      },
+      "failure_tags": [
+        "mobility_ignored",
+        "no_exit_plan",
+        "continues_sightseeing"
+      ]
+    },
+    {
+      "id": "companion_chongqing_003",
+      "city": "Chongqing",
+      "city_zh": "重庆",
+      "task_type": "nearby_food_or_rest_search",
+      "complexity": {
+        "reasoning": [
+          "preference_constraint",
+          "nearby_priority",
+          "local_experience"
+        ],
+        "tool": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "interaction": [
+          "ranked_recommendation"
+        ]
+      },
+      "initial_state": {
+        "city": "Chongqing",
+        "current_time": "2026-07-01T18:00:00+08:00",
+        "current_location": "Jiefangbei",
+        "base_location": "Hotel near Jiefangbei",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "food_constraints": [
+          "mild or non-spicy option"
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Jiefangbei",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller asking the agent to choose a practical local option.",
+          "style": "Prefers a short ranked recommendation.",
+          "age": "25-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Find a nearby option around Jiefangbei. Preserve Chongqing local dinner, but respect this constraint: mild or non-spicy option.",
+        "hidden_constraints": [
+          "mild or non-spicy option",
+          "nearby matters",
+          "Chongqing local dinner"
+        ],
+        "disclosure_plan": [
+          "Ask for a nearby option around Jiefangbei.",
+          "If asked, repeat the constraint: mild or non-spicy option."
+        ]
+      },
+      "first_user_message": "Can you find Chongqing dinner near Jiefangbei? One of us cannot eat very spicy.",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "state_assertions": [
+          "Search is scoped to the current city/location.",
+          "Ranking uses the stated constraint."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "retrieve_candidates",
+            "dimension": "tool",
+            "rubric": "Agent retrieves nearby candidates in the correct city."
+          },
+          {
+            "key": "score_constraints",
+            "dimension": "tool",
+            "rubric": "Agent scores candidates with the stated preference or dietary constraint."
+          },
+          {
+            "key": "respect_constraint",
+            "dimension": "reasoning",
+            "rubric": "Final recommendation respects: mild or non-spicy option."
+          },
+          {
+            "key": "preserve_local_style",
+            "dimension": "reasoning",
+            "rubric": "Recommendation preserves Chongqing local dinner."
+          },
+          {
+            "key": "few_actionable_options",
+            "dimension": "interaction",
+            "rubric": "Final reply gives 1-3 actionable options with reasons."
+          }
+        ]
+      },
+      "failure_tags": [
+        "constraint_ignored",
+        "wrong_area",
+        "unranked_list"
+      ]
+    }
+  ]
+}

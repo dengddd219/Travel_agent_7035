@@ -1,0 +1,131 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "total_tasks": 30,
+  "cities": [
+    {
+      "city": "Beijing",
+      "city_zh": "北京",
+      "path": "beijing.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_beijing_001",
+        "companion_beijing_002",
+        "companion_beijing_003"
+      ]
+    },
+    {
+      "city": "Shanghai",
+      "city_zh": "上海",
+      "path": "shanghai.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_shanghai_001",
+        "companion_shanghai_002",
+        "companion_shanghai_003"
+      ]
+    },
+    {
+      "city": "Chengdu",
+      "city_zh": "成都",
+      "path": "chengdu.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_chengdu_001",
+        "companion_chengdu_002",
+        "companion_chengdu_003"
+      ]
+    },
+    {
+      "city": "Chongqing",
+      "city_zh": "重庆",
+      "path": "chongqing.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_chongqing_001",
+        "companion_chongqing_002",
+        "companion_chongqing_003"
+      ]
+    },
+    {
+      "city": "Guangzhou",
+      "city_zh": "广州",
+      "path": "guangzhou.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_guangzhou_001",
+        "companion_guangzhou_002",
+        "companion_guangzhou_003"
+      ]
+    },
+    {
+      "city": "Shenzhen",
+      "city_zh": "深圳",
+      "path": "shenzhen.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_shenzhen_001",
+        "companion_shenzhen_002",
+        "companion_shenzhen_003"
+      ]
+    },
+    {
+      "city": "Hangzhou",
+      "city_zh": "杭州",
+      "path": "hangzhou.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_hangzhou_001",
+        "companion_hangzhou_002",
+        "companion_hangzhou_003"
+      ]
+    },
+    {
+      "city": "Xian",
+      "city_zh": "西安",
+      "path": "xian.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_xian_001",
+        "companion_xian_002",
+        "companion_xian_003"
+      ]
+    },
+    {
+      "city": "Xiamen",
+      "city_zh": "厦门",
+      "path": "xiamen.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_xiamen_001",
+        "companion_xiamen_002",
+        "companion_xiamen_003"
+      ]
+    },
+    {
+      "city": "Nanjing",
+      "city_zh": "南京",
+      "path": "nanjing.json",
+      "task_count": 3,
+      "task_ids": [
+        "companion_nanjing_001",
+        "companion_nanjing_002",
+        "companion_nanjing_003"
+      ]
+    }
+  ]
+}

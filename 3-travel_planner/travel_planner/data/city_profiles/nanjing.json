@@ -1,10 +1,22 @@
 {
   "city": "Nanjing",
-  "aliases": ["nanjing", "南京"],
+  "aliases": [
+    "nanjing",
+    "南京"
+  ],
   "recommended_areas": [
-    {"name": "Xuanwu", "why": "best for major history museums, city wall, and lake access"},
-    {"name": "Qinhuai", "why": "best for old-city atmosphere, food, and night river flow"},
-    {"name": "Jianye", "why": "good for modern skyline and museum extensions"}
+    {
+      "name": "玄武区",
+      "why": "best for major history museums, city wall, and lake access"
+    },
+    {
+      "name": "秦淮区",
+      "why": "best for old-city atmosphere, food, and night river flow"
+    },
+    {
+      "name": "建邺区",
+      "why": "good for modern skyline and museum extensions"
+    }
   ],
   "transport": [
     "Keep republican-history sites and Qinhuai old-city walking in one central cluster when possible.",
@@ -15,31 +27,88 @@
     "Swap lake walks and mausoleum-heavy outdoor plans for museums, memorial halls, or malls.",
     "Use major museums and indoor heritage venues as weather-safe anchors."
   ],
-  "signature_foods": ["salted duck", "duck blood vermicelli soup", "sesame buns", "jinling snacks", "soup dumplings"],
+  "signature_foods": [
+    "salted duck",
+    "duck blood vermicelli soup",
+    "sesame buns",
+    "jinling snacks",
+    "soup dumplings"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["history", "culture", "city walk"],
-      "suggested_queries": ["Nanjing Museum", "Confucius Temple Nanjing", "Laomendong", "Presidential Palace"],
+      "focus_tags": [
+        "history",
+        "culture",
+        "city walk"
+      ],
+      "suggested_queries": [
+        "南京博物院",
+        "夫子庙",
+        "老门东",
+        "总统府"
+      ],
       "pace_note": "Nanjing works best when you pair one major history anchor with one atmospheric walking district."
     },
     "family": {
-      "focus_tags": ["family", "museum", "park"],
-      "suggested_queries": ["Nanjing Museum", "Nanjing Underwater World", "Xuanwu Lake", "Nanjing Hongshan Forest Zoo"],
+      "focus_tags": [
+        "family",
+        "museum",
+        "park"
+      ],
+      "suggested_queries": [
+        "南京博物院",
+        "Nanjing Underwater World",
+        "Xuanwu Lake",
+        "Nanjing Hongshan Forest Zoo"
+      ],
       "pace_note": "Use one marquee attraction and one nearby flexible backup."
     },
     "food": {
-      "focus_tags": ["food", "local", "night"],
-      "suggested_queries": ["Confucius Temple snacks", "Laomendong food", "duck blood vermicelli Nanjing", "Jinling cuisine"],
+      "focus_tags": [
+        "food",
+        "local",
+        "night"
+      ],
+      "suggested_queries": [
+        "Confucius Temple snacks",
+        "Laomendong food",
+        "duck blood vermicelli Nanjing",
+        "Jinling cuisine"
+      ],
       "pace_note": "Keep food planning close to the Qinhuai old-city cluster to minimize transfers."
     },
     "theme": {
-      "focus_tags": ["history", "culture", "theme"],
-      "suggested_queries": ["Sun Yat-sen Mausoleum", "Presidential Palace", "Memorial Hall of the Victims in Nanjing Massacre", "Ming Xiaoling"],
+      "focus_tags": [
+        "history",
+        "culture",
+        "theme"
+      ],
+      "suggested_queries": [
+        "中山陵",
+        "总统府",
+        "侵华日军南京大屠杀遇难同胞纪念馆",
+        "Ming Xiaoling"
+      ],
       "pace_note": "Build around one strong historical narrative instead of mixing too many eras in one day."
     }
   },
-  "indoor_keywords": ["museum", "memorial", "mall", "gallery", "indoor", "palace"],
-  "outdoor_keywords": ["lake", "temple", "mausoleum", "wall", "garden", "street", "river"],
+  "indoor_keywords": [
+    "museum",
+    "memorial",
+    "mall",
+    "gallery",
+    "indoor",
+    "palace"
+  ],
+  "outdoor_keywords": [
+    "lake",
+    "temple",
+    "mausoleum",
+    "wall",
+    "garden",
+    "street",
+    "river"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -48,7 +117,9 @@
       "temp_max": 26,
       "precipitation_probability": 30,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for old-city walking and lake-adjacent highlights."]
+      "suggestions": [
+        "Good day for old-city walking and lake-adjacent highlights."
+      ]
     },
     {
       "date": "Day 2",
@@ -57,209 +128,285 @@
       "temp_max": 23,
       "precipitation_probability": 65,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use museums and memorial halls as the main anchors."]
+      "suggestions": [
+        "Use museums and memorial halls as the main anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Nanjing Museum",
+      "name": "南京博物院",
       "category": "attraction",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0392,
-      "lon": 118.8430,
+      "lon": 118.843,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "321 Zhongshan East Road, Xuanwu District",
       "open_hours": "09:00-17:00",
       "rating": 4.8,
       "visit_reason": "Best weather-safe history and culture anchor."
     },
     {
-      "name": "Confucius Temple Nanjing",
+      "name": "夫子庙",
       "category": "attraction",
-      "district": "Qinhuai",
+      "district": "秦淮区",
       "lat": 32.0227,
-      "lon": 118.7890,
+      "lon": 118.789,
       "duration_hours": 1.6,
       "ticket_price": 30,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "food", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "food",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Qinhuai District",
       "open_hours": "08:30-21:00",
       "rating": 4.5,
       "visit_reason": "Best old-city night-flow and local-food anchor."
     },
     {
-      "name": "Laomendong",
+      "name": "老门东",
       "category": "food",
-      "district": "Qinhuai",
+      "district": "秦淮区",
       "lat": 32.0158,
       "lon": 118.7862,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "city walk", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "city walk",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "South Zhonghua Gate Area, Qinhuai District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Strong city-walk and snack extension near Qinhuai."
     },
     {
-      "name": "Presidential Palace",
+      "name": "总统府",
       "category": "attraction",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0438,
       "lon": 118.7927,
       "duration_hours": 2.0,
       "ticket_price": 35,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "culture", "theme"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "theme"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "292 Changjiang Road, Xuanwu District",
       "open_hours": "08:30-17:00",
       "rating": 4.7,
       "visit_reason": "Strong republican-history anchor."
     },
     {
-      "name": "Sun Yat-sen Mausoleum",
+      "name": "中山陵",
       "category": "attraction",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0526,
       "lon": 118.8491,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Zhongshan Scenic Area, Xuanwu District",
       "open_hours": "06:30-18:00",
       "rating": 4.7,
       "visit_reason": "Grand mausoleum of the Father of the Nation, set on Purple Mountain."
     },
     {
-      "name": "Nanjing City Wall",
+      "name": "南京城墙",
       "category": "attraction",
-      "district": "Xuanwu",
-      "lat": 32.0490,
+      "district": "玄武区",
+      "lat": 32.049,
       "lon": 118.7813,
       "duration_hours": 1.5,
       "ticket_price": 35,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "view"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "view"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Jiefang Gate / Hanzhong Gate, Xuanwu District",
       "open_hours": "08:00-18:00",
       "rating": 4.6,
       "visit_reason": "World's longest surviving medieval city wall — walkable sections near the gates."
     },
     {
-      "name": "Xuanwu Lake Park",
+      "name": "玄武湖公园",
       "category": "attraction",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0781,
-      "lon": 118.8010,
+      "lon": 118.801,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "lake", "nature", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "lake",
+        "nature",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Xuanwu Lake Scenic Area, Xuanwu District",
       "open_hours": "06:00-21:00",
       "rating": 4.5,
       "visit_reason": "Large urban lake park next to the Ming city wall — relaxed half-day option."
     },
     {
-      "name": "Memorial Hall of the Victims in Nanjing Massacre",
+      "name": "侵华日军南京大屠杀遇难同胞纪念馆",
       "category": "attraction",
-      "district": "Jianye",
-      "lat": 32.0350,
+      "district": "建邺区",
+      "lat": 32.035,
       "lon": 118.7528,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "memorial"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "memorial"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "418 Shuiximen Street, Jianye District",
       "open_hours": "08:30-16:30",
       "rating": 4.8,
       "visit_reason": "Powerful and essential museum of modern history — emotionally significant anchor."
     },
     {
-      "name": "Ming Xiaoling Mausoleum",
+      "name": "明孝陵",
       "category": "attraction",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0475,
       "lon": 118.8443,
       "duration_hours": 2.0,
       "ticket_price": 70,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Purple Mountain, Xuanwu District",
       "open_hours": "08:00-17:30",
       "rating": 4.7,
       "visit_reason": "UNESCO-listed tomb of the Ming dynasty's founding emperor."
     },
     {
-      "name": "Qinhuai River Night Cruise",
+      "name": "秦淮河夜游",
       "category": "attraction",
-      "district": "Qinhuai",
+      "district": "秦淮区",
       "lat": 32.0213,
       "lon": 118.7899,
       "duration_hours": 1.0,
       "ticket_price": 100,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["night views", "river", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "night views",
+        "river",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Confucius Temple Dock, Qinhuai District",
       "open_hours": "18:00-22:00",
       "rating": 4.5,
       "visit_reason": "Best evening experience — lantern-lit historic waterway."
     },
     {
-      "name": "Nanjing Salted Duck Restaurant (Guijie Duck)",
+      "name": "南京盐水鸭（桂记）",
       "category": "food",
-      "district": "Qinhuai",
-      "lat": 32.0240,
+      "district": "秦淮区",
+      "lat": 32.024,
       "lon": 118.7853,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "indoor",
-      "tags": ["food", "local", "specialty"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "specialty"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Laomendong Area, Qinhuai District",
       "open_hours": "10:00-21:00",
       "rating": 4.5,
       "visit_reason": "Nanjing's most famous dish — must-eat salted duck from a local institution."
     },
     {
-      "name": "1912 Nanjing Bar and Restaurant Street",
+      "name": "1912街区",
       "category": "food",
-      "district": "Xuanwu",
+      "district": "玄武区",
       "lat": 32.0497,
       "lon": 118.8028,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "mixed",
-      "tags": ["night", "food", "modern", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "night",
+        "food",
+        "modern",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1912 Street, Xuanwu District",
       "open_hours": "17:00-02:00",
       "rating": 4.3,

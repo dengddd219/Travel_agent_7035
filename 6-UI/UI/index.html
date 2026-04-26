@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 旅行规划助手</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --text: #f8fafc;
+      --muted: rgba(248, 250, 252, 0.74);
+      --panel: rgba(255, 255, 255, 0.91);
+      --panel-border: rgba(255, 255, 255, 0.42);
+      --ink: #152033;
+      --ink-muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --green: #0f766e;
+      --amber: #b45309;
+      --shadow: 0 18px 52px rgba(2, 6, 23, 0.32);
+    }
+
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--text);
+      background: #0f172a;
+    }
+
+    body { overflow-x: hidden; }
+
+    .hero {
+      position: relative;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+      padding: 24px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      background: #0f172a;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(2, 6, 23, 0.76) 0%, rgba(2, 6, 23, 0.54) 46%, rgba(2, 6, 23, 0.22) 100%),
+        linear-gradient(180deg, rgba(2, 6, 23, 0.16) 0%, rgba(2, 6, 23, 0.68) 100%);
+    }
+
+    .nav {
+      position: absolute;
+      top: 18px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--accent);
+      box-shadow: 0 8px 22px rgba(2, 6, 23, 0.24);
+      font-size: 16px;
+    }
+
+    .nav-link {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 9px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.24);
+    }
+
+    .hero-inner {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      padding-top: 52px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(40px, 7vw, 82px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      font-weight: 850;
+      text-wrap: balance;
+    }
+
+    .subcopy {
+      margin: 20px 0 28px;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: clamp(16px, 2.2vw, 20px);
+      line-height: 1.7;
+    }
+
+    .planner {
+      width: min(760px, 100%);
+      display: grid;
+      gap: 12px;
+    }
+
+    .prompt-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 74px;
+      max-height: 180px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    textarea::placeholder { color: #7c8798; }
+
+    .send-btn {
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.16s ease, transform 0.16s ease;
+    }
+
+    .send-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .send-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .send-btn svg { width: 20px; height: 20px; }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-prompts button {
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.34);
+      color: var(--text);
+      padding: 9px 11px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+
+    .quick-prompts button:nth-child(2) { border-color: rgba(20, 184, 166, 0.55); }
+    .quick-prompts button:nth-child(3) { border-color: rgba(245, 158, 11, 0.62); }
+    .quick-prompts button:hover { background: rgba(255, 255, 255, 0.16); }
+
+    .examples {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px 24px 24px;
+      background: #f8fafc;
+      color: var(--ink);
+    }
+
+    .example {
+      min-height: 92px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: var(--ink);
+    }
+
+    .example strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .example span {
+      color: var(--ink-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      .hero { min-height: 86vh; padding: 20px 16px; align-items: flex-end; }
+      .nav { left: 16px; right: 16px; top: 14px; }
+      .nav-link { display: none; }
+      .hero-inner { padding-top: 76px; padding-bottom: 8px; }
+      .prompt-row { grid-template-columns: 1fr; }
+      .send-btn { width: 100%; }
+      .examples { grid-template-columns: 1fr; padding: 14px 16px 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-video { display: none; }
+      .hero { background: #1e293b; }
+      .send-btn, .quick-prompts button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero" aria-label="AI 旅行规划助手">
+      <video class="hero-video" autoplay muted loop playsinline poster="">
+        <source src="/static/hero_video.mp4" type="video/mp4" />
+      </video>
+
+      <nav class="nav" aria-label="主导航">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">✓</span>
+          <span>AI Travel Planner</span>
+        </a>
+        <a class="nav-link" href="/chat">进入聊天页</a>
+      </nav>
+
+      <div class="hero-inner">
+        <p class="eyebrow">AI 旅行规划助手</p>
+        <h1>今天想去哪里？</h1>
+        <p class="subcopy">
+          输入城市、天数、预算和偏好，我会生成中文行程、地图路线、预算摘要和酒店建议。
+        </p>
+
+        <div class="planner" role="search">
+          <div class="prompt-row">
+            <textarea id="trip-input" rows="3" placeholder="比如：上海三日游，我喜欢美食和艺术，预算适中，不想太赶。"></textarea>
+            <button class="send-btn" id="send-btn" type="button" aria-label="开始规划">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="quick-prompts" aria-label="快捷示例">
+            <button type="button" data-prompt="上海三日游，我喜欢美食和艺术，预算适中">上海 3 天美食艺术</button>
+            <button type="button" data-prompt="北京四天亲子游，想去故宫和长城，节奏轻松一点">北京亲子 4 天</button>
+            <button type="button" data-prompt="成都五天美食游，预算适中，想吃火锅和看熊猫">成都美食 5 天</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="examples" aria-label="可直接开始的行程示例">
+      <button class="example" type="button" data-prompt="厦门两天海边轻松游，想看海、散步、吃本地小吃">
+        <strong>周末短途</strong>
+        <span>两天轻松节奏，适合海边、老街和本地小吃。</span>
+      </button>
+      <button class="example" type="button" data-prompt="东京五天第一次旅行，想兼顾城市地标、美食和购物">
+        <strong>第一次到访</strong>
+        <span>地标优先，路线顺，兼顾交通和预算。</span>
+      </button>
+      <button class="example" type="button" data-prompt="杭州三天慢节奏旅行，喜欢湖边散步、茶文化和博物馆">
+        <strong>慢旅行</strong>
+        <span>少折返，保留休息和临时调整空间。</span>
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const input = document.getElementById('trip-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function autoResize() {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+    }
+
+    function startPlanning(prompt) {
+      const query = (prompt || input.value || '').trim();
+      if (!query) {
+        input.focus();
+        return;
+      }
+      window.location.href = '/chat?q=' + encodeURIComponent(query);
+    }
+
+    input.addEventListener('input', autoResize);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        startPlanning();
+      }
+    });
+    sendBtn.addEventListener('click', () => startPlanning());
+
+    document.querySelectorAll('[data-prompt]').forEach((button) => {
+      button.addEventListener('click', () => startPlanning(button.dataset.prompt));
+    });
+  </script>
+</body>
+</html>

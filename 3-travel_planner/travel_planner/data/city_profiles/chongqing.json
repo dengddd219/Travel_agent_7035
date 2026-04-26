@@ -1,10 +1,22 @@
 {
   "city": "Chongqing",
-  "aliases": ["chongqing", "重庆"],
+  "aliases": [
+    "chongqing",
+    "重庆"
+  ],
   "recommended_areas": [
-    {"name": "Yuzhong", "why": "best first-time skyline, river, and old-city landmarks"},
-    {"name": "Jiangbei", "why": "strong night views and modern commercial flow"},
-    {"name": "Nan'an", "why": "good for scenic overlooks and river-facing night planning"}
+    {
+      "name": "渝中区",
+      "why": "best first-time skyline, river, and old-city landmarks"
+    },
+    {
+      "name": "江北区",
+      "why": "strong night views and modern commercial flow"
+    },
+    {
+      "name": "南岸区",
+      "why": "good for scenic overlooks and river-facing night planning"
+    }
   ],
   "transport": [
     "Use metro and taxi strategically because vertical terrain makes walking effort feel larger.",
@@ -15,31 +27,88 @@
     "Swap heavy uphill walking for malls, museums, covered food streets, or indoor observation points.",
     "Use indoor dining and transit-rich zones as rain buffers."
   ],
-  "signature_foods": ["hotpot", "xiaomian", "suanlafen", "jianghu cuisine", "river snacks"],
+  "signature_foods": [
+    "hotpot",
+    "xiaomian",
+    "suanlafen",
+    "jianghu cuisine",
+    "river snacks"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["view", "city walk", "local"],
-      "suggested_queries": ["Hongya Cave", "Jiefangbei", "Liziba", "Chaotianmen"],
+      "focus_tags": [
+        "view",
+        "city walk",
+        "local"
+      ],
+      "suggested_queries": [
+        "洪崖洞",
+        "解放碑",
+        "Liziba",
+        "Chaotianmen"
+      ],
       "pace_note": "Chongqing rewards focused district planning because terrain and transfers add fatigue."
     },
     "family": {
-      "focus_tags": ["family", "park", "view"],
-      "suggested_queries": ["Chongqing Zoo", "Raffles City Chongqing", "Three Gorges Museum", "Yangtze River Cableway"],
+      "focus_tags": [
+        "family",
+        "park",
+        "view"
+      ],
+      "suggested_queries": [
+        "Chongqing Zoo",
+        "重庆来福士",
+        "三峡博物馆",
+        "长江索道"
+      ],
       "pace_note": "Keep the route low-transfer and avoid too many stairs or steep climbs."
     },
     "food": {
-      "focus_tags": ["food", "local", "night"],
-      "suggested_queries": ["Bayi Road food", "hotpot Chongqing", "Jiefangbei dining", "Nanbin Road night food"],
+      "focus_tags": [
+        "food",
+        "local",
+        "night"
+      ],
+      "suggested_queries": [
+        "Bayi Road food",
+        "hotpot Chongqing",
+        "解放碑 美食",
+        "南滨路 夜景 美食"
+      ],
       "pace_note": "Anchor meals in one district and build the evening around a single skyline zone."
     },
     "theme": {
-      "focus_tags": ["night views", "city", "local"],
-      "suggested_queries": ["Hongya Cave night", "Yangtze River Cableway", "Nanshan overlook", "mountain city lane"],
+      "focus_tags": [
+        "night views",
+        "city",
+        "local"
+      ],
+      "suggested_queries": [
+        "洪崖洞 夜景",
+        "长江索道",
+        "南山 观景台",
+        "山城 巷子"
+      ],
       "pace_note": "Treat the mountain-city texture and nightscape as the core narrative."
     }
   },
-  "indoor_keywords": ["museum", "mall", "market", "indoor", "cave", "shopping"],
-  "outdoor_keywords": ["river", "cableway", "road", "viewpoint", "street", "park", "overlook"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "market",
+    "indoor",
+    "cave",
+    "shopping"
+  ],
+  "outdoor_keywords": [
+    "river",
+    "cableway",
+    "road",
+    "viewpoint",
+    "street",
+    "park",
+    "overlook"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -48,7 +117,9 @@
       "temp_max": 28,
       "precipitation_probability": 30,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for river-facing viewpoints and light city walking."]
+      "suggestions": [
+        "Good day for river-facing viewpoints and light city walking."
+      ]
     },
     {
       "date": "Day 2",
@@ -57,226 +128,309 @@
       "temp_max": 24,
       "precipitation_probability": 60,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use indoor dining and museums to reduce steep-weather walking."]
+      "suggestions": [
+        "Use indoor dining and museums to reduce steep-weather walking."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Hongya Cave",
+      "name": "洪崖洞",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5623,
       "lon": 106.5804,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["night views", "landmark", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "night views",
+        "landmark",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "88 Binjiang Road, Yuzhong District",
       "open_hours": "11:00-23:00",
       "rating": 4.5,
       "visit_reason": "Most iconic nightscape anchor."
     },
     {
-      "name": "Liziba Station",
+      "name": "李子坝",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5568,
       "lon": 106.5306,
       "duration_hours": 0.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["city", "transport_experience", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "city",
+        "transport_experience",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Liziba, Yuzhong District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Strong mountain-city identity stop."
     },
     {
-      "name": "Jiefangbei",
+      "name": "解放碑",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5584,
       "lon": 106.5771,
       "duration_hours": 1.4,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["shopping", "food", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Jiefangbei CBD, Yuzhong District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Best urban core anchor for food and shopping."
     },
     {
-      "name": "Three Gorges Museum",
+      "name": "三峡博物馆",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5633,
-      "lon": 106.5510,
+      "lon": 106.551,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "236 Renmin Road, Yuzhong District",
       "open_hours": "09:00-17:00",
       "rating": 4.6,
       "visit_reason": "Best weather-safe culture anchor."
     },
     {
-      "name": "Chaotianmen Square",
+      "name": "朝天门广场",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5641,
       "lon": 106.5904,
       "duration_hours": 1.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "river", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "river",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Chaotianmen, Yuzhong District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Where the Jialing and Yangtze rivers meet — the city's most dramatic geographic anchor."
     },
     {
-      "name": "Yangtze River Cableway",
+      "name": "长江索道",
       "category": "attraction",
-      "district": "Yuzhong",
-      "lat": 29.5570,
+      "district": "渝中区",
+      "lat": 29.557,
       "lon": 106.5834,
       "duration_hours": 0.8,
       "ticket_price": 25,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "city", "transport_experience"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "city",
+        "transport_experience"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Xinhua Road, Yuzhong District",
       "open_hours": "07:00-22:00",
       "rating": 4.6,
       "visit_reason": "Iconic mountain-city aerial crossing with stunning river views."
     },
     {
-      "name": "Ciqikou Ancient Town",
+      "name": "磁器口古镇",
       "category": "food",
-      "district": "Shapingba",
+      "district": "沙坪坝区",
       "lat": 29.5723,
       "lon": 106.4388,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "history", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "history",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Ciqikou, Shapingba District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Best-preserved old town for local snacks, teahouses, and riverside walks."
     },
     {
-      "name": "Nanshan Scenic Area",
+      "name": "南山风景区",
       "category": "attraction",
-      "district": "Nan'an",
+      "district": "南岸区",
       "lat": 29.5032,
-      "lon": 106.5770,
+      "lon": 106.577,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "nature", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "nature",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Nanshan, Nan'an District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Best elevated overlook for the full Chongqing night panorama."
     },
     {
-      "name": "Raffles City Chongqing",
+      "name": "重庆来福士",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5566,
       "lon": 106.5746,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["shopping", "view", "modern", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "view",
+        "modern",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Chaotianmen Area, Yuzhong District",
       "open_hours": "10:00-22:00",
       "rating": 4.6,
       "visit_reason": "Iconic twin-tower sky bridge landmark with rooftop infinity pool views."
     },
     {
-      "name": "Bayi Road Food Street",
+      "name": "八一路好吃街",
       "category": "food",
-      "district": "Jiangbei",
+      "district": "江北区",
       "lat": 29.5755,
       "lon": 106.5308,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "night"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "night"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Bayi Road, Jiangbei District",
       "open_hours": "10:00-23:00",
       "rating": 4.4,
       "visit_reason": "Popular local evening food street for hotpot and xiaomian."
     },
     {
-      "name": "Danzishi Old Street",
+      "name": "弹子石老街",
       "category": "attraction",
-      "district": "Nan'an",
+      "district": "南岸区",
       "lat": 29.5439,
       "lon": 106.5864,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["city walk", "local", "design", "cafe"],
-      "source": ["profile_seed"],
+      "tags": [
+        "city walk",
+        "local",
+        "design",
+        "cafe"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Danzishi, Nan'an District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Riverside creative district with indie cafes and river-view terraces."
     },
     {
-      "name": "Chongqing People's Great Hall",
+      "name": "重庆人民大礼堂",
       "category": "attraction",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5613,
-      "lon": 106.5490,
+      "lon": 106.549,
       "duration_hours": 0.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["landmark", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "landmark",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Renmin Road, Yuzhong District",
       "open_hours": "06:00-21:00",
       "rating": 4.5,
       "visit_reason": "Iconic Soviet-influenced civic landmark at the heart of the city."
     },
     {
-      "name": "Chongqing Hotpot Restaurant (Zhu Laoliu)",
+      "name": "朱老六火锅",
       "category": "food",
-      "district": "Yuzhong",
+      "district": "渝中区",
       "lat": 29.5558,
-      "lon": 106.5720,
+      "lon": 106.572,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["food", "hotpot", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "hotpot",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Jiefangbei Area, Yuzhong District",
       "open_hours": "11:00-22:00",
       "rating": 4.5,

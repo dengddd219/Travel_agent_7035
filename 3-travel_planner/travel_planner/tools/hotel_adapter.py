@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date, timedelta
 
-from WeatherCost.weather_cost_api import search_hotels_api
+from ._group_c_loader import load_group_c_weather_cost_api
 from ..city_names import provider_city_name
 
 """First-stage hotel recommendation adapter.
@@ -61,6 +61,7 @@ def get_hotel_candidates(
     limit: int = 5,
 ) -> dict:
     """Return a human-usable hotel suggestion payload for the UI and report."""
+    search_hotels_api = load_group_c_weather_cost_api().search_hotels_api
     source_city = provider_city_name(city, provider="zh")
     check_in_date, check_out_date = _resolve_stay_window(start_date=start_date, trip_days=trip_days)
     target_districts = [district for district in (target_districts or []) if district]

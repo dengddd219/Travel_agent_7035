@@ -1,10 +1,22 @@
 {
   "city": "Shenzhen",
-  "aliases": ["shenzhen", "深圳"],
+  "aliases": [
+    "shenzhen",
+    "深圳"
+  ],
   "recommended_areas": [
-    {"name": "Futian", "why": "best for modern city core, malls, and efficient transport"},
-    {"name": "Nanshan", "why": "good for coast, design, and tech-modern planning"},
-    {"name": "Luohu", "why": "better for classic commercial streets and older city texture"}
+    {
+      "name": "福田区",
+      "why": "best for modern city core, malls, and efficient transport"
+    },
+    {
+      "name": "南山区",
+      "why": "good for coast, design, and tech-modern planning"
+    },
+    {
+      "name": "罗湖区",
+      "why": "better for classic commercial streets and older city texture"
+    }
   ],
   "transport": [
     "Use metro as the backbone because major districts are spread out but well connected.",
@@ -15,31 +27,87 @@
     "Swap bayfront walks and parks for malls, museums, bookstores, and indoor design spaces.",
     "Use major shopping complexes as the main rain-safe anchors."
   ],
-  "signature_foods": ["Cantonese dim sum", "tea drinks", "seafood", "creative cafes", "fusion snacks"],
+  "signature_foods": [
+    "Cantonese dim sum",
+    "tea drinks",
+    "seafood",
+    "creative cafes",
+    "fusion snacks"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["modern", "view", "shopping"],
-      "suggested_queries": ["Civic Center Shenzhen", "OCT Loft", "Shenzhen Bay Park", "Ping An Finance Centre"],
+      "focus_tags": [
+        "modern",
+        "view",
+        "shopping"
+      ],
+      "suggested_queries": [
+        "深圳市民中心",
+        "华侨城创意文化园",
+        "深圳湾公园",
+        "平安金融中心"
+      ],
       "pace_note": "Shenzhen works best with one modern urban cluster and one scenic or design stop."
     },
     "family": {
-      "focus_tags": ["family", "park", "theme"],
-      "suggested_queries": ["Window of the World", "Splendid China", "Shenzhen Museum", "Shenzhen Bay Park"],
+      "focus_tags": [
+        "family",
+        "park",
+        "theme"
+      ],
+      "suggested_queries": [
+        "世界之窗",
+        "锦绣中华",
+        "深圳博物馆",
+        "深圳湾公园"
+      ],
       "pace_note": "Use one headline theme attraction and keep transit straightforward."
     },
     "food": {
-      "focus_tags": ["food", "shopping", "local"],
-      "suggested_queries": ["Dongmen food", "Coco Park dining", "Sea World Shenzhen", "coffee Shenzhen"],
+      "focus_tags": [
+        "food",
+        "shopping",
+        "local"
+      ],
+      "suggested_queries": [
+        "东门 美食",
+        "COCO Park 美食",
+        "海上世界",
+        "深圳 咖啡"
+      ],
       "pace_note": "Pair meals with malls or nearby leisure zones for a low-friction route."
     },
     "theme": {
-      "focus_tags": ["design", "modern", "local"],
-      "suggested_queries": ["OCT Loft", "Sea World Culture and Arts Center", "bookstores Shenzhen", "design Shenzhen"],
+      "focus_tags": [
+        "design",
+        "modern",
+        "local"
+      ],
+      "suggested_queries": [
+        "华侨城创意文化园",
+        "海上世界文化艺术中心",
+        "深圳 书店",
+        "深圳 设计"
+      ],
       "pace_note": "Focus on design, contemporary culture, or bayfront modernity as the narrative."
     }
   },
-  "indoor_keywords": ["museum", "mall", "bookstore", "gallery", "indoor", "design"],
-  "outdoor_keywords": ["park", "bay", "tower", "walk", "beach", "square"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "bookstore",
+    "gallery",
+    "indoor",
+    "design"
+  ],
+  "outdoor_keywords": [
+    "park",
+    "bay",
+    "tower",
+    "walk",
+    "beach",
+    "square"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -48,7 +116,9 @@
       "temp_max": 31,
       "precipitation_probability": 25,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for bayfront and urban landmark stops."]
+      "suggestions": [
+        "Good day for bayfront and urban landmark stops."
+      ]
     },
     {
       "date": "Day 2",
@@ -57,209 +127,286 @@
       "temp_max": 27,
       "precipitation_probability": 75,
       "outdoor_suitability": "poor",
-      "suggestions": ["Use malls, museums, and indoor cultural venues as the main anchors."]
+      "suggestions": [
+        "Use malls, museums, and indoor cultural venues as the main anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Shenzhen Bay Park",
+      "name": "深圳湾公园",
       "category": "attraction",
-      "district": "Nanshan",
-      "lat": 22.5070,
-      "lon": 113.9670,
+      "district": "南山区",
+      "lat": 22.507,
+      "lon": 113.967,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "park", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "park",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Shenzhen Bay Coastal Area",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Best bayfront leisure anchor."
     },
     {
-      "name": "OCT Loft",
+      "name": "华侨城创意文化园",
       "category": "attraction",
-      "district": "Nanshan",
+      "district": "南山区",
       "lat": 22.5392,
       "lon": 113.9864,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["design", "culture", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "design",
+        "culture",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Enping Street, Nanshan District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Best design-led and creative district anchor."
     },
     {
-      "name": "Ping An Finance Centre",
+      "name": "平安金融中心",
       "category": "attraction",
-      "district": "Futian",
+      "district": "福田区",
       "lat": 22.5332,
       "lon": 114.0554,
       "duration_hours": 1.5,
       "ticket_price": 200,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["view", "landmark", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "5033 Yitian Road, Futian District",
       "open_hours": "10:00-20:00",
       "rating": 4.5,
       "visit_reason": "Strong skyline and weather-safe tower anchor."
     },
     {
-      "name": "Sea World Culture and Arts Center",
+      "name": "海上世界文化艺术中心",
       "category": "attraction",
-      "district": "Nanshan",
+      "district": "南山区",
       "lat": 22.4823,
       "lon": 113.9117,
       "duration_hours": 1.6,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "indoor",
-      "tags": ["design", "museum", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "design",
+        "museum",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1187 Wanghai Road, Nanshan District",
       "open_hours": "10:00-19:00",
       "rating": 4.5,
       "visit_reason": "High-quality indoor design and culture fallback."
     },
     {
-      "name": "Shenzhen Museum",
+      "name": "深圳博物馆",
       "category": "attraction",
-      "district": "Futian",
+      "district": "福田区",
       "lat": 22.5385,
       "lon": 114.0579,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "184 Fuzhong 3rd Road, Futian District",
       "open_hours": "10:00-17:30",
       "rating": 4.5,
       "visit_reason": "Best indoor history and local culture anchor in the civic centre zone."
     },
     {
-      "name": "Window of the World",
+      "name": "世界之窗",
       "category": "attraction",
-      "district": "Nanshan",
+      "district": "南山区",
       "lat": 22.5343,
       "lon": 113.9749,
       "duration_hours": 3.0,
       "ticket_price": 180,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["theme park", "family", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "theme park",
+        "family",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Shennan Avenue, Nanshan District",
       "open_hours": "09:00-22:00",
       "rating": 4.4,
       "visit_reason": "Miniaturised world landmarks — popular family and nostalgic attraction."
     },
     {
-      "name": "Civic Center and Lotus Hill Park",
+      "name": "市民中心和莲花山公园",
       "category": "attraction",
-      "district": "Futian",
+      "district": "福田区",
       "lat": 22.5451,
-      "lon": 114.0580,
+      "lon": 114.058,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "view", "modern", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "view",
+        "modern",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Lotus Hill Park, Futian District",
       "open_hours": "06:00-22:00",
       "rating": 4.5,
       "visit_reason": "Hilltop park with a Deng Xiaoping statue and panoramic views of the CBD."
     },
     {
-      "name": "Dongmen Pedestrian Street",
+      "name": "东门步行街",
       "category": "food",
-      "district": "Luohu",
+      "district": "罗湖区",
       "lat": 22.5393,
       "lon": 114.1162,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["shopping", "food", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Dongmen, Luohu District",
       "open_hours": "Open 24 hours",
       "rating": 4.3,
       "visit_reason": "Shenzhen's oldest commercial street — traditional market energy and local snacks."
     },
     {
-      "name": "Dapeng Fortress (Dapeng Ancient Town)",
+      "name": "大鹏所城",
       "category": "attraction",
-      "district": "Dapeng",
+      "district": "大鹏新区",
       "lat": 22.5869,
       "lon": 114.4589,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Dapeng Ancient Town, Dapeng New District",
       "open_hours": "08:30-17:30",
       "rating": 4.5,
       "visit_reason": "Ming-dynasty coastal fortress — excellent half-day heritage day trip."
     },
     {
-      "name": "Shenzhen Bay Park Mangrove",
+      "name": "深圳湾红树林公园",
       "category": "attraction",
-      "district": "Nanshan",
-      "lat": 22.5230,
-      "lon": 113.9920,
+      "district": "南山区",
+      "lat": 22.523,
+      "lon": 113.992,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["nature", "park", "leisure", "birdwatching"],
-      "source": ["profile_seed"],
+      "tags": [
+        "nature",
+        "park",
+        "leisure",
+        "birdwatching"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Mangrove Nature Reserve, Nanshan District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Scenic mangrove and waterbird reserve fringing the bay — great for morning walks."
     },
     {
-      "name": "Nantou Ancient Town",
+      "name": "南头古城",
       "category": "attraction",
-      "district": "Nanshan",
+      "district": "南山区",
       "lat": 22.5292,
       "lon": 113.9375,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "culture", "city walk", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "city walk",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Nantou, Nanshan District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "1,700-year-old settlement preserved within a modern urban village — urban archaeology."
     },
     {
-      "name": "Coco Park Shopping Mall",
+      "name": "COCO Park购物公园",
       "category": "food",
-      "district": "Futian",
+      "district": "福田区",
       "lat": 22.5364,
       "lon": 114.0509,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["shopping", "food", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "33 Jintian Road, Futian District",
       "open_hours": "10:00-22:00",
       "rating": 4.3,

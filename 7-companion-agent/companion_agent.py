@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import json
 import re
+import sys
+import time
+from contextvars import ContextVar
+from pathlib import Path
 from typing import Any
 
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+import companion_tracer as trace
 from config import Settings
 from constraint_extractor import get_known_pois, classify_intent, extract_constraints
-from models import AgentTurnResult, CompanionState
+from models import AgentAction, AgentObservation, AgentPlan, AgentTurnResult, CompanionState
+from token_costing import aggregate_token_usage, token_usage_from_response, with_token_cost, zero_token_usage
 from tools import (
     check_time_feasibility,
     classify_emergency_scene,
@@ -25,6 +35,9 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     AzureOpenAI = None
     OpenAI = None
+
+
+_TURN_TOKEN_USAGES: ContextVar[list[dict[str, Any]] | None] = ContextVar("turn_token_usages", default=None)
 
 
 SYSTEM_PROMPT = """
@@ -48,7 +61,109 @@ TOOL_POLICY_PROMPT = """
 5. 如果是时间协调，必须补 `get_route`，涉及景区时再补 `get_poi_detail`。
 6. 如果是下雨、天气变化或应急，优先调用 `get_weather_now` 或 `resolve_emergency_resources`。
 7. 如果已经有当天 `remaining_plan`，用户要求压缩、重排或保留核心体验时，调用 `replan_itinerary`，不要直接编造新行程。
+8. `CompanionState.city` 是当前旅程城市。用户只说“外滩/南京路/春熙路”这类同名地点时，默认按当前城市解析；除非用户明确说了另一个城市，不要把跨城市同名地点交给用户判断。
 """
+
+INTENT_ROUTER_PROMPT = """
+You are the semantic router for an in-trip travel companion.
+Classify the latest user message by meaning, not by keyword matching.
+
+Return only a JSON object:
+{"intent":"emergency|replan|coordinate|search","confidence":0.0-1.0,"reason":"short reason"}
+
+Intent definitions:
+- emergency: medical risk, injury, fall, lost, urgent toilet, safety, battery/network/help, cannot walk, needs immediate support.
+- replan: change, shorten, skip, replace, delay, rain/weather disruption, closed venue, queue too long, time budget for the remaining itinerary.
+- coordinate: asks whether the current route/timing can make it, route duration, latest arrival/departure, ordering feasibility.
+- search: nearby food/place recommendation or general local question.
+
+When uncertain between emergency and search, choose emergency. When uncertain between replan and search with an existing remaining_plan, choose replan.
+"""
+
+VALID_INTENTS = {"emergency", "replan", "coordinate", "search"}
+
+
+ACTION_PLANNER_PROMPT = """
+You are the planner/policy layer for an in-trip travel companion agent.
+Use the given CompanionState and latest user message to produce a structured action plan.
+Do not answer the user directly.
+
+Return only a JSON object with this schema:
+{
+  "intent": "emergency|replan|coordinate|search|info",
+  "goal": "short operational goal",
+  "needs_clarification": true|false,
+  "clarification_question": "question to ask if required",
+  "state_updates": {"field": "value"},
+  "actions": [
+    {"tool": "tool_name", "args": {}, "reason": "why", "save_as": "optional_key"}
+  ],
+  "response_policy": "safety_first|replan_summary|route_advice|recommendation|answer",
+  "self_check_focus": ["time_budget", "weather", "mobility", "core_experience"]
+}
+
+Available tools:
+- resolve_location: args {"query": "...", "city_bias": "..."}
+- get_weather_now: args {"city": "..."}
+- retrieve_candidates: args {"query": "...", "city": "...", "current_location": optional object}
+- score_candidates: args {"candidates": [], "context": {}}
+- get_route: args {"origin": object, "dest": object, "mode": "walking|driving"}
+- get_poi_detail: args {"name": "...", "city": "..."}
+- replan_itinerary: args {"time_budget_hours": optional number, "completed_nodes": [], "skipped_nodes": [], "constraints": {}}
+- resolve_emergency_resources: args {"scene": "medical|mobility|toilet|power|network|help|evacuate", "location": object, "base_location": optional object}
+
+Planning rules:
+- If user appears injured, unsafe, lost, unable to walk, urgently needs help, or a companion fell down, intent must be emergency.
+- Emergency plans should usually call resolve_emergency_resources. If current_location is already in state, use that as location; otherwise call resolve_location first if the user gave a place, or ask for clarification.
+- If user asks to change/shorten/skip/reorder today's remaining itinerary, use replan_itinerary.
+- If replan needs current location and state has none and user gave none, ask a clarification question.
+- If user asks for nearby food/place, use retrieve_candidates then score_candidates.
+- If user asks whether timing works or route is feasible, use get_route and/or get_poi_detail.
+- Prefer fewer actions, but include every tool needed to avoid guessing.
+- Treat CompanionState.city as the authoritative city context. For ambiguous POI names, pass this city as city_bias and do not ask the user to choose between cities unless no city is available or the user explicitly names another city.
+"""
+
+
+RESPONSE_GENERATOR_PROMPT = """
+You write the final user-facing reply for an in-trip travel companion.
+Use only the provided action plan, observations, verification result, and state.
+Do not invent routes, venues, prices, opening hours, weather, hospitals, or distances that are not in observations.
+
+Style rules:
+- Emergency: lead with immediate safety action, then nearest reliable resources or fallback safety advice.
+- Replan: state the new order, deferred/removed stops, and the reason.
+- Search: give 1-3 options with why they fit.
+- Coordinate: answer feasibility clearly and mention uncertainty.
+- Keep it concise and actionable.
+- Use structured Markdown, not a dense paragraph.
+- Prefer this shape:
+  **结论**
+  One short answer.
+
+  **依据**
+  - Route / venue / weather facts from observations.
+
+  **下一步**
+  1. The next concrete action.
+  2. Optional backup action.
+- If a clarification is truly needed, use **需要你确认** and ask only the missing operational detail.
+- Do not ask the user to decide between same-name locations in different cities when state.city is present; silently use state.city.
+"""
+
+
+REPAIR_PLANNER_PROMPT = """
+You repair a failed or risky in-trip companion action plan.
+Given the original plan, observations, verification result, and state, return only a JSON AgentPlan object.
+
+Use repair actions only when they materially improve the result.
+Typical repairs:
+- If replan has no feasible/core experience, search for a nearby replacement with retrieve_candidates and score_candidates.
+- If weather or mobility constraints removed too much, search for indoor/accessibility-friendly alternatives.
+- If emergency resources are missing, search broader help resources or ask for clarification.
+
+Return the same JSON schema as the action planner. If no repair is useful, return {"intent":"info","actions":[]}.
+"""
+
 
 INDOOR_REPLAN_INCLUDE_KEYWORDS = [
     "博物馆",
@@ -237,21 +352,94 @@ class CompanionAgent:
                     client_kwargs["base_url"] = self.settings.openai_base_url
                 self.client = OpenAI(**client_kwargs)
 
+    def _chat_completion_create(self, **kwargs: Any) -> Any:
+        response = self.client.chat.completions.create(**kwargs)
+        turn_usages = _TURN_TOKEN_USAGES.get()
+        if turn_usages is not None:
+            turn_usages.append(
+                token_usage_from_response(
+                    response,
+                    model=str(kwargs.get("model") or self.settings.openai_model),
+                )
+            )
+        return response
+
+    @staticmethod
+    def _ensure_structured_reply(reply: str) -> str:
+        text = (reply or "").strip()
+        if not text:
+            return text
+        structured_markers = ("**结论**", "**依据**", "**下一步**", "**需要你确认**", "### ")
+        if any(marker in text for marker in structured_markers):
+            return text
+        if "?" in text or "？" in text:
+            return f"**需要你确认**\n{text}"
+        return (
+            "**结论**\n"
+            f"{text}\n\n"
+            "**下一步**\n"
+            "1. 如果这个建议可行，就按上面第一步执行。\n"
+            "2. 如果你要改目标或出行方式，直接发新的地点或“步行/打车”。"
+        )
+
     def run_turn(self, user_input: str, state: CompanionState | None = None) -> AgentTurnResult:
         state = state or CompanionState(city=self.settings.default_city)
+        token_context = _TURN_TOKEN_USAGES.set([])
+        trace.event(
+            "Companion turn start",
+            {
+                "user_input": user_input,
+                "city": state.city,
+                "current_location": state.current_location,
+                "remaining_plan_count": len(state.remaining_plan),
+                "has_llm_client": self.client is not None,
+            },
+            color="cyan",
+        )
         state.update_time()
         self._apply_structured_constraints(user_input, state)
         state.add_turn("user", user_input)
         self._apply_progress_updates(user_input, state)
+        trace.event(
+            "Companion state after input parsing",
+            {
+                "intent": state.intent,
+                "goal": state.current_goal,
+                "avoid_pois": state.avoid_pois,
+                "prefer_indoor": state.prefer_indoor,
+                "party": state.party,
+                "mobility_risk": state.mobility_risk,
+                "weather_preference": state.weather_preference,
+                "completed_nodes": state.completed_nodes,
+                "skipped_nodes": state.skipped_nodes,
+                "router_state": self._router_state_payload(state),
+            },
+            color="blue",
+        )
 
         try:
             task_result = self._maybe_handle_task_flow(user_input, state)
             if task_result is not None:
+                trace.event(
+                    "Companion execution path",
+                    {"path": "pending_task_flow", "intent": task_result.intent},
+                    color="yellow",
+                )
                 result = task_result
             elif self.client is not None:
                 try:
-                    result = self._run_llm_turn(user_input=user_input, state=state)
+                    trace.event(
+                        "Companion execution path",
+                        {"path": "agentic_llm"},
+                        color="yellow",
+                    )
+                    result = self._run_agentic_turn(user_input=user_input, state=state)
                 except Exception as llm_exc:
+                    trace.event(
+                        "Companion LLM fallback",
+                        {"error": f"{type(llm_exc).__name__}: {llm_exc}"},
+                        color="red",
+                    )
                     result = self._run_fallback_turn(user_input=user_input, state=state)
                     result.tool_logs.append(
                         {
@@ -262,8 +450,18 @@ class CompanionAgent:
                     )
                     state.mobility_state["_llm_fallback_notified"] = True
             else:
+                trace.event(
+                    "Companion execution path",
+                    {"path": "deterministic_fallback"},
+                    color="yellow",
+                )
                 result = self._run_fallback_turn(user_input=user_input, state=state)
         except Exception as exc:
+            trace.event(
+                "Companion turn error",
+                {"error": f"{type(exc).__name__}: {exc}"},
+                color="red",
+            )
             result = AgentTurnResult(
                 reply=f"这轮请求没有成功执行：{exc}",
                 intent="error",
@@ -272,8 +470,34 @@ class CompanionAgent:
                 state=state,
             )
 
+        if result.intent != "error":
+            result.reply = self._ensure_structured_reply(result.reply)
         state.add_turn("assistant", result.reply)
         result.state = state
+        turn_token_usages = _TURN_TOKEN_USAGES.get() or []
+        if turn_token_usages:
+            result.token_usage = aggregate_token_usage(
+                turn_token_usages,
+                model=self.settings.openai_model,
+                source="companion_agent_turn",
+            )
+        elif result.token_usage:
+            result.token_usage = with_token_cost(result.token_usage, model=self.settings.openai_model)
+        else:
+            result.token_usage = zero_token_usage(model=self.settings.openai_model, source="no_llm_call")
+        _TURN_TOKEN_USAGES.reset(token_context)
+        trace.event(
+            "Companion turn done",
+            {
+                "intent": result.intent,
+                "reply": result.reply,
+                "warnings": result.warnings,
+                "tool_logs": result.tool_logs,
+                "token_usage": result.token_usage,
+                "next_state": self._router_state_payload(state),
+            },
+            color="green",
+        )
         return result
 
     def _apply_structured_constraints(self, user_input: str, state: CompanionState) -> None:
@@ -288,6 +512,511 @@ class CompanionAgent:
         state.mobility_risk = extracted.get("mobility_risk", state.mobility_risk)
         state.weather_preference = extracted.get("weather_preference", state.weather_preference)
         state.replan_reason = extracted.get("replan_reason", state.replan_reason)
+
+    @staticmethod
+    def _extract_json_object(raw_text: str) -> dict[str, Any] | None:
+        text = (raw_text or "").strip()
+        if not text:
+            return None
+        try:
+            parsed = json.loads(text)
+            return parsed if isinstance(parsed, dict) else None
+        except json.JSONDecodeError:
+            pass
+        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+        if not match:
+            return None
+        try:
+            parsed = json.loads(match.group(0))
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    @staticmethod
+    def _router_state_payload(state: CompanionState) -> dict[str, Any]:
+        return {
+            "city": state.city,
+            "current_location": state.current_location,
+            "remaining_plan": [
+                {
+                    "poi_name": node.get("poi_name") or node.get("name"),
+                    "time_slot": node.get("time_slot"),
+                    "duration_hours": node.get("duration_hours"),
+                    "indoor_outdoor": node.get("indoor_outdoor"),
+                }
+                for node in state.remaining_plan[:8]
+            ],
+            "completed_nodes": state.completed_nodes,
+            "skipped_nodes": state.skipped_nodes,
+            "party": state.party,
+            "mobility_risk": state.mobility_risk,
+            "prefer_indoor": state.prefer_indoor,
+        }
+
+    def _llm_route_intent(self, user_input: str, state: CompanionState) -> str | None:
+        if self.client is None:
+            return None
+        response = self._chat_completion_create(
+            model=self.settings.openai_model,
+            messages=[
+                {"role": "system", "content": INTENT_ROUTER_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "latest_user_message": user_input,
+                            "state": self._router_state_payload(state),
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        )
+        content = (response.choices[0].message.content or "").strip()
+        parsed = self._extract_json_object(content) or {}
+        intent = str(parsed.get("intent", "")).strip().lower()
+        return intent if intent in VALID_INTENTS else None
+
+    def _route_intent(self, user_input: str, state: CompanionState) -> str | None:
+        try:
+            return self._llm_route_intent(user_input, state)
+        except Exception as exc:
+            state.mobility_state["_intent_router_error"] = str(exc)
+            return None
+
+    @classmethod
+    def _coerce_agent_plan(cls, payload: dict[str, Any] | None) -> AgentPlan:
+        payload = payload or {}
+        intent = str(payload.get("intent") or "search").strip().lower()
+        if intent not in VALID_INTENTS and intent != "info":
+            intent = "search"
+        actions: list[AgentAction] = []
+        for item in payload.get("actions") or []:
+            if not isinstance(item, dict):
+                continue
+            tool = str(item.get("tool") or "").strip()
+            if not tool:
+                continue
+            args = item.get("args") if isinstance(item.get("args"), dict) else {}
+            actions.append(
+                AgentAction(
+                    tool=tool,
+                    args=dict(args),
+                    reason=str(item.get("reason") or ""),
+                    save_as=str(item.get("save_as") or ""),
+                )
+            )
+        return AgentPlan(
+            intent=intent,
+            goal=str(payload.get("goal") or ""),
+            needs_clarification=bool(payload.get("needs_clarification")),
+            clarification_question=str(payload.get("clarification_question") or ""),
+            state_updates=payload.get("state_updates") if isinstance(payload.get("state_updates"), dict) else {},
+            actions=actions,
+            response_policy=str(payload.get("response_policy") or "default"),
+            self_check_focus=[str(item) for item in payload.get("self_check_focus") or [] if str(item)],
+            raw=dict(payload),
+        )
+
+    def _llm_plan_actions(self, user_input: str, state: CompanionState) -> AgentPlan:
+        response = self._chat_completion_create(
+            model=self.settings.openai_model,
+            messages=[
+                {"role": "system", "content": ACTION_PLANNER_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "latest_user_message": user_input,
+                            "companion_state": self._router_state_payload(state),
+                            "recent_turns": state.turn_history[-6:],
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        )
+        content = (response.choices[0].message.content or "").strip()
+        plan = self._coerce_agent_plan(self._extract_json_object(content))
+        trace.event(
+            "Companion LLM action plan",
+            {
+                "raw_output": content,
+                "coerced_plan": plan.raw,
+                "intent": plan.intent,
+                "goal": plan.goal,
+                "needs_clarification": plan.needs_clarification,
+                "actions": [
+                    {
+                        "tool": action.tool,
+                        "args": action.args,
+                        "reason": action.reason,
+                        "save_as": action.save_as,
+                    }
+                    for action in plan.actions
+                ],
+            },
+            color="blue",
+        )
+        return plan
+
+    def _apply_plan_state_updates(self, plan: AgentPlan, state: CompanionState) -> None:
+        allowed_scalars = {
+            "intent",
+            "current_goal",
+            "prefer_indoor",
+            "budget_level",
+            "mobility_risk",
+            "weather_preference",
+            "replan_reason",
+            "time_budget_hours",
+            "base_location",
+        }
+        for key, value in plan.state_updates.items():
+            if key not in allowed_scalars:
+                continue
+            if key == "time_budget_hours" and value is not None:
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    continue
+            setattr(state, key, value)
+        if plan.intent:
+            state.intent = plan.intent
+
+    def _current_location_payload(self, state: CompanionState) -> dict[str, Any] | None:
+        if not state.current_location:
+            return None
+        payload = {
+            "name": state.current_location,
+            "city": state.city or self.settings.default_city,
+            "lat": state.current_coords[0] if state.current_coords else 0.0,
+            "lon": state.current_coords[1] if state.current_coords else 0.0,
+        }
+        return payload
+
+    def _resolve_action_value(self, value: Any, state: CompanionState, saved: dict[str, Any]) -> Any:
+        if isinstance(value, str):
+            if value == "$state.current_location":
+                return self._current_location_payload(state)
+            if value == "$state.city":
+                return state.city
+            if value == "$state.remaining_plan":
+                return state.remaining_plan
+            if value == "$state.completed_nodes":
+                return state.completed_nodes
+            if value == "$state.skipped_nodes":
+                return state.skipped_nodes
+            if value == "$state.time_budget_hours":
+                return state.time_budget_hours
+            if value.startswith("$obs."):
+                return saved.get(value[5:])
+            return value
+        if isinstance(value, dict):
+            return {key: self._resolve_action_value(item, state, saved) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self._resolve_action_value(item, state, saved) for item in value]
+        return value
+
+    def _prepare_action_args(self, action: AgentAction, state: CompanionState, saved: dict[str, Any]) -> dict[str, Any]:
+        args = self._resolve_action_value(dict(action.args), state, saved)
+        if action.tool == "resolve_location":
+            args.setdefault("city_bias", state.city or self.settings.default_city)
+        elif action.tool == "resolve_emergency_resources":
+            args.setdefault("scene", "help")
+            args.setdefault("location", self._current_location_payload(state) or {"name": state.city, "city": state.city, "lat": 0.0, "lon": 0.0})
+        elif action.tool == "retrieve_candidates":
+            args.setdefault("city", state.city or self.settings.default_city)
+            args.setdefault("current_location", self._current_location_payload(state))
+        elif action.tool == "score_candidates":
+            args.setdefault("candidates", saved.get("candidates") or [])
+            args.setdefault("context", self._context_payload(state, self._current_location_payload(state)))
+        elif action.tool == "get_weather_now":
+            args.setdefault("city", state.city or self.settings.default_city)
+        elif action.tool == "replan_itinerary":
+            args.setdefault("time_budget_hours", state.time_budget_hours)
+            args.setdefault("completed_nodes", state.completed_nodes)
+            args.setdefault("skipped_nodes", state.skipped_nodes)
+            constraints = self._replan_constraints(state, args.get("time_budget_hours"))
+            constraints.update(args.get("constraints") or {})
+            args["constraints"] = constraints
+        return args
+
+    def _execute_action_plan(
+        self,
+        plan: AgentPlan,
+        state: CompanionState,
+        tool_logs: list[dict[str, Any]],
+    ) -> list[AgentObservation]:
+        saved: dict[str, Any] = {}
+        observations: list[AgentObservation] = []
+        for action in plan.actions:
+            args = self._prepare_action_args(action, state, saved)
+            trace.event(
+                "Companion action",
+                {
+                    "tool": action.tool,
+                    "reason": action.reason,
+                    "save_as": action.save_as or action.tool,
+                    "prepared_args": args,
+                },
+                color="yellow",
+            )
+            output = self._run_tool_call(action.tool, args, state, tool_logs)
+            save_as = action.save_as or action.tool
+            saved[save_as] = output
+            if action.tool == "resolve_location" and isinstance(output, dict):
+                saved.setdefault("current_location", output)
+                state.city = output.get("city") or state.city
+                state.set_current_location(
+                    output.get("name", state.current_location),
+                    (output.get("lat", 0.0), output.get("lon", 0.0)),
+                )
+            elif action.tool == "retrieve_candidates":
+                saved.setdefault("candidates", output)
+            elif action.tool == "score_candidates" and isinstance(output, dict):
+                saved.setdefault("ranking", output)
+            observations.append(AgentObservation(tool=action.tool, args=args, output=output, save_as=save_as))
+        return observations
+
+    @staticmethod
+    def _observation_payload(observations: list[AgentObservation]) -> list[dict[str, Any]]:
+        return [
+            {
+                "tool": obs.tool,
+                "args": obs.args,
+                "save_as": obs.save_as,
+                "output": obs.output,
+            }
+            for obs in observations
+        ]
+
+    def _verify_agentic_turn(
+        self,
+        plan: AgentPlan,
+        observations: list[AgentObservation],
+        state: CompanionState,
+    ) -> dict[str, Any]:
+        warnings: list[str] = []
+        reasons: list[str] = []
+        tools_used = {obs.tool for obs in observations}
+        if plan.intent == "emergency" and "resolve_emergency_resources" not in tools_used:
+            reasons.append("missing_emergency_resources")
+            warnings.append("Emergency intent did not call emergency resource resolver.")
+        if plan.intent == "replan" and "replan_itinerary" not in tools_used:
+            reasons.append("missing_replan")
+            warnings.append("Replan intent did not call replan_itinerary.")
+        needs_second_search = False
+        for obs in observations:
+            if obs.tool != "replan_itinerary" or not isinstance(obs.output, dict):
+                continue
+            self_check = obs.output.get("self_check") or {}
+            for reason in self_check.get("reasons") or []:
+                if reason not in reasons:
+                    reasons.append(reason)
+            warnings.extend(item for item in obs.output.get("warnings") or [] if item not in warnings)
+            needs_second_search = needs_second_search or obs.output.get("status") == "no_feasible_plan"
+            needs_second_search = needs_second_search or "no_core_experience" in (self_check.get("reasons") or [])
+        return {
+            "ok": not reasons,
+            "reasons": reasons,
+            "warnings": warnings,
+            "needs_second_search": needs_second_search,
+        }
+
+    def _fallback_reply_from_observations(
+        self,
+        plan: AgentPlan,
+        observations: list[AgentObservation],
+        verification: dict[str, Any],
+    ) -> str:
+        if plan.needs_clarification:
+            return plan.clarification_question or "我还需要一个关键信息才能继续。"
+        for obs in reversed(observations):
+            if obs.tool == "replan_itinerary" and isinstance(obs.output, dict):
+                summary = obs.output.get("summary") or "已完成当天剩余行程重排。"
+                return f"**结论**\n{summary}\n\n**下一步**\n1. 按新顺序走，先保留优先级最高的站点。\n2. 如果现场又变动，继续告诉我当前位置和剩余时间。"
+            if obs.tool == "resolve_emergency_resources" and isinstance(obs.output, dict):
+                immediate = obs.output.get("immediate_action") or {}
+                note = (obs.output.get("safety_notes") or [""])[0]
+                action = immediate.get("summary") or "优先找最近游客中心、保安亭或出口。"
+                note_line = f"\n- {note}" if note else "\n- 如果症状加重，直接联系现场工作人员或急救。"
+                return f"**结论**\n先别继续赶路。{action}\n\n**安全提醒**{note_line}"
+            if obs.tool == "score_candidates" and isinstance(obs.output, dict):
+                primary = obs.output.get("primary") or []
+                if primary:
+                    names = "、".join(str(item.get("name", "")) for item in primary[:3])
+                    return f"**结论**\n我优先建议：{names}。\n\n**下一步**\n1. 选一家后，我继续帮你算路线。\n2. 如果想换菜系或预算，直接补充条件。"
+        if verification.get("warnings"):
+            warning_lines = "\n".join(f"- {item}" for item in verification["warnings"])
+            return f"**结论**\n我完成了检查，但还有风险。\n\n**风险**\n{warning_lines}"
+        return "**结论**\n我已经根据当前状态完成处理。"
+
+    def _generate_final_response(
+        self,
+        plan: AgentPlan,
+        observations: list[AgentObservation],
+        verification: dict[str, Any],
+        state: CompanionState,
+    ) -> str:
+        try:
+            response = self._chat_completion_create(
+                model=self.settings.openai_model,
+                messages=[
+                    {"role": "system", "content": RESPONSE_GENERATOR_PROMPT},
+                    {
+                        "role": "user",
+                        "content": json.dumps(
+                            {
+                                "action_plan": plan.raw,
+                                "observations": self._observation_payload(observations),
+                                "verification": verification,
+                                "state": self._router_state_payload(state),
+                            },
+                            ensure_ascii=False,
+                        ),
+                    },
+                ],
+            )
+            reply = (response.choices[0].message.content or "").strip()
+            trace.event(
+                "Companion response LLM output",
+                {"reply": reply},
+                color="green",
+            )
+            return reply or self._fallback_reply_from_observations(plan, observations, verification)
+        except Exception as exc:
+            trace.event(
+                "Companion response fallback",
+                {"error": f"{type(exc).__name__}: {exc}"},
+                color="red",
+            )
+            return self._fallback_reply_from_observations(plan, observations, verification)
+
+    def _llm_repair_plan(
+        self,
+        plan: AgentPlan,
+        observations: list[AgentObservation],
+        verification: dict[str, Any],
+        state: CompanionState,
+    ) -> AgentPlan:
+        response = self._chat_completion_create(
+            model=self.settings.openai_model,
+            messages=[
+                {"role": "system", "content": REPAIR_PLANNER_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "original_plan": plan.raw,
+                            "observations": self._observation_payload(observations),
+                            "verification": verification,
+                            "state": self._router_state_payload(state),
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        )
+        content = (response.choices[0].message.content or "").strip()
+        repair_plan = self._coerce_agent_plan(self._extract_json_object(content))
+        trace.event(
+            "Companion LLM repair output",
+            {
+                "raw_output": content,
+                "coerced_plan": repair_plan.raw,
+            },
+            color="blue",
+        )
+        return repair_plan
+
+    def _run_agentic_turn(self, user_input: str, state: CompanionState) -> AgentTurnResult:
+        plan = self._llm_plan_actions(user_input, state)
+        self._apply_plan_state_updates(plan, state)
+        tool_logs: list[dict[str, Any]] = [
+            {
+                "tool": "agent_plan",
+                "arguments": {"user_input": user_input},
+                "preview": json.dumps(plan.raw, ensure_ascii=False)[:500],
+            }
+        ]
+        if plan.needs_clarification:
+            trace.event(
+                "Companion clarification needed",
+                {
+                    "intent": plan.intent,
+                    "goal": plan.goal,
+                    "question": plan.clarification_question,
+                    "plan": plan.raw,
+                },
+                color="yellow",
+            )
+            state.current_task = {
+                "intent": plan.intent,
+                "goal": plan.goal,
+                "plan": plan.raw,
+            }
+            state.task_status = "needs_clarification"
+            state.clarification_pending = "agent_plan"
+            return AgentTurnResult(
+                reply=plan.clarification_question or "我还需要一个关键信息才能继续。",
+                intent=plan.intent,
+                tool_logs=tool_logs,
+            )
+        observations = self._execute_action_plan(plan, state, tool_logs)
+        verification = self._verify_agentic_turn(plan, observations, state)
+        trace.event(
+            "Companion verification",
+            verification,
+            color="blue",
+        )
+        if verification.get("needs_second_search"):
+            try:
+                repair_plan = self._llm_repair_plan(plan, observations, verification, state)
+                if repair_plan.actions:
+                    trace.event(
+                        "Companion repair plan",
+                        {
+                            "reason": verification.get("reasons", []),
+                            "plan": repair_plan.raw,
+                        },
+                        color="yellow",
+                    )
+                    tool_logs.append(
+                        {
+                            "tool": "agent_repair_plan",
+                            "arguments": {"reason": verification.get("reasons", [])},
+                            "preview": json.dumps(repair_plan.raw, ensure_ascii=False)[:500],
+                        }
+                    )
+                    self._apply_plan_state_updates(repair_plan, state)
+                    repair_observations = self._execute_action_plan(repair_plan, state, tool_logs)
+                    observations.extend(repair_observations)
+                    verification = self._verify_agentic_turn(repair_plan, observations, state)
+            except Exception as exc:
+                verification.setdefault("warnings", []).append(f"Repair planning failed: {exc}")
+        reply = self._generate_final_response(plan, observations, verification, state)
+        trace.event(
+            "Companion generated reply",
+            {
+                "reply": reply,
+                "observation_count": len(observations),
+                "verification": verification,
+            },
+            color="green",
+        )
+        cards = [
+            {"tool": obs.tool, "payload": obs.output}
+            for obs in observations
+            if obs.tool in {"replan_itinerary", "resolve_emergency_resources", "score_candidates"}
+        ]
+        return AgentTurnResult(
+            reply=reply,
+            intent=plan.intent,
+            cards=cards,
+            tool_logs=tool_logs,
+            warnings=list(verification.get("warnings") or []),
+        )
 
     def _apply_progress_updates(self, user_input: str, state: CompanionState) -> None:
         completed_markers = ["finished", "completed", "done with", "逛完", "玩完", "已经去了", "已经看完"]
@@ -318,11 +1047,16 @@ class CompanionAgent:
                 matches.append(name)
         return matches
 
-    def _maybe_handle_task_flow(self, user_input: str, state: CompanionState) -> AgentTurnResult | None:
+    def _maybe_handle_task_flow(
+        self,
+        user_input: str,
+        state: CompanionState,
+        routed_intent: str | None = None,
+    ) -> AgentTurnResult | None:
         if state.clarification_pending:
             return self._resume_pending_task(user_input, state)
 
-        intent = self._classify_intent(user_input)
+        intent = routed_intent or self._classify_intent(user_input)
         if intent != "replan" or not state.remaining_plan:
             return None
 
@@ -400,22 +1134,36 @@ class CompanionAgent:
             )
 
         time_budget = task.get("time_budget_hours") or state.time_budget_hours
-        result = replan_itinerary(
-            remaining_plan=state.remaining_plan,
-            current_location=state.current_location,
-            time_budget_hours=time_budget,
-            completed_nodes=state.completed_nodes,
-            skipped_nodes=state.skipped_nodes,
-            constraints=task.get("constraints") or self._replan_constraints(state, time_budget),
+        arguments = {
+            "time_budget_hours": time_budget,
+            "completed_nodes": state.completed_nodes,
+            "skipped_nodes": state.skipped_nodes,
+            "constraints": task.get("constraints") or self._replan_constraints(state, time_budget),
+        }
+        trace.event(
+            "Companion pending task",
+            {"task": task, "tool": "replan_itinerary", "arguments": arguments},
+            color="yellow",
         )
+        started_at = time.monotonic()
+        trace.tool_start("replan_itinerary", arguments)
+        try:
+            result = replan_itinerary(
+                remaining_plan=state.remaining_plan,
+                current_location=state.current_location,
+                time_budget_hours=time_budget,
+                completed_nodes=state.completed_nodes,
+                skipped_nodes=state.skipped_nodes,
+                constraints=arguments["constraints"],
+            )
+        except Exception as exc:
+            trace.tool_error("replan_itinerary", arguments, exc, int((time.monotonic() - started_at) * 1000))
+            raise
+        trace.tool_finish("replan_itinerary", arguments, result, int((time.monotonic() - started_at) * 1000))
         tool_logs.append(
             {
                 "tool": "replan_itinerary",
-                "arguments": {
-                    "time_budget_hours": time_budget,
-                    "completed_nodes": state.completed_nodes,
-                    "skipped_nodes": state.skipped_nodes,
-                },
+                "arguments": arguments,
                 "preview": result.get("summary", "")[:500],
             }
         )
@@ -443,11 +1191,14 @@ class CompanionAgent:
         state.current_task = None
 
         plan_names = [str(node.get("poi_name") or node.get("name") or "") for node in result.get("new_plan", [])]
-        reply = result.get("summary") or "已完成当天剩余行程重排。"
+        reply = f"**结论**\n{result.get('summary') or '已完成当天剩余行程重排。'}"
         if plan_names:
-            reply += " 新顺序：" + " -> ".join(plan_names) + "。"
+            order_lines = "\n".join(f"{idx + 1}. {name}" for idx, name in enumerate(plan_names))
+            reply += f"\n\n**新顺序**\n{order_lines}"
         if result.get("warnings"):
-            reply += " 风险提示：" + "；".join(result["warnings"])
+            warning_lines = "\n".join(f"- {item}" for item in result["warnings"])
+            reply += f"\n\n**风险**\n{warning_lines}"
+        reply += "\n\n**下一步**\n1. 先按新顺序去第一站。\n2. 如果现场时间继续变化，告诉我当前位置和剩余时间。"
         return AgentTurnResult(
             reply=reply,
             intent="replan",
@@ -480,10 +1231,25 @@ class CompanionAgent:
                     return None
         return None
 
-    def _run_llm_turn(self, user_input: str, state: CompanionState) -> AgentTurnResult:
+    def _run_llm_turn(
+        self,
+        user_input: str,
+        state: CompanionState,
+        routed_intent: str | None = None,
+    ) -> AgentTurnResult:
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "system", "content": TOOL_POLICY_PROMPT},
+            {
+                "role": "system",
+                "content": json.dumps(
+                    {
+                        "semantic_intent": routed_intent or state.intent,
+                        "companion_state": self._router_state_payload(state),
+                    },
+                    ensure_ascii=False,
+                ),
+            },
         ]
         messages.extend(state.turn_history[-10:])
 
@@ -494,7 +1260,7 @@ class CompanionAgent:
         require_tool_first = self._should_require_tool_first(user_input, state)
 
         while True:
-            response = self.client.chat.completions.create(
+            response = self._chat_completion_create(
                 model=self.settings.openai_model,
                 messages=messages,
                 tools=TOOL_SCHEMAS,
@@ -509,9 +1275,25 @@ class CompanionAgent:
 
             message = response.choices[0].message
             tool_calls = list(message.tool_calls or [])
+            trace.event(
+                "Companion tool-calling LLM output",
+                {
+                    "llm_call_count": llm_call_count,
+                    "message_content": message.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "arguments": tool_call.function.arguments or "{}",
+                        }
+                        for tool_call in tool_calls
+                    ],
+                },
+                color="blue",
+            )
             if not tool_calls:
                 reply = (message.content or "").strip() or "暂时没有得到可执行结论。"
-                intent = self._classify_intent(user_input)
+                intent = routed_intent or self._classify_intent(user_input)
                 token_usage = {
                     "input_tokens": total_input_tokens,
                     "output_tokens": total_output_tokens,
@@ -540,9 +1322,23 @@ class CompanionAgent:
                     }
                 )
 
-    def _run_fallback_turn(self, user_input: str, state: CompanionState) -> AgentTurnResult:
-        intent = self._classify_intent(user_input)
+    def _run_fallback_turn(
+        self,
+        user_input: str,
+        state: CompanionState,
+        routed_intent: str | None = None,
+    ) -> AgentTurnResult:
+        intent = routed_intent or self._classify_intent(user_input)
         tool_logs: list[dict[str, Any]] = []
+        trace.event(
+            "Companion fallback router",
+            {
+                "intent": intent,
+                "routed_intent": routed_intent,
+                "user_input": user_input,
+            },
+            color="blue",
+        )
 
         if intent == "emergency":
             result = self._handle_emergency(user_input, state, tool_logs)
@@ -572,7 +1368,16 @@ class CompanionAgent:
     ) -> Any:
         if tool_name not in self.tool_impls:
             raise KeyError(f"Unknown tool: {tool_name}")
-        output = self.tool_impls[tool_name](arguments, state)
+        started_at = time.monotonic()
+        trace.tool_start(tool_name, arguments)
+        try:
+            output = self.tool_impls[tool_name](arguments, state)
+        except Exception as exc:
+            elapsed_ms = int((time.monotonic() - started_at) * 1000)
+            trace.tool_error(tool_name, arguments, exc, elapsed_ms)
+            raise
+        elapsed_ms = int((time.monotonic() - started_at) * 1000)
+        trace.tool_finish(tool_name, arguments, output, elapsed_ms)
         tool_logs.append({"tool": tool_name, "arguments": arguments, "preview": str(output)[:500]})
         return output
 
@@ -660,7 +1465,23 @@ class CompanionAgent:
 
     def _classify_intent(self, text: str) -> str:
         lowered = text.strip().lower()
-        if any(token in lowered for token in ["replan", "reschedule", "reroute", "only have", "hours left"]):
+        if any(
+            token in lowered
+            for token in [
+                "replan",
+                "reschedule",
+                "reroute",
+                "only have",
+                "hours left",
+                "重排",
+                "重新安排",
+                "调整行程",
+                "改行程",
+                "只剩",
+                "剩下",
+                "来不及",
+            ]
+        ):
             return "replan"
         return classify_intent(text)
 
@@ -987,10 +1808,19 @@ class CompanionAgent:
 
         cards = primary + ranking.get("backup", [])
         first = primary[0]
+        option_lines = []
+        for idx, item in enumerate(cards[:5], start=1):
+            reason = item.get("ranking_reason") or "综合得分较高"
+            distance = item.get("distance_m")
+            distance_text = f"，约 {round(distance)} 米" if isinstance(distance, (int, float)) and distance else ""
+            option_lines.append(f"{idx}. `{item.get('name', '')}`：{reason}{distance_text}")
         reply = (
-            f"优先推荐你先看 `{first.get('name', '')}`。"
-            f"它{first.get('ranking_reason', '综合得分较高')}。"
-            f"我也保留了 {min(len(cards), 5)} 个候选供你比较。"
+            f"**结论**\n优先看 `{first.get('name', '')}`。\n\n"
+            "**候选**\n"
+            + "\n".join(option_lines)
+            + "\n\n**下一步**\n"
+            "1. 你选定一家后，我继续帮你算从当前位置过去的步行/打车时间。\n"
+            "2. 如果想换菜系、预算或环境，直接补充条件。"
         )
         return AgentTurnResult(reply=reply, intent="search", cards=cards, tool_logs=tool_logs)
 
@@ -1057,19 +1887,18 @@ class CompanionAgent:
             leg_parts.append(
                 f"{card['destination']['name']} 路上约 {card['route']['duration_min']} 分钟，建议至少预留 {stay_min} 分钟"
             )
-        reply = "路线已经帮你串起来了。"
+        conclusion = "这条路线目前不建议直接执行。" if all_warnings else "这条路线目前看整体可行。"
+        reply = f"**结论**\n{conclusion}"
         if leg_parts:
-            reply += " 当前粗略时间线：" + "，".join(leg_parts) + "。"
+            reply += "\n\n**时间线**\n" + "\n".join(f"- {part}" for part in leg_parts)
         if feasibility["latest_departure_time"]:
-            reply += f" 如果你要赶第一站，最晚建议在 {feasibility['latest_departure_time']} 前离开当前点位。"
+            reply += f"\n\n**最晚出发**\n- 建议在 {feasibility['latest_departure_time']} 前离开当前点位。"
         if all_warnings:
-            reply += " 但这组安排我不建议直接执行。风险提示：" + "；".join(all_warnings)
-        else:
-            reply += " 目前看整体可行。"
+            reply += "\n\n**风险**\n" + "\n".join(f"- {item}" for item in all_warnings)
         alternatives = self._build_coordinate_alternatives(state, cards, all_warnings)
         if alternatives:
-            reply += " 你可以这样改："
-            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:2])
+            reply += "\n\n**可选方案**\n"
+            reply += "\n".join(f"{idx + 1}. {item['title']}：{item['summary']}" for idx, item in enumerate(alternatives[:2]))
         return AgentTurnResult(
             reply=reply,
             intent="coordinate",
@@ -1118,20 +1947,23 @@ class CompanionAgent:
         primary = ranking.get("primary", [])
         user_reports_rain = any(token in user_input for token in ["下雨", "淋雨", "雨天"])
         if user_reports_rain:
-            reply = "你现场反馈已经在下雨，我优先按雨天策略重排。"
-            reply += f" 实时天气接口当前显示 `{weather.get('summary', 'Unknown')}`，这里只作辅助参考。"
+            conclusion = "你现场反馈已经在下雨，我优先按雨天策略重排。"
+            weather_line = f"实时天气接口当前显示 `{weather.get('summary', 'Unknown')}`，这里只作辅助参考。"
         else:
-            reply = f"我先按当天实时天气重排。当前天气是 `{weather.get('summary', 'Unknown')}`。"
+            conclusion = "我先按当天实时天气重排。"
+            weather_line = f"当前天气是 `{weather.get('summary', 'Unknown')}`。"
+        reply = f"**结论**\n{conclusion}\n\n**依据**\n- {weather_line}"
         if primary:
-            reply += f" 室内替代我优先建议 `{primary[0].get('name', '')}`。"
+            reply += f"\n- 室内替代优先看 `{primary[0].get('name', '')}`。"
         else:
-            reply += " 我先排除了原目标和明显室外点位，但当前没有找到足够好的室内替代，建议改查附近商场或大型博物馆。"
+            reply += "\n- 已排除原目标和明显室外点位，但当前没有找到足够好的室内替代。"
         if weather.get("suggestions"):
-            reply += " " + weather["suggestions"][0]
+            reply += f"\n- {weather['suggestions'][0]}"
         alternatives = self._build_replan_alternatives(state, target_poi_name, primary)
         if alternatives:
-            reply += " 可执行替代："
-            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:2])
+            reply += "\n\n**可执行替代**\n"
+            reply += "\n".join(f"{idx + 1}. {item['title']}：{item['summary']}" for idx, item in enumerate(alternatives[:2]))
+        reply += "\n\n**下一步**\n1. 先选一个室内替代或休整点。\n2. 如果你给我剩余时间，我可以继续压缩后面的站点。"
         return AgentTurnResult(
             reply=reply,
             intent="replan",
@@ -1174,14 +2006,15 @@ class CompanionAgent:
         group_split_plan = resources.get("group_split_plan") or {}
 
         if immediate_action:
-            reply = f"先别继续赶路。{immediate_action.get('summary', '')}"
+            conclusion = f"先别继续赶路。{immediate_action.get('summary', '')}"
         elif primary:
             first = primary[0]
-            reply = f"先别继续赶路。优先处理 `{first.get('action_type', '')}`：`{first.get('name', '')}`。"
+            conclusion = f"先别继续赶路。优先处理 `{first.get('action_type', '')}`：`{first.get('name', '')}`。"
         else:
-            reply = "地图候选不够稳定，优先找最近出口、游客中心或保安亭。"
+            conclusion = "地图候选不够稳定，优先找最近出口、游客中心或保安亭。"
+        reply = f"**结论**\n{conclusion}"
         if resources.get("safety_notes"):
-            reply += " " + resources["safety_notes"][0]
+            reply += "\n\n**安全提醒**\n" + "\n".join(f"- {item}" for item in resources["safety_notes"][:3])
         warnings = resources.get("warnings", [])
         cards = primary + resources.get("backup_actions", [])
         alternatives = []
@@ -1213,8 +2046,8 @@ class CompanionAgent:
                 }
             )
         if alternatives:
-            reply += " 接下来建议："
-            reply += "；".join(f"{item['title']}：{item['summary']}" for item in alternatives[:3])
+            reply += "\n\n**接下来建议**\n"
+            reply += "\n".join(f"{idx + 1}. {item['title']}：{item['summary']}" for idx, item in enumerate(alternatives[:3]))
         return AgentTurnResult(
             reply=reply,
             intent="emergency",

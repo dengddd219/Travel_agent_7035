@@ -1,10 +1,22 @@
 {
   "city": "Xiamen",
-  "aliases": ["xiamen", "厦门"],
+  "aliases": [
+    "xiamen",
+    "厦门"
+  ],
   "recommended_areas": [
-    {"name": "Siming", "why": "best for city core, seaside leisure, and food"},
-    {"name": "Gulangyu vicinity", "why": "best for classic island atmosphere and slow travel"},
-    {"name": "Huandao Road", "why": "good for coastal leisure and relaxed couple/family pacing"}
+    {
+      "name": "思明区",
+      "why": "best for city core, seaside leisure, and food"
+    },
+    {
+      "name": "Gulangyu vicinity",
+      "why": "best for classic island atmosphere and slow travel"
+    },
+    {
+      "name": "环岛路",
+      "why": "good for coastal leisure and relaxed couple/family pacing"
+    }
   ],
   "transport": [
     "Keep coastal leisure and old-town food in one broad Siming cluster when possible.",
@@ -15,31 +27,88 @@
     "Swap beach and coastal promenades for malls, museums, cafés, or indoor cultural venues.",
     "Use covered food streets and shopping complexes to keep the day flexible."
   ],
-  "signature_foods": ["shacha noodles", "peanut soup", "oyster omelette", "seafood", "local desserts"],
+  "signature_foods": [
+    "shacha noodles",
+    "peanut soup",
+    "oyster omelette",
+    "seafood",
+    "local desserts"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["coast", "local", "view"],
-      "suggested_queries": ["Gulangyu", "Huandao Road", "Zhongshan Road Xiamen", "Shapowei"],
+      "focus_tags": [
+        "coast",
+        "local",
+        "view"
+      ],
+      "suggested_queries": [
+        "鼓浪屿",
+        "环岛路",
+        "厦门中山路",
+        "沙坡尾"
+      ],
       "pace_note": "Xiamen works best with a slow coastal rhythm instead of dense landmark-hopping."
     },
     "family": {
-      "focus_tags": ["family", "coast", "park"],
-      "suggested_queries": ["Xiamen Science and Technology Museum", "Xiamen Botanical Garden", "beach Xiamen", "Zengcuoan"],
+      "focus_tags": [
+        "family",
+        "coast",
+        "park"
+      ],
+      "suggested_queries": [
+        "厦门科技馆",
+        "厦门园林植物园",
+        "厦门 海边",
+        "Zengcuoan"
+      ],
       "pace_note": "Use one scenic anchor and keep a low-effort indoor backup for heat or rain."
     },
     "food": {
-      "focus_tags": ["food", "local", "market"],
-      "suggested_queries": ["Zhongshan Road food", "shacha noodles Xiamen", "Shapowei cafes", "seafood Xiamen"],
+      "focus_tags": [
+        "food",
+        "local",
+        "market"
+      ],
+      "suggested_queries": [
+        "中山路 美食",
+        "厦门 沙茶面",
+        "Shapowei cafes",
+        "seafood Xiamen"
+      ],
       "pace_note": "Group meals by neighborhood and leave enough time for seaside pauses."
     },
     "theme": {
-      "focus_tags": ["coast", "design", "local"],
-      "suggested_queries": ["Shapowei", "Jimei School Village", "Gulangyu piano museum", "Xiamen art spaces"],
+      "focus_tags": [
+        "coast",
+        "design",
+        "local"
+      ],
+      "suggested_queries": [
+        "沙坡尾",
+        "集美学村",
+        "鼓浪屿 钢琴博物馆",
+        "厦门 艺术空间"
+      ],
       "pace_note": "Lean into coastal city-walk and island atmosphere rather than breadth."
     }
   },
-  "indoor_keywords": ["museum", "mall", "cafe", "aquarium", "gallery", "indoor"],
-  "outdoor_keywords": ["beach", "coast", "road", "island", "garden", "harbour", "walk"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "cafe",
+    "aquarium",
+    "gallery",
+    "indoor"
+  ],
+  "outdoor_keywords": [
+    "beach",
+    "coast",
+    "road",
+    "island",
+    "garden",
+    "harbour",
+    "walk"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -48,7 +117,9 @@
       "temp_max": 29,
       "precipitation_probability": 25,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for coastal walks and island-facing highlights."]
+      "suggestions": [
+        "Good day for coastal walks and island-facing highlights."
+      ]
     },
     {
       "date": "Day 2",
@@ -57,209 +128,285 @@
       "temp_max": 25,
       "precipitation_probability": 75,
       "outdoor_suitability": "poor",
-      "suggestions": ["Use indoor dining, museums, and malls as the main anchors."]
+      "suggestions": [
+        "Use indoor dining, museums, and malls as the main anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Gulangyu",
+      "name": "鼓浪屿",
       "category": "attraction",
-      "district": "Siming",
-      "lat": 24.4460,
-      "lon": 118.0640,
+      "district": "思明区",
+      "lat": 24.446,
+      "lon": 118.064,
       "duration_hours": 3.0,
       "ticket_price": 35,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["coast", "landmark", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "coast",
+        "landmark",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Gulangyu Island, Xiamen",
       "open_hours": "Open 24 hours",
       "rating": 4.7,
       "visit_reason": "The city's defining island-leisure anchor."
     },
     {
-      "name": "Huandao Road",
+      "name": "环岛路",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4354,
       "lon": 118.1662,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["coast", "view", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "coast",
+        "view",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Huandao South Road, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Best coastal leisure route."
     },
     {
-      "name": "Zhongshan Road Pedestrian Street",
+      "name": "中山路步行街",
       "category": "food",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4545,
       "lon": 118.0818,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "shopping", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "shopping",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Zhongshan Road, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Best food-and-shopping core for easy pacing."
     },
     {
-      "name": "Shapowei",
+      "name": "沙坡尾",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4375,
       "lon": 118.0931,
       "duration_hours": 1.4,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["design", "local", "cafe"],
-      "source": ["profile_seed"],
+      "tags": [
+        "design",
+        "local",
+        "cafe"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Shapowei, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Good lifestyle and design-oriented extension."
     },
     {
-      "name": "Sunlight Rock (Sunlight Rock Scenic Area)",
+      "name": "日光岩",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4469,
       "lon": 118.0657,
       "duration_hours": 1.5,
       "ticket_price": 60,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "landmark", "nature"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "nature"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Gulangyu Island, Xiamen",
       "open_hours": "07:00-18:00",
       "rating": 4.6,
       "visit_reason": "Highest point on Gulangyu with best panoramic views over sea and city."
     },
     {
-      "name": "Shuzhuang Garden (Gulangyu)",
+      "name": "菽庄花园",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4381,
       "lon": 118.0677,
       "duration_hours": 1.2,
       "ticket_price": 30,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["garden", "history", "coast"],
-      "source": ["profile_seed"],
+      "tags": [
+        "garden",
+        "history",
+        "coast"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Gulangyu Island, Xiamen",
       "open_hours": "07:00-18:00",
       "rating": 4.5,
       "visit_reason": "Beautiful seaside classical garden built into rocky coastal cliffs."
     },
     {
-      "name": "Nanputuo Temple",
+      "name": "南普陀寺",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4479,
-      "lon": 118.0990,
+      "lon": 118.099,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "temple", "history"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "temple",
+        "history"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "515 Siming South Road, Siming District",
       "open_hours": "06:00-20:00",
       "rating": 4.6,
       "visit_reason": "Major Tang-dynasty coastal Buddhist temple beside Xiamen University."
     },
     {
-      "name": "Xiamen University Campus Walk",
+      "name": "厦门大学",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4454,
       "lon": 118.0992,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["city walk", "local", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "city walk",
+        "local",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Xiamen University, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "One of China's most beautiful campus settings — seaside, colonial-style buildings."
     },
     {
-      "name": "Jimei School Village",
+      "name": "集美学村",
       "category": "attraction",
-      "district": "Jimei",
+      "district": "集美区",
       "lat": 24.5793,
       "lon": 118.0989,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Jimei, Jimei District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Distinctive neo-Renaissance school complex founded by overseas Chinese philanthropist Tan Kah Kee."
     },
     {
-      "name": "Baicheng Beach",
+      "name": "白城沙滩",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4413,
       "lon": 118.1013,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["beach", "coast", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "beach",
+        "coast",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Baicheng Beach, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Sheltered city beach beside Xiamen University — best casual seaside stop in the centre."
     },
     {
-      "name": "Xiamen Botanical Garden",
+      "name": "厦门园林植物园",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.4614,
       "lon": 118.1098,
       "duration_hours": 1.8,
       "ticket_price": 15,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["nature", "park", "family", "garden"],
-      "source": ["profile_seed"],
+      "tags": [
+        "nature",
+        "park",
+        "family",
+        "garden"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Wanyue Road, Siming District",
       "open_hours": "07:30-18:00",
       "rating": 4.5,
       "visit_reason": "Large hillside botanical garden with a famous cactus collection and shady trails."
     },
     {
-      "name": "Zengcuoan Art Village",
+      "name": "曾厝垵",
       "category": "attraction",
-      "district": "Siming",
+      "district": "思明区",
       "lat": 24.5128,
       "lon": 118.1513,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["art", "design", "local", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "art",
+        "design",
+        "local",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Zengcuoan, Siming District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,

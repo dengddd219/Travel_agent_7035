@@ -154,3 +154,32 @@ class AgentTurnResult:
     error: dict[str, Any] | None = None
     state: CompanionState | None = None
     token_usage: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class AgentAction:
+    tool: str
+    args: dict[str, Any] = field(default_factory=dict)
+    reason: str = ""
+    save_as: str = ""
+
+
+@dataclass(slots=True)
+class AgentPlan:
+    intent: str
+    goal: str = ""
+    needs_clarification: bool = False
+    clarification_question: str = ""
+    state_updates: dict[str, Any] = field(default_factory=dict)
+    actions: list[AgentAction] = field(default_factory=list)
+    response_policy: str = "default"
+    self_check_focus: list[str] = field(default_factory=list)
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class AgentObservation:
+    tool: str
+    args: dict[str, Any]
+    output: Any
+    save_as: str = ""

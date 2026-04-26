@@ -1,7 +1,7 @@
-"""Debug tracer for RAG+Agent pipeline observability.
+"""Optional terminal tracing for the travel-planner pipeline.
 
-Set env var DEBUG_AGENT=1 to activate terminal tracing.
-Production runs are unaffected when the var is absent.
+Set ``DEBUG_AGENT=1`` to print compact orchestration traces. All functions are
+no-ops by default, so production and tests do not pay for debug output.
 """
 from __future__ import annotations
 
@@ -12,206 +12,254 @@ import time
 from contextlib import contextmanager
 from typing import Any
 
-_ENABLED = os.getenv("DEBUG_AGENT", "").strip() in ("1", "true", "yes")
+_TRUTHY = {"1", "true", "yes", "on"}
+_ENABLED = (
+    os.getenv("DEBUG_AGENT", "").strip().lower() in _TRUTHY
+    or os.getenv("TRACE_AGENT", "").strip().lower() in _TRUTHY
+)
 
-# ANSI color codes
 _C = {
-    "reset":  "\033[0m",
-    "bold":   "\033[1m",
-    "dim":    "\033[2m",
-    "cyan":   "\033[36m",
+    "reset": "\033[0m",
+    "bold": "\033[1m",
+    "dim": "\033[2m",
+    "cyan": "\033[36m",
     "yellow": "\033[33m",
-    "green":  "\033[32m",
-    "blue":   "\033[34m",
-    "magenta":"\033[35m",
-    "red":    "\033[31m",
-    "white":  "\033[97m",
+    "green": "\033[32m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "red": "\033[31m",
+    "white": "\033[97m",
 }
+
+
+def is_debug_enabled() -> bool:
+    return _ENABLED
+
+
+def _trace_full() -> bool:
+    return os.getenv("TRACE_FULL", "").strip().lower() in _TRUTHY
+
+
+def _preview_chars(default: int = 1200) -> int:
+    raw = os.getenv("TRACE_PREVIEW_CHARS", "").strip()
+    if not raw:
+        return default
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return default
+
+
+def _rag_chunk_limit(default: int = 3) -> int:
+    raw = os.getenv("TRACE_RAG_CHUNKS", "").strip()
+    if not raw:
+        return default
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return default
 
 
 def _c(text: str, *codes: str) -> str:
     if not _ENABLED:
         return text
-    prefix = "".join(_C.get(c, "") for c in codes)
+    prefix = "".join(_C.get(code, "") for code in codes)
     return f"{prefix}{text}{_C['reset']}"
 
 
-def _hr(char: str = "─", width: int = 72, color: str = "dim") -> None:
+def _hr(char: str = "-", width: int = 72, color: str = "dim") -> None:
     if _ENABLED:
         print(_c(char * width, color))
 
 
-def _header(title: str, icon: str = "▶", color: str = "cyan") -> None:
+def _header(title: str, color: str = "cyan") -> None:
     if not _ENABLED:
         return
-    _hr("═", color=color)
-    print(_c(f"{icon}  {title}", "bold", color))
-    _hr("─", color="dim")
+    _hr("=", color=color)
+    print(_c(title, "bold", color))
+    _hr("-", color="dim")
+
+
+def _short_json(value: Any, limit: int | None = None) -> str:
+    try:
+        text = json.dumps(value, ensure_ascii=False, indent=2)
+    except Exception:
+        text = str(value)
+    if _trace_full():
+        return text
+    limit = _preview_chars() if limit is None else limit
+    return text if limit <= 0 or len(text) <= limit else text[:limit].rstrip() + "..."
 
 
 def _kv(key: str, value: Any, indent: int = 2) -> None:
     if not _ENABLED:
         return
     pad = " " * indent
-    vstr = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
-    # wrap long values
-    wrapped = textwrap.fill(vstr, width=90, subsequent_indent=pad + "  ")
+    text = value if isinstance(value, str) else _short_json(value)
+    wrapped = textwrap.fill(str(text), width=96, subsequent_indent=pad + "  ")
     print(f"{pad}{_c(key + ':', 'bold', 'white')} {_c(wrapped, 'dim')}")
 
 
-def _json_block(data: Any, indent: int = 2, max_items: int | None = None) -> None:
-    if not _ENABLED:
-        return
-    pad = " " * indent
-    if isinstance(data, list) and max_items is not None:
-        data = data[:max_items]
-    text = json.dumps(data, ensure_ascii=False, indent=2)
-    for line in text.splitlines():
-        print(pad + _c(line, "dim"))
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Public API
-# ──────────────────────────────────────────────────────────────────────────────
-
-def trace_session_start(user_request: str, turn: int = 1) -> None:
+def trace_session_start(user_request: str, turn: int | None = None) -> None:
     if not _ENABLED:
         return
     print()
-    _hr("═", color="cyan")
-    print(_c(f"  DEBUG_AGENT  |  Turn {turn}", "bold", "cyan"))
-    _hr("═", color="cyan")
-    _kv("User request", user_request)
+    _header(f"Travel planner run{f' | turn {turn}' if turn else ''}", "cyan")
+    _kv("user_request", user_request)
+    print()
+
+
+def trace_turn_understanding(understanding: Any) -> None:
+    if not _ENABLED:
+        return
+    _header("Step 1 | Turn understanding", "yellow")
+    _kv("source", getattr(understanding, "source", "unknown"))
+    _kv("needs_clarification", getattr(understanding, "needs_clarification", False))
+    _kv("missing_profile_slots", getattr(understanding, "missing_profile_slots", []))
+    _kv("resolved_profile", getattr(understanding, "resolved_profile", {}))
+    overrides = getattr(understanding, "decomposition_overrides", {})
+    if overrides:
+        _kv("decomposition_overrides", overrides)
     print()
 
 
 def trace_profile(user_profile: dict) -> None:
     if not _ENABLED:
         return
-    _header("STEP 1 — Intent Extraction (user profile)", "①", "yellow")
-    for k, v in user_profile.items():
-        _kv(k, v)
+    _header("Step 2 | Resolved profile", "yellow")
+    _kv("profile", user_profile)
     print()
 
 
 def trace_decomposition(decomposition: dict) -> None:
     if not _ENABLED:
         return
-    _header("STEP 2 — Query Decomposition", "②", "yellow")
+    _header("Step 3 | Retrieval decomposition", "blue")
     _kv("strategy_queries", decomposition.get("strategy_queries", []))
-    _kv("geo_queries",      decomposition.get("geo_queries", []))
-    _kv("condition_queries",decomposition.get("condition_queries", {}))
+    _kv("geo_queries", decomposition.get("geo_queries", []))
+    _kv("condition_queries", decomposition.get("condition_queries", {}))
     print()
 
 
 def trace_rag_input(queries: list[str], city: str, travel_type: str, top_k: int) -> None:
     if not _ENABLED:
         return
-    _header("STEP 3 — RAG Retrieval INPUT", "③", "blue")
-    _kv("city",        city)
+    _header("Step 4 | RAG input", "blue")
+    _kv("city", city)
     _kv("travel_type", travel_type)
-    _kv("top_k",       top_k)
-    _kv("queries",     queries)
+    _kv("top_k", top_k)
+    _kv("queries", queries)
     print()
 
 
 def trace_rag_output(result: dict) -> None:
     if not _ENABLED:
         return
-    _header("STEP 3 — RAG Retrieval OUTPUT", "③", "green")
-    _kv("retrieval_mode",    result.get("retrieval_mode", "?"))
-    _kv("source",            result.get("source", "?"))
-    _kv("total_chunks",      len(result.get("results", [])))
-    _kv("recommended_pois",  result.get("recommended_pois", []))
+    _header("Step 4 | RAG output", "green")
+    _kv("retrieval_mode", result.get("retrieval_mode", ""))
+    _kv("source", result.get("source", ""))
+    _kv("result_count", len(result.get("results", [])))
+    _kv("recommended_pois", result.get("recommended_pois", []))
     _kv("theme_suggestions", result.get("theme_suggestions", []))
-    _kv("local_pitfalls",    result.get("local_pitfalls", []))
-
-    # Per-query diagnostics
-    print(_c("  Per-query diagnostics:", "bold", "white"))
-    for q in result.get("queries", []):
-        print(_c(f"    • [{q.get('search_backend','?')}] score_count={q.get('result_count',0)}", "dim"))
-        print(_c(f"      query: {q.get('query','')}", "dim"))
-        print(_c(f"      top chunks: {q.get('top_chunk_ids',[])}", "dim"))
-
-    # Show top-3 raw chunks
-    chunks = result.get("results", [])[:3]
-    if chunks:
-        print(_c("  Top-3 raw chunks:", "bold", "white"))
-        for i, ch in enumerate(chunks, 1):
-            snippet = ch.get("chunk_text", "")[:200].replace("\n", " ")
-            print(_c(f"    [{i}] score={ch.get('score',0):.4f}  chunk_id={ch.get('chunk_id','?')}", "dim"))
-            print(_c(f"        {snippet}…", "dim"))
+    _kv("local_pitfalls", result.get("local_pitfalls", []))
+    _kv("evidence_chunk_count", len(result.get("evidence_chunks", []) or []))
+    _kv("route_pair_hint_count", len(result.get("route_pair_hints", []) or []))
+    _kv("pitfall_evidence_count", len(result.get("pitfall_evidence", []) or []))
+    for item in result.get("queries", [])[:5]:
+        _kv("query_diag", item, indent=4)
+    results = result.get("results", []) or []
+    limit = len(results) if _trace_full() else min(len(results), _rag_chunk_limit())
+    if results and limit:
+        _kv("chunk_trace_count", f"{limit}/{len(results)}")
+    for index, item in enumerate(results[:limit], start=1):
+        if not isinstance(item, dict):
+            _kv(f"chunk_{index}", item, indent=4)
+            continue
+        metadata = item.get("metadata", {}) if isinstance(item.get("metadata"), dict) else {}
+        _kv(
+            f"chunk_{index}",
+            {
+                "chunk_id": item.get("chunk_id", ""),
+                "score": item.get("score", item.get("hybrid_score", "")),
+                "title": metadata.get("title", ""),
+                "source": metadata.get("source", metadata.get("file", "")),
+                "poi_names": metadata.get("poi_names", []),
+                "districts": metadata.get("districts", []),
+                "tags": metadata.get("tags", []),
+                "chunk_text": item.get("chunk_text", ""),
+            },
+            indent=4,
+        )
     print()
 
 
 def trace_tool_call(tool_name: str, arguments: dict, result: Any) -> None:
-    """Trace any non-RAG tool call (city context, weather, POI, cost, tips)."""
     if not _ENABLED:
         return
-    icons = {
-        "get_city_context":    ("④", "magenta"),
-        "search_batch_pois":   ("⑤", "magenta"),
-        "get_weather_forecast":("⑥", "magenta"),
-        "get_cost_summary":    ("⑦", "magenta"),
-        "get_travel_tips":     ("⑧", "magenta"),
-    }
-    icon, color = icons.get(tool_name, ("•", "white"))
-    _header(f"TOOL — {tool_name}", icon, color)
+    _header(f"Tool | {tool_name}", "magenta")
     _kv("arguments", arguments)
-
-    # Summarize result rather than dumping everything
     if isinstance(result, dict):
-        summary: dict = {}
-        if "results" in result:
-            summary["result_count"] = len(result["results"])
-            summary["sample_names"] = [r.get("name", r.get("chunk_id", "?")) for r in result["results"][:4]]
-        for field in ("provider", "retrieval_mode", "city", "total_cost", "daily_cost",
-                      "budget_level", "forecast", "tips_count"):
+        summary: dict[str, Any] = {}
+        for field in (
+            "provider",
+            "retrieval_mode",
+            "source",
+            "city",
+            "budget_level",
+            "total_cost",
+            "daily_cost",
+        ):
             if field in result:
                 summary[field] = result[field]
+        if "results" in result:
+            summary["result_count"] = len(result.get("results", []))
+            summary["sample"] = [
+                item.get("name") or item.get("chunk_id") or item.get("title")
+                for item in result.get("results", [])[:4]
+                if isinstance(item, dict)
+            ]
+        if "forecast" in result:
+            summary["forecast_days"] = len(result.get("forecast", []))
         if "tips" in result:
-            summary["tips_count"] = len(result["tips"])
-        _kv("result_summary", summary)
+            summary["tips_count"] = len(result.get("tips", []))
+        _kv("result_summary", summary or result)
     else:
-        _kv("result", str(result)[:200])
+        _kv("result", result)
     print()
 
 
 def trace_planner_input(strategy_context: dict, selected_poi_count: int) -> None:
     if not _ENABLED:
         return
-    _header("STEP 4 — Planner INPUT (how RAG feeds planning)", "④", "blue")
-    _kv("rag_recommended_pois (fed to planner)", strategy_context.get("recommended_pois", []))
+    _header("Step 5 | Planner input", "blue")
+    _kv("selected_poi_count", selected_poi_count)
+    _kv("rag_recommended_pois", strategy_context.get("recommended_pois", []))
     _kv("neighborhood_notes_count", len(strategy_context.get("neighborhood_notes", [])))
-    _kv("total_pois_before_select", selected_poi_count)
     print()
 
 
 def trace_plan_output(plan: dict) -> None:
     if not _ENABLED:
         return
-    _header("STEP 5 — Final Plan OUTPUT", "⑤", "green")
-    days = plan.get("days", [])
-    _kv("total_days", len(days))
-    for day in days:
-        items = day.get("items", [])
-        names = [it.get("poi_name", "?") for it in items]
-        print(_c(f"  Day {day.get('day_index','?')}: {day.get('area','?')} | {day.get('theme','')}", "bold", "white"))
-        print(_c(f"    POIs: {names}", "dim"))
-    _kv("planning_notes", plan.get("planning_notes", []))
-    print()
-    _hr("═", color="cyan")
+    _header("Step 6 | Plan output", "green")
+    _kv("city", plan.get("city", ""))
+    _kv("trip_days", plan.get("trip_days", ""))
+    for day in plan.get("days", []):
+        names = [item.get("poi_name", "?") for item in day.get("items", [])]
+        _kv(f"day_{day.get('day_index', '?')}", names)
+    _kv("review_summary", plan.get("review_summary", ""))
     print()
 
 
 @contextmanager
 def trace_step_timer(label: str):
-    """Context manager that prints elapsed time for a step."""
     if not _ENABLED:
         yield
         return
-    t0 = time.perf_counter()
-    yield
-    elapsed = time.perf_counter() - t0
-    print(_c(f"  ⏱  {label}: {elapsed:.2f}s", "dim"))
-    print()
+    started_at = time.perf_counter()
+    try:
+        yield
+    finally:
+        elapsed = time.perf_counter() - started_at
+        print(_c(f"  {label}: {elapsed:.2f}s", "dim"))
+        print()

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from WeatherCost.weather_cost_api import estimate_cost_api
+from ._group_c_loader import load_group_c_weather_cost_api
 from ..city_names import provider_city_name
 
 """Adapter from Group C cost output into our own normalized schema."""
@@ -46,6 +46,7 @@ def get_group_c_cost_summary(
     user_budget: float | None = None,
 ) -> dict:
     """Call Group C's estimator and reshape the response for our planner/UI."""
+    estimate_cost_api = load_group_c_weather_cost_api().estimate_cost_api
     source_city = provider_city_name(city, provider="zh")
     normalized_budget_level = _normalize_budget_level(budget_level)
     raw = estimate_cost_api(source_city, days, normalized_budget_level, user_budget=user_budget)

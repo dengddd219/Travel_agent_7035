@@ -21,6 +21,7 @@ def get_city_context(city: str, travel_type: str = "leisure") -> dict:
     return {
         "city": profile.get("city", city),
         "recommended_areas": profile.get("recommended_areas", []),
+        "seed_poi_names": [item.get("name", "") for item in profile.get("seed_pois", []) if item.get("name")],
         "transport": profile.get("transport", []),
         "bad_weather_fallbacks": profile.get("bad_weather_fallbacks", []),
         "signature_foods": profile.get("signature_foods", []),

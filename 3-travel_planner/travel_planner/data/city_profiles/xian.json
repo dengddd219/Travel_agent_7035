@@ -1,10 +1,23 @@
 {
   "city": "Xian",
-  "aliases": ["xian", "xi'an", "西安"],
+  "aliases": [
+    "xian",
+    "xi'an",
+    "西安"
+  ],
   "recommended_areas": [
-    {"name": "Beilin / City Wall", "why": "best first-time historic cluster and walkable landmarks"},
-    {"name": "Yanta", "why": "good for museum, pagoda, and theme-based planning"},
-    {"name": "Qujiang", "why": "better for family, night lighting, and bigger modern venues"}
+    {
+      "name": "碑林区 / 城墙",
+      "why": "best first-time historic cluster and walkable landmarks"
+    },
+    {
+      "name": "雁塔区",
+      "why": "good for museum, pagoda, and theme-based planning"
+    },
+    {
+      "name": "曲江新区",
+      "why": "better for family, night lighting, and bigger modern venues"
+    }
   ],
   "transport": [
     "Keep old-city walls and Muslim Quarter on the same day when possible.",
@@ -15,31 +28,87 @@
     "Swap wall walking and broad outdoor parks for museums, pagoda interiors, or indoor heritage venues.",
     "Use covered dining streets and malls to reduce exposed walking."
   ],
-  "signature_foods": ["roujiamo", "biangbiang noodles", "yangrou paomo", "persimmon cakes", "cold skin noodles"],
+  "signature_foods": [
+    "roujiamo",
+    "biangbiang noodles",
+    "yangrou paomo",
+    "persimmon cakes",
+    "cold skin noodles"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["history", "culture", "landmark"],
-      "suggested_queries": ["Xi'an City Wall", "Bell Tower Xi'an", "Giant Wild Goose Pagoda", "Muslim Quarter"],
+      "focus_tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "suggested_queries": [
+        "西安城墙",
+        "西安 钟楼",
+        "大雁塔",
+        "回民街"
+      ],
       "pace_note": "Xi'an is strongest when you keep the day tightly anchored around one history cluster."
     },
     "family": {
-      "focus_tags": ["family", "museum", "history"],
-      "suggested_queries": ["Terracotta Warriors", "Shaanxi History Museum", "Tang Paradise", "Qujiang Ocean Park"],
+      "focus_tags": [
+        "family",
+        "museum",
+        "history"
+      ],
+      "suggested_queries": [
+        "兵马俑",
+        "陕西历史博物馆",
+        "Tang Paradise",
+        "曲江海洋公园"
+      ],
       "pace_note": "Give the family one flagship attraction and keep the rest lighter."
     },
     "food": {
-      "focus_tags": ["food", "local", "market"],
-      "suggested_queries": ["Muslim Quarter", "Yongxingfang", "Xi'an snacks", "local noodles Xi'an"],
+      "focus_tags": [
+        "food",
+        "local",
+        "market"
+      ],
+      "suggested_queries": [
+        "回民街",
+        "Yongxingfang",
+        "西安 小吃",
+        "西安 面食"
+      ],
       "pace_note": "Pair food neighborhoods with nearby monuments rather than long-distance detours."
     },
     "theme": {
-      "focus_tags": ["history", "theme", "culture"],
-      "suggested_queries": ["Shaanxi History Museum", "Han Yangling Museum", "Daming Palace", "Tang-era Xi'an"],
+      "focus_tags": [
+        "history",
+        "theme",
+        "culture"
+      ],
+      "suggested_queries": [
+        "陕西历史博物馆",
+        "Han Yangling Museum",
+        "大明宫",
+        "西安 大唐风格"
+      ],
       "pace_note": "Choose one dynasty or historical theme and build depth around it."
     }
   },
-  "indoor_keywords": ["museum", "mall", "pagoda", "history", "indoor", "exhibition"],
-  "outdoor_keywords": ["wall", "tower", "quarter", "park", "palace", "garden"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "pagoda",
+    "history",
+    "indoor",
+    "exhibition"
+  ],
+  "outdoor_keywords": [
+    "wall",
+    "tower",
+    "quarter",
+    "park",
+    "palace",
+    "garden"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -48,7 +117,9 @@
       "temp_max": 26,
       "precipitation_probability": 20,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for city-wall or pagoda-based outdoor highlights."]
+      "suggestions": [
+        "Good day for city-wall or pagoda-based outdoor highlights."
+      ]
     },
     {
       "date": "Day 2",
@@ -57,209 +128,285 @@
       "temp_max": 22,
       "precipitation_probability": 55,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use history museums and food streets as weather-safe anchors."]
+      "suggestions": [
+        "Use history museums and food streets as weather-safe anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Xi'an City Wall",
+      "name": "西安城墙",
       "category": "attraction",
-      "district": "Beilin",
+      "district": "碑林区",
       "lat": 34.2583,
       "lon": 108.9423,
       "duration_hours": 2.0,
       "ticket_price": 54,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "view"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "view"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "South Gate Area, Beilin District",
       "open_hours": "08:00-22:00",
       "rating": 4.7,
       "visit_reason": "The city's strongest visual and historic landmark."
     },
     {
-      "name": "Shaanxi History Museum",
+      "name": "陕西历史博物馆",
       "category": "attraction",
-      "district": "Yanta",
+      "district": "雁塔区",
       "lat": 34.2256,
       "lon": 108.9542,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "91 Xiaozhai East Road, Yanta District",
       "open_hours": "09:00-17:30",
       "rating": 4.8,
       "visit_reason": "Best weather-safe history anchor."
     },
     {
-      "name": "Giant Wild Goose Pagoda",
+      "name": "大雁塔",
       "category": "attraction",
-      "district": "Yanta",
+      "district": "雁塔区",
       "lat": 34.2194,
       "lon": 108.9602,
       "duration_hours": 1.8,
       "ticket_price": 40,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "culture", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Cien Road, Yanta District",
       "open_hours": "08:30-18:00",
       "rating": 4.6,
       "visit_reason": "Iconic Tang-era anchor with easy nearby extensions."
     },
     {
-      "name": "Muslim Quarter",
+      "name": "回民街",
       "category": "food",
-      "district": "Lianhu",
+      "district": "莲湖区",
       "lat": 34.2654,
       "lon": 108.9437,
       "duration_hours": 1.6,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "market"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "market"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Huimin Street Area, Lianhu District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Best-known local snack and night-energy cluster."
     },
     {
-      "name": "Terracotta Warriors",
+      "name": "兵马俑",
       "category": "attraction",
-      "district": "Lintong",
+      "district": "临潼区",
       "lat": 34.3847,
       "lon": 109.2731,
       "duration_hours": 3.5,
       "ticket_price": 120,
       "price_level": 3,
       "indoor_outdoor": "indoor",
-      "tags": ["history", "landmark", "culture", "museum"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "culture",
+        "museum"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Terracotta Warriors Museum, Lintong District",
       "open_hours": "08:30-18:00",
       "rating": 4.9,
       "visit_reason": "Xi'an's defining world-heritage attraction — three pits of 8,000 life-size warriors."
     },
     {
-      "name": "Bell Tower",
+      "name": "钟楼",
       "category": "attraction",
-      "district": "Beilin",
+      "district": "碑林区",
       "lat": 34.2567,
       "lon": 108.9485,
       "duration_hours": 1.0,
       "ticket_price": 54,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "landmark", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Bell Tower Square, Beilin District",
       "open_hours": "08:30-21:30",
       "rating": 4.6,
       "visit_reason": "Geometric heart of old Xi'an — the Ming-dynasty bell tower at the city's crossroads."
     },
     {
-      "name": "Drum Tower",
+      "name": "鼓楼",
       "category": "attraction",
-      "district": "Lianhu",
+      "district": "莲湖区",
       "lat": 34.2609,
       "lon": 108.9403,
       "duration_hours": 0.8,
       "ticket_price": 54,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["history", "landmark", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "landmark",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Beiyuanmen, Lianhu District",
       "open_hours": "09:00-21:30",
       "rating": 4.5,
       "visit_reason": "Companion to the Bell Tower — gateway to the Muslim Quarter with drum performance."
     },
     {
-      "name": "Tang Paradise (Datang Furong Garden)",
+      "name": "大唐芙蓉园",
       "category": "attraction",
-      "district": "Qujiang",
+      "district": "曲江新区",
       "lat": 34.1927,
       "lon": 108.9692,
       "duration_hours": 2.5,
       "ticket_price": 120,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "family", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "family",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Furong West Road, Qujiang District",
       "open_hours": "09:00-21:00",
       "rating": 4.6,
       "visit_reason": "Spectacular Tang-dynasty garden theme park with a world-class fountain and light show."
     },
     {
-      "name": "Daming Palace National Heritage Park",
+      "name": "大明宫国家遗址公园",
       "category": "attraction",
-      "district": "Xincheng",
+      "district": "新城区",
       "lat": 34.2919,
       "lon": 108.9635,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "park"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "park"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Daming Palace, Xincheng District",
       "open_hours": "07:00-18:00",
       "rating": 4.5,
       "visit_reason": "Ruins of the once-largest palace complex in the world — Tang-dynasty grandeur."
     },
     {
-      "name": "Yongxingfang Food Street",
+      "name": "永兴坊",
       "category": "food",
-      "district": "Xincheng",
-      "lat": 34.2630,
+      "district": "新城区",
+      "lat": 34.263,
       "lon": 108.9628,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "market"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "market"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Bei Yuan Men Area, Xincheng District",
       "open_hours": "09:00-22:00",
       "rating": 4.4,
       "visit_reason": "Covered indoor food market showcasing all Shaanxi regional dishes in one place."
     },
     {
-      "name": "Small Wild Goose Pagoda",
+      "name": "小雁塔",
       "category": "attraction",
-      "district": "Beilin",
+      "district": "碑林区",
       "lat": 34.2347,
       "lon": 108.9444,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["history", "culture", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "history",
+        "culture",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Youyi West Road, Beilin District",
       "open_hours": "09:00-18:00",
       "rating": 4.5,
       "visit_reason": "Peaceful Tang-dynasty pagoda inside a museum park — less crowded than the Giant Goose."
     },
     {
-      "name": "Qujiang Pool Ruins Park",
+      "name": "曲江池遗址公园",
       "category": "attraction",
-      "district": "Qujiang",
+      "district": "曲江新区",
       "lat": 34.1997,
       "lon": 108.9783,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "history", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "history",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Qujiang District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,

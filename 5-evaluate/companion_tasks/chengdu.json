@@ -1,0 +1,391 @@
+{
+  "version": "0.2",
+  "benchmark": "travel_agent_7035_companion_tasks",
+  "agent": "companion",
+  "description": "Per-city VitaBench-style companion-agent task files. Each city currently contains 3 tasks for a 30-task benchmark seed set.",
+  "evaluator": {
+    "window_turns": 10,
+    "overlap_turns": 2,
+    "success_policy": "all_required_rubrics",
+    "recommended_trials": 4,
+    "metrics": [
+      "avg_at_4",
+      "pass_at_4",
+      "pass_all_4",
+      "rubric_completion_rate"
+    ]
+  },
+  "city": "Chengdu",
+  "city_zh": "成都",
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": "companion_chengdu_001",
+      "city": "Chengdu",
+      "city_zh": "成都",
+      "task_type": "emergency_mobility",
+      "complexity": {
+        "reasoning": [
+          "safety_priority",
+          "mobility_triage",
+          "route_to_help"
+        ],
+        "tool": [
+          "resolve_emergency_resources"
+        ],
+        "interaction": [
+          "urgent_user",
+          "do_not_continue_sightseeing"
+        ]
+      },
+      "initial_state": {
+        "city": "Chengdu",
+        "current_time": "2026-07-08T10:45:00+08:00",
+        "current_location": "Chengdu Research Base of Giant Panda Breeding",
+        "base_location": "Hotel near Chunxi Road",
+        "party": {
+          "adults": 2,
+          "elderly": 1,
+          "children": 1
+        },
+        "mobility_risk": "high",
+        "remaining_plan": [
+          {
+            "poi_name": "Chengdu Research Base of Giant Panda Breeding",
+            "time_slot": "morning",
+            "duration_hours": 2.5,
+            "priority": 5,
+            "must_visit": true,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 2.4,
+            "mobility_level": "high"
+          },
+          {
+            "poi_name": "Du Fu Thatched Cottage",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 12.0,
+            "walking_km": 1.1,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Kuanzhai Alley",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 3,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 13.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Panicked family member.",
+          "style": "Provides location but expects immediate safety guidance.",
+          "age": "30-45",
+          "patience": "low",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "My father is at the panda base, feels dizzy and cannot keep walking. I need an immediate rest or medical/help point, and we may need to go back to the hotel.",
+        "hidden_constraints": [
+          "safety is more important than completing itinerary",
+          "need rest/medical/help resources",
+          "need group split or fallback advice"
+        ],
+        "disclosure_plan": [
+          "First report dizziness and inability to walk.",
+          "If asked whether there is injury, say no obvious injury but he is dizzy and weak.",
+          "If asked location, repeat that we are inside the panda base."
+        ]
+      },
+      "first_user_message": "We are in the panda base. My father is dizzy and cannot keep walking. What should we do now?",
+      "expected_trajectory": {
+        "required_intent": "emergency",
+        "tools_must_call": [
+          "resolve_emergency_resources"
+        ],
+        "tools_should_not_call": [
+          "replan_itinerary before emergency resources"
+        ],
+        "state_assertions": [
+          "intent is emergency",
+          "emergency scene is medical or mobility",
+          "final answer leads with immediate safety action"
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "classify_emergency",
+            "dimension": "reasoning",
+            "rubric": "Agent classifies the message as emergency rather than search or normal replan."
+          },
+          {
+            "key": "call_emergency_resources",
+            "dimension": "tool",
+            "rubric": "Agent calls resolve_emergency_resources using the current Chengdu location."
+          },
+          {
+            "key": "safety_first",
+            "dimension": "interaction",
+            "rubric": "Final reply tells the user to stop walking/rest and seek nearby help before continuing the trip."
+          },
+          {
+            "key": "no_sightseeing_priority",
+            "dimension": "reasoning",
+            "rubric": "Agent does not prioritize completing the remaining sightseeing plan."
+          },
+          {
+            "key": "fallback_if_data_missing",
+            "dimension": "interaction",
+            "rubric": "If map data is incomplete, agent gives safe fallback options such as visitor center, staff, exit, or emergency services."
+          }
+        ]
+      },
+      "failure_tags": [
+        "emergency_misclassified",
+        "continues_itinerary",
+        "no_resource_lookup"
+      ]
+    },
+    {
+      "id": "companion_chengdu_002",
+      "city": "Chengdu",
+      "city_zh": "成都",
+      "task_type": "nearby_food_or_rest_search",
+      "complexity": {
+        "reasoning": [
+          "preference_constraint",
+          "nearby_priority",
+          "local_experience"
+        ],
+        "tool": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "interaction": [
+          "ranked_recommendation"
+        ]
+      },
+      "initial_state": {
+        "city": "Chengdu",
+        "current_time": "2026-07-01T18:00:00+08:00",
+        "current_location": "Kuanzhai Alley",
+        "base_location": "Hotel near Kuanzhai Alley",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "food_constraints": [
+          "not too spicy"
+        ],
+        "remaining_plan": [
+          {
+            "poi_name": "Kuanzhai Alley",
+            "time_slot": "evening",
+            "duration_hours": 1.0,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "mixed",
+            "distance_km": 0.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Traveller asking the agent to choose a practical local option.",
+          "style": "Prefers a short ranked recommendation.",
+          "age": "25-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Find a nearby option around Kuanzhai Alley. Preserve Chengdu local flavor, but respect this constraint: not too spicy.",
+        "hidden_constraints": [
+          "not too spicy",
+          "nearby matters",
+          "Chengdu local flavor"
+        ],
+        "disclosure_plan": [
+          "Ask for a nearby option around Kuanzhai Alley.",
+          "If asked, repeat the constraint: not too spicy."
+        ]
+      },
+      "first_user_message": "Can you pick a nearby Chengdu dinner place around Kuanzhai Alley? I want local food but not too spicy.",
+      "expected_trajectory": {
+        "required_intent": "search",
+        "tools_must_call": [
+          "retrieve_candidates",
+          "score_candidates"
+        ],
+        "state_assertions": [
+          "Search is scoped to the current city/location.",
+          "Ranking uses the stated constraint."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "retrieve_candidates",
+            "dimension": "tool",
+            "rubric": "Agent retrieves nearby candidates in the correct city."
+          },
+          {
+            "key": "score_constraints",
+            "dimension": "tool",
+            "rubric": "Agent scores candidates with the stated preference or dietary constraint."
+          },
+          {
+            "key": "respect_constraint",
+            "dimension": "reasoning",
+            "rubric": "Final recommendation respects: not too spicy."
+          },
+          {
+            "key": "preserve_local_style",
+            "dimension": "reasoning",
+            "rubric": "Recommendation preserves Chengdu local flavor."
+          },
+          {
+            "key": "few_actionable_options",
+            "dimension": "interaction",
+            "rubric": "Final reply gives 1-3 actionable options with reasons."
+          }
+        ]
+      },
+      "failure_tags": [
+        "constraint_ignored",
+        "wrong_area",
+        "unranked_list"
+      ]
+    },
+    {
+      "id": "companion_chengdu_003",
+      "city": "Chengdu",
+      "city_zh": "成都",
+      "task_type": "weather_indoor_replan",
+      "complexity": {
+        "reasoning": [
+          "weather_branch",
+          "indoor_substitution",
+          "core_interest_preservation"
+        ],
+        "tool": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "interaction": [
+          "conditional_plan"
+        ]
+      },
+      "initial_state": {
+        "city": "Chengdu",
+        "current_time": "2026-07-01T14:00:00+08:00",
+        "current_location": "Wuhou Shrine",
+        "base_location": "Hotel near Wuhou Shrine",
+        "party": {
+          "adults": 2,
+          "elderly": 0,
+          "children": 0
+        },
+        "remaining_plan": [
+          {
+            "poi_name": "Jinli Old Street",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 4,
+            "must_visit": false,
+            "indoor_outdoor": "outdoor",
+            "distance_km": 1.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          },
+          {
+            "poi_name": "Chengdu Museum",
+            "time_slot": "afternoon",
+            "duration_hours": 1.5,
+            "priority": 5,
+            "must_visit": false,
+            "indoor_outdoor": "indoor",
+            "distance_km": 3.0,
+            "walking_km": 1.0,
+            "mobility_level": "medium"
+          }
+        ]
+      },
+      "user_scenario": {
+        "profile": {
+          "persona": "Weather-sensitive traveller.",
+          "style": "Accepts tradeoffs if the reason is clear.",
+          "age": "28-40",
+          "patience": "medium",
+          "dietary_restriction": "none"
+        },
+        "complete_instruction": "Rain may affect the plan. Avoid exposed outdoor activity and preserve Chengdu culture.",
+        "hidden_constraints": [
+          "check weather before deciding",
+          "prefer indoor if raining",
+          "preserve Chengdu culture"
+        ],
+        "disclosure_plan": [
+          "Mention rain/weather concern.",
+          "If asked priority, say Chengdu culture matters most."
+        ]
+      },
+      "first_user_message": "It may rain after Wuhou Shrine. Can you avoid outdoor strolling and keep something cultural?",
+      "expected_trajectory": {
+        "required_intent": "replan",
+        "tools_must_call": [
+          "get_weather_now",
+          "replan_itinerary"
+        ],
+        "state_assertions": [
+          "Weather is checked.",
+          "Indoor preference or conditional outdoor decision is used."
+        ]
+      },
+      "evaluation_criteria": {
+        "required_rubrics": [
+          {
+            "key": "weather_checked",
+            "dimension": "tool",
+            "rubric": "Agent checks Chengdu weather."
+          },
+          {
+            "key": "indoor_constraint",
+            "dimension": "reasoning",
+            "rubric": "Agent turns rain into an indoor or conditional-outdoor constraint."
+          },
+          {
+            "key": "call_replan",
+            "dimension": "tool",
+            "rubric": "Agent calls replan_itinerary."
+          },
+          {
+            "key": "preserve_core_interest",
+            "dimension": "interaction",
+            "rubric": "Final reply preserves Chengdu culture."
+          },
+          {
+            "key": "avoid_exposed_outdoor",
+            "dimension": "reasoning",
+            "rubric": "Agent avoids or makes exposed outdoor stops conditional."
+          }
+        ]
+      },
+      "failure_tags": [
+        "weather_guess",
+        "drops_core_interest",
+        "keeps_bad_weather_outdoor"
+      ]
+    }
+  ]
+}

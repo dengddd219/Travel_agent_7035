@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .city_names import normalize_poi_display_name, normalize_rag_query_text
+
 """Load packaged city profiles.
 
 City profiles are our stable knowledge layer:
@@ -20,6 +22,20 @@ add more dynamic information.
 DATA_DIR = Path(__file__).resolve().parent / "data" / "city_profiles"
 
 
+def _normalize_profile_display_names(profile: dict) -> dict:
+    normalized = json.loads(json.dumps(profile))
+    for area in normalized.get("recommended_areas", []):
+        if isinstance(area, dict) and area.get("name"):
+            area["name"] = normalize_poi_display_name(area["name"])
+    for guidance in normalized.get("travel_type_guidance", {}).values():
+        queries = guidance.get("suggested_queries", [])
+        guidance["suggested_queries"] = [normalize_rag_query_text(item) for item in queries]
+    for poi in normalized.get("seed_pois", []):
+        if isinstance(poi, dict) and poi.get("name"):
+            poi["name"] = normalize_poi_display_name(poi["name"])
+    return normalized
+
+
 def _slugify_city(city: str) -> str:
     """Convert a city label into the filename pattern used by profile JSON files."""
     return city.strip().lower().replace(" ", "_").replace("-", "_")
@@ -34,15 +50,15 @@ def load_city_profile(city: str) -> dict:
     city_slug = _slugify_city(city)
     target = DATA_DIR / f"{city_slug}.json"
     if target.exists():
-        return json.loads(target.read_text(encoding="utf-8"))
+        return _normalize_profile_display_names(json.loads(target.read_text(encoding="utf-8")))
 
     for path in DATA_DIR.glob("*.json"):
         data = json.loads(path.read_text(encoding="utf-8"))
         aliases = [alias.lower() for alias in data.get("aliases", [])]
         if city.lower() in aliases:
-            return data
+            return _normalize_profile_display_names(data)
 
-    return {
+    return _normalize_profile_display_names({
         "city": city,
         "aliases": [city],
         "recommended_areas": [],
@@ -79,4 +95,4 @@ def load_city_profile(city: str) -> dict:
         },
         "indoor_keywords": ["museum", "mall", "market", "gallery", "temple", "aquarium", "indoor"],
         "outdoor_keywords": ["park", "garden", "peak", "beach", "harbour", "ferry", "promenade", "trail"],
-    }
+    })

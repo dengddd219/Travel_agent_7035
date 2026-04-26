@@ -1,11 +1,26 @@
 {
   "city": "Hangzhou",
-  "aliases": ["hangzhou", "杭州"],
+  "aliases": [
+    "hangzhou",
+    "杭州"
+  ],
   "recommended_areas": [
-    {"name": "West Lake", "why": "best scenic core and classic first-time pacing"},
-    {"name": "Hubin / Longxiangqiao", "why": "good for easy transport, shopping, and lake access"},
-    {"name": "Xixi", "why": "better for nature-heavy and family-heavy planning"},
-    {"name": "Qinghefang", "why": "good for old-street texture and food add-ons"}
+    {
+      "name": "西湖",
+      "why": "best scenic core and classic first-time pacing"
+    },
+    {
+      "name": "湖滨 / 龙翔桥",
+      "why": "good for easy transport, shopping, and lake access"
+    },
+    {
+      "name": "西溪",
+      "why": "better for nature-heavy and family-heavy planning"
+    },
+    {
+      "name": "清河坊",
+      "why": "good for old-street texture and food add-ons"
+    }
   ],
   "transport": [
     "Treat West Lake as one main cluster and avoid adding too many far-flung attractions the same day.",
@@ -16,31 +31,88 @@
     "Swap long lake walks for museums, tea museums, malls, or indoor cultural spaces.",
     "Move shopping and dining clusters into the rainiest part of the day."
   ],
-  "signature_foods": ["dongpo pork", "longjing shrimp", "jianbing variants", "lotus-root desserts", "tea snacks"],
+  "signature_foods": [
+    "dongpo pork",
+    "longjing shrimp",
+    "jianbing variants",
+    "lotus-root desserts",
+    "tea snacks"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["nature", "culture", "view"],
-      "suggested_queries": ["West Lake", "Leifeng Pagoda", "Qinghefang", "Lingyin Temple"],
+      "focus_tags": [
+        "nature",
+        "culture",
+        "view"
+      ],
+      "suggested_queries": [
+        "西湖",
+        "雷峰塔",
+        "清河坊",
+        "灵隐寺"
+      ],
       "pace_note": "Hangzhou works best when you leave room for scenic pauses and tea breaks."
     },
     "family": {
-      "focus_tags": ["family", "park", "nature"],
-      "suggested_queries": ["Hangzhou Zoo", "Xixi Wetland", "Songcheng", "West Lake boat"],
+      "focus_tags": [
+        "family",
+        "park",
+        "nature"
+      ],
+      "suggested_queries": [
+        "杭州动物园",
+        "西溪湿地",
+        "宋城",
+        "西湖 游船"
+      ],
       "pace_note": "Use one scenic anchor and avoid forcing too many climbs or long walks."
     },
     "food": {
-      "focus_tags": ["food", "tea", "local"],
-      "suggested_queries": ["Qinghefang food", "Longjing tea village", "Hubin dining", "Hangzhou local dishes"],
+      "focus_tags": [
+        "food",
+        "tea",
+        "local"
+      ],
+      "suggested_queries": [
+        "清河坊 美食",
+        "龙井村",
+        "湖滨 美食",
+        "杭州 本地菜"
+      ],
       "pace_note": "Keep meals close to the day's lake or old-street cluster."
     },
     "theme": {
-      "focus_tags": ["culture", "nature", "local"],
-      "suggested_queries": ["China National Tea Museum", "Liangzhu Museum", "Lingyin Temple", "Yuhang culture"],
+      "focus_tags": [
+        "culture",
+        "nature",
+        "local"
+      ],
+      "suggested_queries": [
+        "中国茶叶博物馆",
+        "良渚博物院",
+        "灵隐寺",
+        "余杭 文化"
+      ],
       "pace_note": "Build depth around tea culture, landscape, or Song-dynasty atmosphere."
     }
   },
-  "indoor_keywords": ["museum", "mall", "temple", "tea museum", "gallery", "indoor"],
-  "outdoor_keywords": ["lake", "wetland", "park", "pagoda", "island", "village", "garden"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "temple",
+    "tea museum",
+    "gallery",
+    "indoor"
+  ],
+  "outdoor_keywords": [
+    "lake",
+    "wetland",
+    "park",
+    "pagoda",
+    "island",
+    "village",
+    "garden"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -49,7 +121,9 @@
       "temp_max": 26,
       "precipitation_probability": 25,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for the lake edge, pagodas, and scenic walks."]
+      "suggestions": [
+        "Good day for the lake edge, pagodas, and scenic walks."
+      ]
     },
     {
       "date": "Day 2",
@@ -58,209 +132,289 @@
       "temp_max": 23,
       "precipitation_probability": 70,
       "outdoor_suitability": "poor",
-      "suggestions": ["Shift to museums, malls, and tea-culture venues."]
+      "suggestions": [
+        "Shift to museums, malls, and tea-culture venues."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "West Lake",
+      "name": "西湖",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2431,
-      "lon": 120.1500,
+      "lon": 120.15,
       "duration_hours": 2.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["nature", "view", "landmark"],
-      "source": ["profile_seed"],
+      "tags": [
+        "nature",
+        "view",
+        "landmark"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "West Lake Scenic Area",
       "open_hours": "Open 24 hours",
       "rating": 4.8,
       "visit_reason": "The city's core scenic anchor."
     },
     {
-      "name": "Lingyin Temple",
+      "name": "灵隐寺",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2427,
       "lon": 120.1025,
       "duration_hours": 2.0,
       "ticket_price": 75,
       "price_level": 3,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "temple", "history"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "temple",
+        "history"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Fayun Lane, Xihu District",
       "open_hours": "06:30-18:00",
       "rating": 4.7,
       "visit_reason": "Major spiritual and cultural anchor."
     },
     {
-      "name": "Qinghefang",
+      "name": "清河坊",
       "category": "food",
-      "district": "Shangcheng",
+      "district": "上城区",
       "lat": 30.2448,
       "lon": 120.1704,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Qinghefang Historic Street, Shangcheng District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Best old-street extension for local snacks and easy pacing."
     },
     {
-      "name": "China National Tea Museum",
+      "name": "中国茶叶博物馆",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2207,
       "lon": 120.1249,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "tea", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "tea",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "88 Longjing Road, Xihu District",
       "open_hours": "09:00-16:30",
       "rating": 4.5,
       "visit_reason": "Ideal weather-safe cultural anchor."
     },
     {
-      "name": "Leifeng Pagoda",
+      "name": "雷峰塔",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2321,
       "lon": 120.1483,
       "duration_hours": 1.5,
       "ticket_price": 40,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["landmark", "history", "view"],
-      "source": ["profile_seed"],
+      "tags": [
+        "landmark",
+        "history",
+        "view"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "15 Nanshan Road, Xihu District",
       "open_hours": "08:00-17:30",
       "rating": 4.6,
       "visit_reason": "Rebuilt pagoda with the best elevated views over West Lake's southern end."
     },
     {
-      "name": "Longjing Tea Village",
+      "name": "龙井村",
       "category": "food",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2137,
       "lon": 120.0982,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["tea", "nature", "local", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "tea",
+        "nature",
+        "local",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Longjing Village, Xihu District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "The source of Dragon Well tea — terraced plantations and tasting sessions."
     },
     {
-      "name": "Xixi Wetland National Park",
+      "name": "西溪国家湿地公园",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2664,
       "lon": 120.0622,
       "duration_hours": 2.5,
       "ticket_price": 80,
       "price_level": 3,
       "indoor_outdoor": "outdoor",
-      "tags": ["nature", "wetland", "family", "park"],
-      "source": ["profile_seed"],
+      "tags": [
+        "nature",
+        "wetland",
+        "family",
+        "park"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Tianmushan Road, Xihu District",
       "open_hours": "08:30-17:30",
       "rating": 4.6,
       "visit_reason": "Unique urban wetland park offering boat tours through reed-lined waterways."
     },
     {
-      "name": "Broken Bridge (Duanqiao)",
+      "name": "断桥",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.2568,
       "lon": 120.1503,
       "duration_hours": 0.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["landmark", "view", "lake", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "landmark",
+        "view",
+        "lake",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Bai Causeway, West Lake, Xihu District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "Most romantic and iconic bridge on West Lake, legendary in Chinese folklore."
     },
     {
-      "name": "He Fang Street (Hefang Jie)",
+      "name": "河坊街",
       "category": "food",
-      "district": "Shangcheng",
+      "district": "上城区",
       "lat": 30.2452,
       "lon": 120.1714,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "local", "shopping", "city walk"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "local",
+        "shopping",
+        "city walk"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "He Fang Street, Shangcheng District",
       "open_hours": "Open 24 hours",
       "rating": 4.5,
       "visit_reason": "Old medicine market street turned local food and craft shopping strip."
     },
     {
-      "name": "Liangzhu Museum",
+      "name": "良渚博物院",
       "category": "attraction",
-      "district": "Yuhang",
+      "district": "余杭区",
       "lat": 30.4213,
       "lon": 120.0114,
       "duration_hours": 2.0,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "history", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "history",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1 Meilizhou Road, Yuhang District",
       "open_hours": "09:30-17:00",
       "rating": 4.7,
       "visit_reason": "World-class museum of the 5,000-year-old Liangzhu jade civilisation (UNESCO site)."
     },
     {
-      "name": "Song Dynasty Town (Songcheng)",
+      "name": "宋城",
       "category": "attraction",
-      "district": "Xihu",
+      "district": "西湖区",
       "lat": 30.1921,
       "lon": 120.1127,
       "duration_hours": 2.5,
       "ticket_price": 250,
       "price_level": 4,
       "indoor_outdoor": "mixed",
-      "tags": ["theme park", "history", "family", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "theme park",
+        "history",
+        "family",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "148 Zhijiang Road, Xihu District",
       "open_hours": "09:00-21:30",
       "rating": 4.5,
       "visit_reason": "Immersive Song-dynasty themed park with the acclaimed Thousand Year Romance show."
     },
     {
-      "name": "Hubin Pedestrian Street",
+      "name": "湖滨步行街",
       "category": "food",
-      "district": "Shangcheng",
+      "district": "上城区",
       "lat": 30.2513,
       "lon": 120.1612,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 3,
       "indoor_outdoor": "mixed",
-      "tags": ["shopping", "food", "lake", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "lake",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Hubin Road, Shangcheng District",
       "open_hours": "Open 24 hours",
       "rating": 4.4,

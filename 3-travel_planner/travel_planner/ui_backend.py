@@ -8,8 +8,19 @@ from uuid import uuid4
 from .agent import ConversationState, ConversationRunResult
 from .city_names import city_name_bundle
 from .config import Settings
-from .data_store import load_city_profile
-from .llm import create_response_client
+from .llm import (
+    build_user_report_generation_messages,
+    build_user_report_polish_messages,
+    create_response_client,
+)
+
+
+"""Presentation helpers for the frontend.
+
+This module should focus on transforming already-structured itinerary data into
+frontend payloads. It should avoid re-implementing deep travel understanding.
+Natural-language polish is delegated to the LLM when available.
+"""
 
 
 DAY_COLORS = [
@@ -19,18 +30,6 @@ DAY_COLORS = [
     "#E11D48",
     "#8B5CF6",
 ]
-
-FOOD_LABELS = {
-    "hotpot": "火锅",
-    "dan dan noodles": "担担面",
-    "zhong dumplings": "钟水饺",
-    "rabbit head": "兔头",
-    "tea house snacks": "茶馆小吃",
-    "soup dumplings": "汤包",
-    "roast duck": "烤鸭",
-    "morning tea": "早茶",
-    "wonton noodles": "云吞面",
-}
 
 
 @dataclass(slots=True)
@@ -172,51 +171,246 @@ def build_map_payload(itinerary_json: dict) -> dict:
     }
 
 
-def _humanize_theme(raw_theme: str) -> str:
+def _as_float(value: object, default: float = 0.0) -> float:
+    try:
+        if value is None or value == "":
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _money(value: object) -> float:
+    return round(_as_float(value), 2)
+
+
+def _range(min_value: object = 0.0, max_value: object | None = None) -> dict:
+    low = _money(min_value)
+    high = _money(low if max_value is None else max_value)
+    if high < low:
+        low, high = high, low
     return {
-        "Leisure": "慢慢逛的城市体验",
-        "Food-led day": "吃吃逛逛的一天",
-        "Culture and city highlights": "文化和城市地标",
-        "Scenic landmark day": "风景和地标体验",
-    }.get(raw_theme, raw_theme or "城市体验")
+        "min": low,
+        "max": high,
+        "mid": round((low + high) / 2, 2),
+    }
 
 
-def _humanize_food(food_name: str) -> str:
-    return FOOD_LABELS.get(food_name.strip().lower(), food_name)
+def _normalize_range(payload: dict | None) -> dict:
+    payload = payload or {}
+    return _range(payload.get("min", 0.0), payload.get("max", payload.get("min", 0.0)))
 
 
-def _pick_day_foods(city_profile: dict, day_index: int) -> tuple[str, str]:
-    foods = [_humanize_food(item) for item in city_profile.get("signature_foods", []) if str(item).strip()]
-    if not foods:
-        return ("当地人气小店", "本地口味馆子")
-    lunch = foods[day_index % len(foods)]
-    dinner = foods[(day_index + 1) % len(foods)] if len(foods) > 1 else foods[0]
-    return lunch, dinner
+def _scale_range(payload: dict | None, multiplier: int | float) -> dict:
+    base = _normalize_range(payload)
+    factor = max(float(multiplier), 0.0)
+    return _range(base["min"] * factor, base["max"] * factor)
 
 
-def _day_strategy_note(day: dict, strategy_summary: dict, guide_references: list[str]) -> str:
-    area = str(day.get("area", "")).strip().lower()
-    stop_names = [str(item.get("poi_name", "")).strip() for item in day.get("items", []) if item.get("poi_name")]
-    for note in strategy_summary.get("neighborhood_notes", []) or []:
-        district = str(note.get("district", "")).strip().lower()
-        note_text = str(note.get("note", "")).strip()
-        if district and note_text and (district in area or area in district):
-            return f"攻略里常把这一区一起玩，主要也是因为：{note_text}"
-    for reference in guide_references:
-        reference_text = str(reference).strip()
-        lowered = reference_text.lower()
-        if any(stop.lower() in lowered for stop in stop_names if stop):
-            return f"这天我也参考了攻略里的说法：{reference_text}"
-        if area and area in lowered:
-            return f"这天我也参考了攻略里的说法：{reference_text}"
-    if stop_names and strategy_summary.get("recommended_pois"):
-        matched = [
-            poi for poi in strategy_summary.get("recommended_pois", [])
-            if any(poi.lower() in stop.lower() or stop.lower() in poi.lower() for stop in stop_names)
-        ]
-        if matched:
-            return "这天优先保留了攻略里高频出现的点：" + "、".join(matched[:3])
-    return ""
+def _sum_ranges(*ranges: dict) -> dict:
+    return _range(
+        sum(_normalize_range(item)["min"] for item in ranges),
+        sum(_normalize_range(item)["max"] for item in ranges),
+    )
+
+
+def _max_range(left: dict | None, right: dict | None) -> dict:
+    left_range = _normalize_range(left)
+    right_range = _normalize_range(right)
+    return _range(max(left_range["min"], right_range["min"]), max(left_range["max"], right_range["max"]))
+
+
+def _matches_any_name(name: str, candidates: list[str]) -> bool:
+    key = name.strip().lower()
+    if not key:
+        return False
+    return any(key in candidate.strip().lower() or candidate.strip().lower() in key for candidate in candidates if candidate)
+
+
+def _is_guide_aligned(item: dict, rag_recommended_pois: list[str]) -> bool:
+    reasoning = str(item.get("reasoning", ""))
+    if "攻略" in reasoning or "检索" in reasoning:
+        return True
+    return _matches_any_name(str(item.get("poi_name", "")), rag_recommended_pois)
+
+
+def _route_transport_estimate(days: list[dict]) -> dict:
+    min_total = 0.0
+    max_total = 0.0
+    driving_distance_m = 0
+    for day in days:
+        for item in day.get("items", []) or []:
+            mode = str(item.get("arrival_mode", "")).lower()
+            distance_m = int(_as_float(item.get("arrival_distance_m"), 0.0))
+            if mode in {"", "start"} or "walk" in mode:
+                continue
+            distance_km = max(distance_m / 1000, 0.0)
+            driving_distance_m += distance_m
+            min_total += max(10.0, 8.0 + distance_km * 2.2)
+            max_total += max(16.0, 14.0 + distance_km * 3.2)
+    estimate = _range(min_total, max_total)
+    estimate["driving_distance_km"] = round(driving_distance_m / 1000, 2)
+    return estimate
+
+
+def build_plan_cost_summary(itinerary_json: dict, hotel_recommendations: dict | None = None) -> dict:
+    """Build a cost payload tied to the final itinerary, not only the city envelope."""
+    days = itinerary_json.get("days", []) if isinstance(itinerary_json, dict) else []
+    if not days:
+        return {}
+
+    hotel_recommendations = hotel_recommendations or {}
+    cost_summary = (itinerary_json.get("conditions_context") or {}).get("cost_summary") or {}
+    strategy_summary = itinerary_json.get("strategy_summary", {}) or {}
+    rag_recommended_pois = [str(item).strip() for item in strategy_summary.get("recommended_pois", []) if str(item).strip()]
+    guide_references = [str(item).strip() for item in itinerary_json.get("guide_references", []) if str(item).strip()]
+
+    day_costs: list[dict] = []
+    paid_items: list[dict] = []
+    guide_aligned_items: list[dict] = []
+    total_route_distance_m = 0
+    total_route_duration_min = 0
+    attraction_total = 0.0
+    guide_aligned_total = 0.0
+
+    for day in days:
+        day_attractions = 0.0
+        day_guide_cost = 0.0
+        day_paid_items: list[dict] = []
+        for item in day.get("items", []) or []:
+            item_cost = _money(item.get("est_cost", 0.0))
+            is_guide_aligned = _is_guide_aligned(item, rag_recommended_pois)
+            day_attractions += item_cost
+            if is_guide_aligned:
+                day_guide_cost += item_cost
+            if item_cost > 0:
+                paid_item = {
+                    "day_index": day.get("day_index"),
+                    "poi_name": item.get("poi_name", ""),
+                    "cost": item_cost,
+                    "guide_aligned": is_guide_aligned,
+                    "reasoning": item.get("reasoning", ""),
+                }
+                day_paid_items.append(paid_item)
+                paid_items.append(paid_item)
+            if is_guide_aligned:
+                guide_aligned_items.append(
+                    {
+                        "day_index": day.get("day_index"),
+                        "poi_name": item.get("poi_name", ""),
+                        "cost": item_cost,
+                        "reasoning": item.get("reasoning", ""),
+                    }
+                )
+
+        route_distance_m = int(_as_float(day.get("inter_stop_distance_m"), 0.0))
+        route_duration_min = int(_as_float(day.get("inter_stop_duration_min"), 0.0))
+        total_route_distance_m += route_distance_m
+        total_route_duration_min += route_duration_min
+        attraction_total += day_attractions
+        guide_aligned_total += day_guide_cost
+        day_costs.append(
+            {
+                "day_index": day.get("day_index"),
+                "area": day.get("area", ""),
+                "theme": day.get("theme", ""),
+                "attraction_cost": _money(day_attractions),
+                "guide_aligned_cost": _money(day_guide_cost),
+                "route_distance_km": round(route_distance_m / 1000, 2),
+                "route_duration_min": route_duration_min,
+                "paid_items": day_paid_items[:5],
+            }
+        )
+
+    trip_days = int(_as_float(itinerary_json.get("trip_days"), len(days))) or len(days)
+    hotel_nights = max(trip_days - 1, 1)
+    breakdown = cost_summary.get("breakdown", {}) if isinstance(cost_summary, dict) else {}
+    hotel_per_night = _normalize_range(breakdown.get("hotel_per_night"))
+    food_per_day = _normalize_range(breakdown.get("food_per_day"))
+    city_transport_total = _normalize_range(breakdown.get("local_transport_total"))
+    route_transport_total = _route_transport_estimate(days)
+    transport_total = _max_range(city_transport_total, route_transport_total)
+
+    hotel_total = _scale_range(hotel_per_night, hotel_nights)
+    food_total = _scale_range(food_per_day, trip_days)
+    attraction_range = _range(attraction_total)
+    base_total = _sum_ranges(hotel_total, food_total, transport_total)
+    plan_total = _sum_ranges(base_total, attraction_range)
+
+    hotel_prices = [
+        _as_float(hotel.get("min_price"), 0.0)
+        for hotel in hotel_recommendations.get("hotel_candidates", [])[:5]
+        if _as_float(hotel.get("min_price"), 0.0) > 0
+    ]
+    hotel_candidate_reference = _range(min(hotel_prices), max(hotel_prices)) if hotel_prices else {}
+    recommended_areas = [
+        area.get("district", "")
+        for area in hotel_recommendations.get("recommended_areas", [])[:3]
+        if area.get("district")
+    ]
+
+    pricing_notes = [
+        "Plan-level total adds final itinerary attraction tickets to the city hotel/food/transport envelope.",
+        "Guide-aligned cost is computed from POIs whose planner reasoning or RAG recommendations mention travel-guide evidence.",
+        "Route transport uses the planned inter-stop legs; city-level transport remains the fallback when it is higher.",
+    ]
+    for note in (cost_summary.get("pricing_notes", []) if isinstance(cost_summary, dict) else []):
+        if note not in pricing_notes:
+            pricing_notes.append(note)
+
+    return {
+        "city": itinerary_json.get("city", cost_summary.get("city", "")),
+        "days": trip_days,
+        "budget_level": cost_summary.get("budget_level", "medium") if isinstance(cost_summary, dict) else "medium",
+        "currency": cost_summary.get("currency", "CNY") if isinstance(cost_summary, dict) else "CNY",
+        "totals": {
+            **plan_total,
+            "base_min": base_total["min"],
+            "base_max": base_total["max"],
+            "attraction_tickets": _money(attraction_total),
+            "guide_aligned_attraction_tickets": _money(guide_aligned_total),
+        },
+        "breakdown": {
+            "hotel_per_night": hotel_per_night,
+            "hotel_total": hotel_total,
+            "food_per_day": food_per_day,
+            "food_total": food_total,
+            "local_transport_total": transport_total,
+            "city_transport_total": city_transport_total,
+            "route_transport_total": route_transport_total,
+            "attraction_tickets": attraction_range,
+            "guide_aligned_attractions": _range(guide_aligned_total),
+        },
+        "itinerary_costs": {
+            "hotel_nights": hotel_nights,
+            "attraction_total": _money(attraction_total),
+            "guide_aligned_attraction_total": _money(guide_aligned_total),
+            "route_distance_km": round(total_route_distance_m / 1000, 2),
+            "route_duration_min": total_route_duration_min,
+            "daily": day_costs,
+            "paid_items": paid_items[:12],
+        },
+        "guide_alignment": {
+            "guide_references": guide_references[:4],
+            "rag_recommended_pois": rag_recommended_pois[:8],
+            "guide_aligned_items": guide_aligned_items[:12],
+            "guide_aligned_count": len(guide_aligned_items),
+        },
+        "hotel_context": {
+            "recommended_areas": recommended_areas,
+            "candidate_nightly_reference": hotel_candidate_reference,
+            "sample_hotels": hotel_recommendations.get("hotel_candidates", [])[:3],
+        },
+        "pricing_notes": pricing_notes,
+        "sources": [
+            "Final itinerary POI ticket estimates",
+            "RAG / travel-guide evidence in planner reasoning",
+            "Group C city cost envelope",
+            "Hotel recommendation candidates and stay areas",
+        ],
+        "source": "plan_cost_aggregator",
+        "base_cost_source": cost_summary.get("source", "") if isinstance(cost_summary, dict) else "",
+    }
 
 
 def _day_weather_sentence(weather_payload: dict, day_index: int) -> str:
@@ -233,20 +427,97 @@ def _day_weather_sentence(weather_payload: dict, day_index: int) -> str:
     return f"天气大概是{summary}，气温约 {temp_min}°C 到 {temp_max}°C，降水风险 {precip or 0}% 左右。"
 
 
-def _day_evening_suggestion(day: dict, city_profile: dict, travel_type: str) -> str:
-    area = day.get("area", "核心区域")
-    theme = str(day.get("theme", "")).lower()
-    if "food" in theme:
-        return f"晚饭后可以继续在{area}附近找夜宵、茶馆或者散步的街区，不用再跑太远。"
-    if "culture" in theme:
-        return f"吃完晚饭以后，比较适合在{area}附近再补一个夜景、老街或者轻松散步的点。"
-    if "food" in travel_type:
-        return f"晚饭后建议继续留在{area}附近逛吃，找夜市、小酒馆或者本地小吃会比较顺。"
-    if "family" in travel_type:
-        return f"晚上尽量留在{area}附近做轻松活动，比如商场、夜景步道，或者早点回酒店休息。"
-    if city_profile.get("bad_weather_fallbacks"):
-        return f"如果晚上临时下雨，也可以直接切到{area}附近的室内点，不用大改路线。"
-    return f"晚饭后可以在{area}附近慢慢逛一圈，把夜景和本地生活气氛补上。"
+def _build_user_report_brief(itinerary_json: dict, hotel_recommendations: dict | None = None) -> dict:
+    # Convert the itinerary JSON into a compact structure for LLM copywriting.
+    city_info = city_name_bundle(itinerary_json.get("city", ""))
+    city = city_info["city_zh"] or city_info["city_en"] or itinerary_json.get("city", "这座城市")
+    weather_payload = itinerary_json.get("weather_payload", {})
+    strategy_summary = itinerary_json.get("strategy_summary", {})
+    guide_references = [str(item).strip() for item in itinerary_json.get("guide_references", []) if str(item).strip()]
+    hotel_recommendations = hotel_recommendations or {}
+
+    days: list[dict] = []
+    for zero_based_index, day in enumerate(itinerary_json.get("days", [])):
+        stop_names = [str(item.get("poi_name", "")).strip() for item in day.get("items", []) if item.get("poi_name")]
+        if not stop_names:
+            continue
+        days.append(
+            {
+                "day_index": day.get("day_index"),
+                "area": day.get("area", ""),
+                "theme": day.get("theme", ""),
+                "top_stops": stop_names[:4],
+                "weather_summary": _day_weather_sentence(weather_payload, zero_based_index),
+                "day_notes": [str(note).strip() for note in day.get("notes", []) if str(note).strip()][:2],
+            }
+        )
+
+    return {
+        "city": city,
+        "trip_days": itinerary_json.get("trip_days", len(days)),
+        "overview": itinerary_json.get("overview", ""),
+        "guide_references": guide_references[:4],
+        "recommended_pois": strategy_summary.get("recommended_pois", [])[:6],
+        "review_summary": itinerary_json.get("review_summary", ""),
+        "replan_summary": itinerary_json.get("replan_summary", ""),
+        "estimated_core_cost": itinerary_json.get("total_estimated_cost", 0),
+        "hotel_areas": [
+            area.get("district", "")
+            for area in hotel_recommendations.get("recommended_areas", [])[:3]
+            if area.get("district")
+        ],
+        "days": days,
+    }
+
+
+def _build_user_report_fallback(report_brief: dict) -> str:
+    # Offline fallback if LLM copywriting is unavailable.
+    city = report_brief.get("city", "这座城市")
+    trip_days = report_brief.get("trip_days", len(report_brief.get("days", [])))
+    paragraphs = [
+        f"我先帮你排了一版 {city}{trip_days} 天的行程，整体会尽量让路线更顺、节奏更稳。"
+    ]
+    if report_brief.get("guide_references"):
+        paragraphs.append("这版路线也参考了攻略里反复提到的信号：" + "；".join(report_brief["guide_references"][:3]) + "。")
+    if report_brief.get("recommended_pois"):
+        paragraphs.append("优先保留的高频点包括：" + "、".join(report_brief["recommended_pois"][:4]) + "。")
+    for day in report_brief.get("days", []):
+        weather = day.get("weather_summary", "")
+        notes = " ".join(day.get("day_notes", []))
+        paragraphs.append(
+            " ".join(
+                part for part in [
+                    f"第{day.get('day_index', '?')}天建议主要待在{day.get('area', '核心区域')}附近，主题偏{day.get('theme', '城市体验')}，核心点位可以串联 { '、'.join(day.get('top_stops', [])) }。",
+                    weather,
+                    notes,
+                ] if part
+            )
+        )
+    closing = [f"核心景点门票我先按大约 CNY {float(report_brief.get('estimated_core_cost', 0)):.0f} 来估。"]
+    if report_brief.get("hotel_areas"):
+        closing.append("住宿优先住在 " + "、".join(report_brief["hotel_areas"][:2]) + " 会更顺路。")
+    if report_brief.get("review_summary"):
+        closing.append(str(report_brief["review_summary"]))
+    paragraphs.append(" ".join(closing))
+    return "\n\n".join(part for part in paragraphs if part.strip())
+
+
+def generate_user_friendly_report(itinerary_json: dict, hotel_recommendations: dict | None = None) -> str:
+    # Preferred path: build a structured brief, then let the LLM write the prose.
+    report_brief = _build_user_report_brief(itinerary_json, hotel_recommendations)
+    settings = Settings.from_env()
+    if not settings.has_llm_credentials:
+        return _build_user_report_fallback(report_brief)
+    try:
+        bundle = create_response_client(settings)
+        response = bundle.client.responses.create(
+            model=bundle.model,
+            input=build_user_report_generation_messages(report_brief=report_brief),
+        )
+        generated = getattr(response, "output_text", "") or ""
+        return generated.strip() or _build_user_report_fallback(report_brief)
+    except Exception:
+        return _build_user_report_fallback(report_brief)
 
 
 def polish_user_friendly_report(raw_report: str, itinerary_json: dict) -> str:
@@ -258,106 +529,12 @@ def polish_user_friendly_report(raw_report: str, itinerary_json: dict) -> str:
         bundle = create_response_client(settings)
         response = bundle.client.responses.create(
             model=bundle.model,
-            input=[
-                {
-                    "role": "system",
-                    "content": (
-                        "你是一名旅行产品文案编辑。请把用户版行程说明润色成自然、统一、容易理解的简体中文。"
-                        "要求：1. 不要中英文混用，专有景点名尽量转成常见中文；"
-                        "2. 保留每天安排、天气、餐饮建议、攻略依据；"
-                        "3. 语气像真人推荐，不要太硬，不要过度营销；"
-                        "4. 不要使用 Markdown 标题或项目符号，输出 4 到 6 段自然短文即可。"
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"城市：{itinerary_json.get('city', '')}\n"
-                        f"天数：{itinerary_json.get('trip_days', '')}\n"
-                        f"请润色下面这段用户版说明：\n{raw_report}"
-                    ),
-                },
-            ],
+            input=build_user_report_polish_messages(raw_report=raw_report, itinerary_json=itinerary_json),
         )
         polished = getattr(response, "output_text", "") or ""
         return polished.strip() or raw_report
     except Exception:
         return raw_report
-
-
-def build_user_friendly_report(itinerary_json: dict, hotel_recommendations: dict | None = None) -> str:
-    city_info = city_name_bundle(itinerary_json.get("city", ""))
-    city = city_info["city_zh"] or city_info["city_en"] or itinerary_json.get("city", "这座城市")
-    city_profile = load_city_profile(city_info["canonical"] or itinerary_json.get("city", ""))
-    trip_days = itinerary_json.get("trip_days", len(itinerary_json.get("days", [])))
-    travel_type = str(itinerary_json.get("overview", "")).lower()
-    trip_label = "轻松逛逛"
-    if "food" in travel_type:
-        trip_label = "吃喝逛吃"
-    elif "family" in travel_type:
-        trip_label = "亲子友好"
-    elif "theme" in travel_type:
-        trip_label = "主题体验"
-    opening = f"我先帮你排了一版 {city}{trip_days}天的行程，整体会更偏{trip_label}，尽量让路线顺一点、节奏松一点，走起来不会太累。"
-    guide_references = [str(item).strip() for item in itinerary_json.get("guide_references", []) if str(item).strip()]
-    strategy_summary = itinerary_json.get("strategy_summary", {})
-    weather_payload = itinerary_json.get("weather_payload", {})
-    reference_intro = ""
-    if guide_references:
-        reference_intro = "我不是只按地图生排的，这版会参考攻略里反复提到的点和片区。"
-
-    day_lines: list[str] = []
-    for zero_based_index, day in enumerate(itinerary_json.get("days", [])):
-        stop_names = [item.get("poi_name", "") for item in day.get("items", []) if item.get("poi_name")]
-        if not stop_names:
-            continue
-        top_stops = "、".join(stop_names[:3])
-        theme = _humanize_theme(str(day.get("theme", "当日路线")))
-        lunch, dinner = _pick_day_foods(city_profile, zero_based_index)
-        guide_note = _day_strategy_note(day, strategy_summary, guide_references)
-        weather_sentence = _day_weather_sentence(weather_payload, zero_based_index)
-        evening_note = _day_evening_suggestion(day, city_profile, travel_type)
-        day_lines.append(
-            " ".join(
-                part
-                for part in [
-                    f"第{day.get('day_index', '?')}天我会建议你主要待在{day.get('area', '核心区域')}附近，这一天更偏{theme}，可以把 {top_stops} 串起来走。",
-                    weather_sentence,
-                    guide_note,
-                    f"中午可以优先吃 {lunch}，尽量放在线路中段；晚上更适合安排 {dinner}，吃完就在附近继续逛。",
-                    evening_note,
-                ]
-                if part
-            )
-        )
-
-    review_summary = itinerary_json.get("review_summary", "")
-    replan_summary = itinerary_json.get("replan_summary", "")
-    budget = itinerary_json.get("total_estimated_cost", 0)
-    closing_lines = [f"这版行程里，核心景点门票我先按大约 CNY {float(budget):.0f} 来估。"]
-    if hotel_recommendations and hotel_recommendations.get("recommended_areas"):
-        top_areas = "、".join(area.get("district", "") for area in hotel_recommendations["recommended_areas"][:2] if area.get("district"))
-        if top_areas:
-            closing_lines.append(f"如果你住宿还没定，优先住在 {top_areas} 会更顺路。")
-    if review_summary:
-        if "passed without major" in review_summary.lower():
-            closing_lines.append("我已经顺手帮你检查过一轮，路线、天气和预算目前都没有特别明显的问题。")
-        else:
-            closing_lines.append(f"我这边又检查过一轮，目前需要你特别留意的是：{review_summary}")
-    if replan_summary and "No automatic replan was needed" not in replan_summary:
-        closing_lines.append("另外我已经自动帮你重排过一轮，最后保留的是更稳、更顺路的那个版本。")
-
-    paragraphs = [opening]
-    if reference_intro:
-        paragraphs.append(reference_intro)
-        paragraphs.append("我参考到的攻略信号包括：" + "；".join(guide_references[:3]) + "。")
-    if strategy_summary.get("recommended_pois"):
-        recommended = "、".join(strategy_summary.get("recommended_pois", [])[:4])
-        paragraphs.append(f"所以这次我会优先把这些攻略里高频出现的点放进路线里：{recommended}。")
-    if day_lines:
-        paragraphs.append("\n".join(day_lines))
-    paragraphs.append(" ".join(closing_lines))
-    return "\n\n".join(part for part in paragraphs if part.strip())
 
 
 def build_frontend_response(
@@ -370,12 +547,15 @@ def build_frontend_response(
     if run_result.needs_clarification or not itinerary_json:
         user_friendly_report = run_result.answer
     else:
-        user_friendly_report = build_user_friendly_report(
+        user_friendly_report = generate_user_friendly_report(
             itinerary_json,
             run_result.state.latest_hotel_recommendations or {},
         )
         if polish_user_report:
             user_friendly_report = polish_user_friendly_report(user_friendly_report, itinerary_json)
+    hotel_recommendations = run_result.state.latest_hotel_recommendations or {}
+    cost_summary = (itinerary_json.get("conditions_context") or {}).get("cost_summary") or {}
+    plan_cost_summary = build_plan_cost_summary(itinerary_json, hotel_recommendations)
     return {
         "conversation_id": conversation_id,
         "conversation_state": serialize_conversation_state(run_result.state),
@@ -384,7 +564,7 @@ def build_frontend_response(
         "weather_payload": itinerary_json.get("weather_payload", {}),
         "strategy_summary": itinerary_json.get("strategy_summary", {}),
         "guide_references": itinerary_json.get("guide_references", []),
-        "hotel_recommendations": run_result.state.latest_hotel_recommendations or {},
+        "hotel_recommendations": hotel_recommendations,
         "user_friendly_report": user_friendly_report,
         "report": run_result.answer,
         "needs_clarification": run_result.needs_clarification,
@@ -396,5 +576,6 @@ def build_frontend_response(
         "replan_summary": itinerary_json.get("replan_summary", ""),
         "replan_metadata": itinerary_json.get("replan_metadata", {}),
         "map_payload": build_map_payload(itinerary_json),
-        "cost_summary": (itinerary_json.get("conditions_context") or {}).get("cost_summary") or {},
+        "cost_summary": cost_summary,
+        "plan_cost_summary": plan_cost_summary,
     }

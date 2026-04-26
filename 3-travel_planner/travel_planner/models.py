@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from .city_names import normalize_poi_display_name
+
 
 class UserPreferences(BaseModel):
     city: str
@@ -19,6 +21,21 @@ class UserPreferences(BaseModel):
     avoid: list[str] = Field(default_factory=list)
     notes: str = ""
     extra_request: str = ""
+
+
+class DecompositionOverrides(BaseModel):
+    strategy_queries: list[str] = Field(default_factory=list)
+    geo_queries: list[str] = Field(default_factory=list)
+    planning_constraints: list[str] = Field(default_factory=list)
+    intent_summary: str = ""
+
+
+class TurnUnderstandingPayload(BaseModel):
+    resolved_profile: UserPreferences
+    missing_profile_slots: list[str] = Field(default_factory=list)
+    needs_clarification: bool = False
+    clarification_question: str = ""
+    decomposition_overrides: DecompositionOverrides = Field(default_factory=DecompositionOverrides)
 
 
 class POI(BaseModel):
@@ -49,6 +66,13 @@ class POI(BaseModel):
             return "; ".join(str(item).strip() for item in value if str(item).strip())
         return str(value)
 
+    @field_validator("name", mode="before")
+    @classmethod
+    def normalize_name(cls, value):
+        if value is None:
+            return ""
+        return normalize_poi_display_name(str(value))
+
 
 class WeatherDay(BaseModel):
     date: str
@@ -73,6 +97,17 @@ class DayPlanItem(BaseModel):
     arrival_mode: str = "start"
     arrival_distance_m: int = 0
     arrival_duration_min: int = 0
+    guide_evidence: str = ""
+    local_note: str = ""
+    pitfall_note: str = ""
+    guide_source: str = ""
+
+    @field_validator("poi_name", mode="before")
+    @classmethod
+    def normalize_poi_name(cls, value):
+        if value is None:
+            return ""
+        return normalize_poi_display_name(str(value))
 
 
 class DayPlan(BaseModel):

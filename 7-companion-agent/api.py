@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import json
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 from companion_agent import CompanionAgent
 from models import CompanionState
+from token_costing import post_trace_webhook, with_token_cost
 
 
 app = FastAPI(title="Companion Agent API")
@@ -23,6 +29,7 @@ def _write_companion_trace(record: dict) -> None:
         EVAL_TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
         with EVAL_TRACE_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        post_trace_webhook(record)
     except Exception:
         pass
 
@@ -61,7 +68,7 @@ def companion(req: CompanionRequest) -> CompanionResponse:
     conversation_id = req.conversation_id or "local-companion"
     turn = len((result.state or state).turn_history) // 2  # user+assistant pairs
 
-    token_usage = result.token_usage or {}
+    token_usage = with_token_cost(result.token_usage or {}, model=agent.settings.openai_model)
     alerts = []
     if total_ms > 30_000:
         alerts.append(f"HIGH_LATENCY: {total_ms}ms")

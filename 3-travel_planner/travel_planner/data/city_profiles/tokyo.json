@@ -1,11 +1,26 @@
 {
   "city": "Tokyo",
-  "aliases": ["tokyo", "东京"],
+  "aliases": [
+    "tokyo",
+    "东京"
+  ],
   "recommended_areas": [
-    {"name": "Asakusa", "why": "classic first-time highlights and easy cultural pacing"},
-    {"name": "Shibuya / Harajuku", "why": "good for design, shopping, and youth culture"},
-    {"name": "Ueno", "why": "strong museum cluster and flexible weather backup"},
-    {"name": "Shinjuku", "why": "strong nightlife and transport hub"}
+    {
+      "name": "浅草",
+      "why": "classic first-time highlights and easy cultural pacing"
+    },
+    {
+      "name": "涩谷 / 原宿",
+      "why": "good for design, shopping, and youth culture"
+    },
+    {
+      "name": "上野",
+      "why": "strong museum cluster and flexible weather backup"
+    },
+    {
+      "name": "新宿",
+      "why": "strong nightlife and transport hub"
+    }
   ],
   "transport": [
     "Keep daily plans rail-line friendly and avoid stacking too many far-flung neighborhoods.",
@@ -16,31 +31,89 @@
     "Shift shrine walks to museums, department stores, food halls, or covered shopping streets.",
     "Use observation decks and indoor culture venues as rain buffers."
   ],
-  "signature_foods": ["sushi", "ramen", "tempura", "yakitori", "kissaten coffee"],
+  "signature_foods": [
+    "sushi",
+    "ramen",
+    "tempura",
+    "yakitori",
+    "kissaten coffee"
+  ],
   "travel_type_guidance": {
     "leisure": {
-      "focus_tags": ["culture", "view", "local"],
-      "suggested_queries": ["Senso-ji", "Shibuya Sky", "Meiji Shrine", "Ameya-Yokocho"],
+      "focus_tags": [
+        "culture",
+        "view",
+        "local"
+      ],
+      "suggested_queries": [
+        "浅草寺",
+        "涩谷SKY",
+        "明治神宫",
+        "阿美横町"
+      ],
       "pace_note": "Tokyo rewards neighborhood depth more than rushing through too many icons."
     },
     "family": {
-      "focus_tags": ["family", "park", "museum"],
-      "suggested_queries": ["Ueno Zoo", "teamLab Planets", "Tokyo Disneyland", "Sumida Aquarium"],
+      "focus_tags": [
+        "family",
+        "park",
+        "museum"
+      ],
+      "suggested_queries": [
+        "Ueno Zoo",
+        "teamLab Planets",
+        "东京迪士尼",
+        "墨田水族馆"
+      ],
       "pace_note": "Use one headline attraction plus nearby low-effort backups."
     },
     "food": {
-      "focus_tags": ["food", "market", "local"],
-      "suggested_queries": ["Tsukiji Outer Market", "Omoide Yokocho", "Kappabashi", "Depachika Tokyo"],
+      "focus_tags": [
+        "food",
+        "market",
+        "local"
+      ],
+      "suggested_queries": [
+        "筑地场外市场",
+        "思い出横丁",
+        "合羽桥",
+        "东京 地下美食街"
+      ],
       "pace_note": "Keep meals geographically tight and avoid crossing the city for each reservation."
     },
     "theme": {
-      "focus_tags": ["culture", "design", "local"],
-      "suggested_queries": ["21_21 DESIGN SIGHT", "Nezu Museum", "Daikanyama T-Site", "Yanaka Ginza"],
+      "focus_tags": [
+        "culture",
+        "design",
+        "local"
+      ],
+      "suggested_queries": [
+        "21_21 DESIGN SIGHT",
+        "根津美术馆",
+        "代官山T-SITE",
+        "谷中银座"
+      ],
       "pace_note": "Build narrative depth around design, history, or subculture instead of breadth."
     }
   },
-  "indoor_keywords": ["museum", "mall", "department", "aquarium", "teamlab", "gallery", "store"],
-  "outdoor_keywords": ["shrine", "park", "garden", "sky", "crossing", "market", "tower"],
+  "indoor_keywords": [
+    "museum",
+    "mall",
+    "department",
+    "aquarium",
+    "teamlab",
+    "gallery",
+    "store"
+  ],
+  "outdoor_keywords": [
+    "shrine",
+    "park",
+    "garden",
+    "sky",
+    "crossing",
+    "market",
+    "tower"
+  ],
   "fallback_weather": [
     {
       "date": "Day 1",
@@ -49,7 +122,9 @@
       "temp_max": 23,
       "precipitation_probability": 25,
       "outdoor_suitability": "good",
-      "suggestions": ["Good day for shrine walks and outdoor neighborhoods."]
+      "suggestions": [
+        "Good day for shrine walks and outdoor neighborhoods."
+      ]
     },
     {
       "date": "Day 2",
@@ -58,56 +133,76 @@
       "temp_max": 21,
       "precipitation_probability": 55,
       "outdoor_suitability": "mixed",
-      "suggestions": ["Use museums and department stores as backup anchors."]
+      "suggestions": [
+        "Use museums and department stores as backup anchors."
+      ]
     }
   ],
   "seed_pois": [
     {
-      "name": "Senso-ji",
+      "name": "浅草寺",
       "category": "attraction",
-      "district": "Asakusa",
+      "district": "浅草",
       "lat": 35.7148,
       "lon": 139.7967,
       "duration_hours": 1.8,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "mixed",
-      "tags": ["culture", "landmark", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "landmark",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "2-3-1 Asakusa, Taito City",
       "open_hours": "06:00-17:00",
       "rating": 4.6,
       "visit_reason": "Strong first-time Tokyo landmark with cultural depth."
     },
     {
-      "name": "Shibuya Sky",
+      "name": "涩谷SKY",
       "category": "attraction",
-      "district": "Shibuya",
+      "district": "涩谷",
       "lat": 35.6595,
       "lon": 139.7005,
       "duration_hours": 1.5,
       "ticket_price": 2200,
       "price_level": 4,
       "indoor_outdoor": "outdoor",
-      "tags": ["view", "landmark", "night views"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "night views"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "2-24-12 Shibuya",
       "open_hours": "10:00-22:30",
       "rating": 4.6,
       "visit_reason": "Premium skyline anchor."
     },
     {
-      "name": "Tsukiji Outer Market",
+      "name": "筑地场外市场",
       "category": "food",
-      "district": "Tsukiji",
+      "district": "筑地",
       "lat": 35.6654,
       "lon": 139.7707,
       "duration_hours": 1.6,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "mixed",
-      "tags": ["food", "market", "local"],
-      "source": ["profile_seed"],
+      "tags": [
+        "food",
+        "market",
+        "local"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Tsukiji, Chuo City",
       "open_hours": "07:00-14:00",
       "rating": 4.5,
@@ -116,151 +211,210 @@
     {
       "name": "teamLab Planets",
       "category": "attraction",
-      "district": "Toyosu",
+      "district": "丰洲",
       "lat": 35.6491,
       "lon": 139.7898,
       "duration_hours": 2.0,
       "ticket_price": 3800,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["museum", "family", "design"],
-      "source": ["profile_seed"],
+      "tags": [
+        "museum",
+        "family",
+        "design"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "6-1-16 Toyosu",
       "open_hours": "09:00-21:00",
       "rating": 4.7,
       "visit_reason": "Strong immersive indoor anchor."
     },
     {
-      "name": "Meiji Shrine",
+      "name": "明治神宫",
       "category": "attraction",
-      "district": "Harajuku",
+      "district": "原宿",
       "lat": 35.6763,
       "lon": 139.6993,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["culture", "shrine", "nature"],
-      "source": ["profile_seed"],
+      "tags": [
+        "culture",
+        "shrine",
+        "nature"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1-1 Yoyogikamizonocho, Shibuya",
       "open_hours": "Sunrise to sunset",
       "rating": 4.6,
       "visit_reason": "Tranquil forested shrine in the city centre — essential spiritual and natural contrast."
     },
     {
-      "name": "Shinjuku Gyoen",
+      "name": "新宿御苑",
       "category": "attraction",
-      "district": "Shinjuku",
+      "district": "新宿",
       "lat": 35.6851,
-      "lon": 139.7100,
+      "lon": 139.71,
       "duration_hours": 1.8,
       "ticket_price": 500,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "nature", "garden", "leisure"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "nature",
+        "garden",
+        "leisure"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "11 Naitomachi, Shinjuku",
       "open_hours": "09:00-16:30",
       "rating": 4.7,
       "visit_reason": "Tokyo's finest formal garden — exceptional for cherry blossom and seasonal colour."
     },
     {
-      "name": "Ueno Park and Zoo",
+      "name": "上野公园与动物园",
       "category": "attraction",
-      "district": "Ueno",
+      "district": "上野",
       "lat": 35.7155,
       "lon": 139.7714,
       "duration_hours": 2.5,
       "ticket_price": 600,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["park", "family", "museum", "nature"],
-      "source": ["profile_seed"],
+      "tags": [
+        "park",
+        "family",
+        "museum",
+        "nature"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "9-83 Uenokoen, Taito",
       "open_hours": "09:30-17:00",
       "rating": 4.5,
       "visit_reason": "Museum cluster, zoo, and cherry-blossom promenade in one park."
     },
     {
-      "name": "Tokyo Skytree",
+      "name": "东京晴空塔",
       "category": "attraction",
-      "district": "Asakusa",
+      "district": "浅草",
       "lat": 35.7101,
       "lon": 139.8107,
       "duration_hours": 1.5,
       "ticket_price": 2100,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["view", "landmark", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "view",
+        "landmark",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "1-1-2 Oshiage, Sumida",
       "open_hours": "10:00-21:00",
       "rating": 4.5,
       "visit_reason": "World's tallest broadcast tower — unbeatable 360-degree panorama over Tokyo."
     },
     {
-      "name": "Harajuku Takeshita Street",
+      "name": "原宿竹下通",
       "category": "food",
-      "district": "Harajuku",
+      "district": "原宿",
       "lat": 35.6702,
       "lon": 139.7027,
       "duration_hours": 1.2,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["shopping", "food", "local", "youth culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "shopping",
+        "food",
+        "local",
+        "youth culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Takeshita Street, Harajuku, Shibuya",
       "open_hours": "Open 24 hours",
       "rating": 4.4,
       "visit_reason": "Tokyo's most colourful fashion street with crepes, candy floss, and street style."
     },
     {
-      "name": "Shibuya Crossing",
+      "name": "涩谷十字路口",
       "category": "attraction",
-      "district": "Shibuya",
+      "district": "涩谷",
       "lat": 35.6596,
       "lon": 139.7006,
       "duration_hours": 0.5,
       "ticket_price": 0,
       "price_level": 1,
       "indoor_outdoor": "outdoor",
-      "tags": ["landmark", "local", "city"],
-      "source": ["profile_seed"],
+      "tags": [
+        "landmark",
+        "local",
+        "city"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Shibuya Station, Shibuya District",
       "open_hours": "Open 24 hours",
       "rating": 4.6,
       "visit_reason": "World's busiest pedestrian crossing — unmissable Tokyo icon."
     },
     {
-      "name": "Yanaka Ginza",
+      "name": "谷中银座",
       "category": "food",
-      "district": "Ueno",
+      "district": "上野",
       "lat": 35.7272,
       "lon": 139.7645,
       "duration_hours": 1.5,
       "ticket_price": 0,
       "price_level": 2,
       "indoor_outdoor": "outdoor",
-      "tags": ["local", "food", "city walk", "culture"],
-      "source": ["profile_seed"],
+      "tags": [
+        "local",
+        "food",
+        "city walk",
+        "culture"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "Yanaka Ginza, Taito District",
       "open_hours": "10:00-18:00",
       "rating": 4.5,
       "visit_reason": "Old-Tokyo shopping street that survived the war — authentic shitamachi atmosphere."
     },
     {
-      "name": "Roppongi Hills and Mori Art Museum",
+      "name": "六本木新城与森美术馆",
       "category": "attraction",
-      "district": "Roppongi",
+      "district": "六本木",
       "lat": 35.6604,
       "lon": 139.7293,
       "duration_hours": 2.0,
       "ticket_price": 2000,
       "price_level": 4,
       "indoor_outdoor": "indoor",
-      "tags": ["art", "museum", "view", "modern"],
-      "source": ["profile_seed"],
+      "tags": [
+        "art",
+        "museum",
+        "view",
+        "modern"
+      ],
+      "source": [
+        "profile_seed"
+      ],
       "address": "6-10-1 Roppongi, Minato",
       "open_hours": "10:00-22:00",
       "rating": 4.6,

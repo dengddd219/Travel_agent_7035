@@ -115,17 +115,13 @@ def _plan_once(
     used_hours = 0.0
 
     sorted_candidates = _sort_candidates(kept_candidates)
-    for index, node in enumerate(sorted_candidates):
+    for node in sorted_candidates:
         duration = _as_float(node.get("duration_hours"), 1.0)
         if time_budget is not None and used_hours + duration > time_budget:
             deferred = dict(node)
             deferred["defer_reason"] = "over_time_budget"
             deferred_nodes.append(deferred)
-            for remaining in sorted_candidates[index + 1 :]:
-                deferred_remaining = dict(remaining)
-                deferred_remaining["defer_reason"] = "lower_priority_after_budget_limit"
-                deferred_nodes.append(deferred_remaining)
-            break
+            continue
         selected.append(node)
         used_hours += duration
 
