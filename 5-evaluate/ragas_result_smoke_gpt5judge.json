@@ -1,0 +1,133 @@
+{
+  "timestamp": "2026-04-27T03:44:20.468146Z",
+  "model": "gpt-5-mini",
+  "answer_model": "gpt-5-mini",
+  "judge_model": "gpt-5",
+  "models": {
+    "answer": "gpt-5-mini",
+    "judge": "gpt-5"
+  },
+  "case_count": 1,
+  "top_k": 5,
+  "avg_scores": {
+    "faithfulness": 0.55,
+    "answer_relevancy": 0.4,
+    "context_precision": 0.5,
+    "overall": 0.4833
+  },
+  "token_usage": {
+    "input_tokens": 3342,
+    "output_tokens": 1322,
+    "total_tokens": 4664,
+    "llm_call_count": 2,
+    "record_count": 2,
+    "model": null,
+    "models": [
+      "gpt-5",
+      "gpt-5-mini"
+    ],
+    "sources": [
+      "api_usage_field"
+    ],
+    "source": "ragas_evaluator",
+    "estimated_cost": {
+      "currency": "USD",
+      "model": null,
+      "priced_model": null,
+      "pricing_source": "summed_child_costs",
+      "input_usd_per_1m_tokens": null,
+      "output_usd_per_1m_tokens": null,
+      "input_usd": 0.0028285,
+      "output_usd": 0.00922,
+      "total_usd": 0.0120485,
+      "total_cny": 0.086749,
+      "cny_per_usd": 7.2
+    },
+    "total_input_tokens": 3342,
+    "total_output_tokens": 1322
+  },
+  "thresholds": {
+    "faithfulness": {
+      "target": 0.7,
+      "pass": false
+    },
+    "answer_relevancy": {
+      "target": 0.7,
+      "pass": false
+    },
+    "context_precision": {
+      "target": 0.6,
+      "pass": false
+    },
+    "overall": {
+      "target": 0.67,
+      "pass": false
+    }
+  },
+  "details": [
+    {
+      "id": "rag_001",
+      "query": "成都熊猫基地怎么去，几点开门",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "根据你给的参考资料，关于“怎么去”和“几点开门”的信息如下：\n\n怎么去\n- 地铁：多篇资料提到可乘坐地铁3号线前往，资料中有一处写到“在3号线上，2站到春熙路，5站到熊猫基地（约400多米）”。注意西门和南门对应的地铁站不一样（有攻略提醒“西门和南门坐的地铁站不一样”），所以进出门口选择要看你要从哪一侧进出；常见路线是“西门进、南门出”或“西门进南门出”。\n- 出租/打车：资料多次提到成都打车便宜、可直接打车到熊猫基地，酒店附近也常打车前往（例如从机场打",
+      "ground_truth": "成都大熊猫繁育研究基地通常早上约7:30开放，建议早上去看熊猫活动和喂食。市区可坐地铁3号线到熊猫大道站或附近站点后换乘接驳车、公交或打车前往。",
+      "scores": {
+        "faithfulness": 0.55,
+        "answer_relevancy": 0.4,
+        "context_precision": 0.5
+      },
+      "reasoning": "未给出开门时间且将“400多（元）”误读为“400多米”，虽部分出行信息源于上下文但有偏差",
+      "latency_ms": {
+        "retrieve": 47921,
+        "generate": 10710,
+        "judge": 11468
+      },
+      "token_usage": {
+        "input_tokens": 3342,
+        "output_tokens": 1322,
+        "total_tokens": 4664,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.0028285,
+          "output_usd": 0.00922,
+          "total_usd": 0.0120485,
+          "total_cny": 0.086749,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    }
+  ],
+  "route_quality_summary": {
+    "avg_evidence_chunks": 5.0,
+    "cases_with_pitfall_coverage": 0,
+    "cases_with_route_plan_coverage": 1,
+    "pitfall_coverage_rate": 0.0,
+    "route_plan_coverage_rate": 1.0
+  }
+}

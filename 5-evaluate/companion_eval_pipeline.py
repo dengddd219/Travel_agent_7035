@@ -184,11 +184,21 @@ class ChatLLM:
     def chat_json(self, messages: list[dict[str, str]], temperature: float = 0.0) -> Any:
         if self.client is None:
             raise RuntimeError("LLM client is not available")
-        response = self.client.chat.completions.create(
-            model=self.settings.openai_model,
-            messages=messages,
-            temperature=temperature,
-        )
+        request: dict[str, Any] = {
+            "model": self.settings.openai_model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        try:
+            response = self.client.chat.completions.create(**request)
+        except Exception as exc:
+            message = str(exc).lower()
+            if "temperature" not in message or "unsupported" not in message:
+                raise
+            # Some reasoning deployments, including gpt-5-mini on Azure, only
+            # accept the model default temperature.
+            request.pop("temperature", None)
+            response = self.client.chat.completions.create(**request)
         self._token_usages.append(token_usage_from_response(response, model=self.settings.openai_model))
         content = response.choices[0].message.content or ""
         return extract_json(content)
@@ -410,7 +420,10 @@ class TrajectoryRunner:
 
     def run_task_trial(self, task: dict[str, Any], trial_index: int) -> dict[str, Any]:
         state = CompanionState.from_dict(task.get("initial_state") or {})
-        agent = CompanionAgent(settings=self._agent_settings(task))
+        agent = CompanionAgent(
+            settings=self._agent_settings(task),
+            force_agentic_llm=not self.config.no_agent_llm,
+        )
         simulator = LLMUserSimulator(task, llm=self.llm, mode=self.config.simulator_mode)
         events: list[dict[str, Any]] = []
         token_usage = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_call_count": 0}
@@ -894,6 +907,43 @@ def mean(values: Any) -> float:
     return float(sum(values) / len(values))
 
 
+def load_existing_trial_results(path: Path) -> tuple[list[dict[str, Any]], set[tuple[str, int]]]:
+    if not path.exists():
+        return [], set()
+    scores: list[dict[str, Any]] = []
+    completed: set[tuple[str, int]] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        item = json.loads(line)
+        task_id = str(item.get("task_id") or "")
+        trial_index = int(item.get("trial_index") or 0)
+        if not task_id or trial_index <= 0:
+            continue
+        pair = (task_id, trial_index)
+        if pair in completed:
+            continue
+        completed.add(pair)
+        scores.append(item)
+    return scores, completed
+
+
+def write_partial_summary(
+    out_dir: Path,
+    scores: list[dict[str, Any]],
+    config: EvalConfig,
+    completed_count: int,
+    total_count: int,
+) -> None:
+    summary = MetricsAggregator.summarize(scores, k=config.num_trials)
+    summary["progress"] = {
+        "completed_trials": completed_count,
+        "total_trials": total_count,
+        "completion_rate": completed_count / total_count if total_count else 0.0,
+    }
+    write_json(out_dir / "partial_summary.json", summary)
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run CompanionAgent VitaBench-style evaluation.")
     parser.add_argument("--tasks", type=Path, default=DEFAULT_TASK_INDEX, help="Task index or city task JSON file.")
@@ -931,9 +981,18 @@ def run(config: EvalConfig) -> dict[str, Any]:
         overlap_turns=config.overlap_turns,
     )
 
-    all_scores: list[dict[str, Any]] = []
+    total_trials = len(tasks) * config.num_trials
+    all_scores, completed_pairs = load_existing_trial_results(out_dir / "trial_results.jsonl")
+    if completed_pairs:
+        print(
+            f"Resuming {out_dir}: {len(completed_pairs)}/{total_trials} trials already completed.",
+            flush=True,
+        )
     for task in tasks:
         for trial in range(1, config.num_trials + 1):
+            pair = (str(task.get("id") or ""), trial)
+            if pair in completed_pairs:
+                continue
             trajectory = runner.run_task_trial(task, trial)
             score = evaluator.evaluate(task, trajectory)
             score["trial_index"] = trial
@@ -943,6 +1002,16 @@ def run(config: EvalConfig) -> dict[str, Any]:
             all_scores.append(score)
             append_jsonl(out_dir / "trajectories.jsonl", trajectory)
             append_jsonl(out_dir / "trial_results.jsonl", score)
+            completed_pairs.add(pair)
+            print(
+                f"[{len(completed_pairs)}/{total_trials}] "
+                f"{score.get('task_id')} trial={trial} "
+                f"strict={score.get('strict_success')} "
+                f"rubric={score.get('rubric_score'):.3f} "
+                f"tool={score.get('tool_success'):.3f}",
+                flush=True,
+            )
+            write_partial_summary(out_dir, all_scores, config, len(completed_pairs), total_trials)
 
     summary = MetricsAggregator.summarize(all_scores, k=config.num_trials)
     summary["config"] = {

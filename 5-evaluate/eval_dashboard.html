@@ -1,0 +1,1797 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Travel Agent Evaluation Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f9fb;
+      --panel: #ffffff;
+      --text: #172638;
+      --muted: #5d6876;
+      --border: #e0e5eb;
+      --blue: #1c4aff;
+      --teal: #00aafb;
+      --amber: #8c99a8;
+      --green: #2ff3e8;
+      --purple: #5874ff;
+      --red: #d92d20;
+      --ink: #001c2d;
+      --navy: #001c2d;
+      --navy-2: #082f49;
+      --cyan: #2ff3e8;
+      --electric: #00aafb;
+      --light-grey: #e6e6e6;
+      --ice: #f0f6fc;
+      --line: #e6e6e6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      line-height: 1.45;
+    }
+    .shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 24px 40px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-end;
+      background: var(--navy);
+      color: #ffffff;
+      border: 1px solid #0b3b5c;
+      border-radius: 8px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 22px rgba(0, 28, 45, 0.18);
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+    .subtitle {
+      margin-top: 8px;
+      color: #d7e8f6;
+      font-size: 14px;
+    }
+    .stamp {
+      color: #d9edf8;
+      font-size: 13px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .kpi, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(5, 28, 44, 0.05);
+    }
+    .kpi {
+      padding: 16px;
+      min-height: 118px;
+      border-top: 5px solid var(--blue);
+      cursor: grab;
+      user-select: none;
+    }
+    .kpi:active { cursor: grabbing; }
+    .kpi.is-dragging {
+      opacity: 0.55;
+      transform: scale(0.98);
+    }
+    .kpi-teal { border-top-color: var(--teal); }
+    .kpi-amber { border-top-color: var(--amber); }
+    .kpi-green { border-top-color: var(--green); }
+    .kpi-purple { border-top-color: var(--purple); }
+    .kpi-red { border-top-color: var(--red); }
+    .kpi-title {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .kpi-value {
+      font-size: 27px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .kpi-meta {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .panel {
+      padding: 16px;
+      min-width: 0;
+    }
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0;
+      color: var(--navy);
+    }
+    .panel-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: -6px;
+      margin-bottom: 12px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(118px, 0.8fr) minmax(160px, 2fr) minmax(92px, 0.7fr);
+      gap: 10px;
+      align-items: center;
+      min-height: 30px;
+      font-size: 13px;
+    }
+    .bar-label {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bar-track {
+      height: 10px;
+      background: var(--ice);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+    .bar-blue { background: var(--blue); }
+    .bar-teal { background: var(--teal); }
+    .bar-amber { background: var(--amber); }
+    .bar-green { background: var(--green); }
+    .bar-red { background: var(--red); }
+    .bar-value {
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .line-chart-wrap {
+      width: 100%;
+      min-height: 320px;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      margin: 2px 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chart-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+    .legend-swatch {
+      width: 22px;
+      height: 3px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .legend-hit { background: var(--teal); }
+    .legend-mrr { background: var(--amber); }
+    .line-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+    .chart-grid {
+      stroke: var(--line);
+      stroke-width: 1;
+    }
+    .chart-axis {
+      stroke: #b8c7d9;
+      stroke-width: 1.2;
+    }
+    .chart-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .chart-hit-line { stroke: var(--teal); }
+    .chart-mrr-line { stroke: var(--amber); }
+    .chart-point {
+      stroke: #ffffff;
+      stroke-width: 2;
+    }
+    .chart-hit-point { fill: var(--teal); }
+    .chart-mrr-point { fill: var(--amber); }
+    .chart-y-label,
+    .chart-x-label {
+      fill: var(--muted);
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+    }
+    .chart-summary {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .donut-wrap {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.8fr) minmax(210px, 1fr);
+      gap: 16px;
+      align-items: center;
+      min-height: 250px;
+    }
+    .donut-chart {
+      width: 100%;
+      max-width: 260px;
+      margin: 0 auto;
+      display: block;
+    }
+    .donut-bg {
+      fill: none;
+      stroke: var(--ice);
+      stroke-width: 28;
+    }
+    .donut-segment {
+      fill: none;
+      stroke-width: 28;
+      stroke-linecap: butt;
+      transition: stroke-width 0.15s ease;
+    }
+    .donut-segment:hover {
+      stroke-width: 32;
+    }
+    .donut-green { stroke: var(--green); background: var(--green); }
+    .donut-teal { stroke: var(--teal); background: var(--teal); }
+    .donut-amber { stroke: var(--amber); background: var(--amber); }
+    .donut-red { stroke: var(--red); background: var(--red); }
+    .donut-total {
+      fill: var(--ink);
+      font-weight: 700;
+      font-size: 30px;
+      font-family: Arial, sans-serif;
+    }
+    .donut-caption {
+      fill: var(--muted);
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+    }
+    .donut-legend {
+      display: grid;
+      gap: 10px;
+    }
+    .donut-legend-row {
+      display: grid;
+      grid-template-columns: 14px minmax(96px, 1fr) minmax(86px, auto);
+      gap: 9px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .donut-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .donut-band {
+      color: var(--text);
+    }
+    .donut-value {
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #f7fafd;
+    }
+    td {
+      color: var(--text);
+    }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 46px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .score-good {
+      color: #084c61;
+      background: #d9fffc;
+      border-color: #9bf8f1;
+    }
+    .score-mid {
+      color: #334155;
+      background: #eef4ff;
+      border-color: #cbd6ff;
+    }
+    .score-low {
+      color: #991b1b;
+      background: #fee2e2;
+      border-color: #fecaca;
+    }
+    .metric-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .metric-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f9fbfe;
+    }
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 7px;
+    }
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sources {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .sources li {
+      margin: 8px 0;
+    }
+    .sources span {
+      display: inline-block;
+      min-width: 140px;
+      color: var(--text);
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      color: var(--navy-2);
+      background: #eef5fb;
+      border: 1px solid #d5e4f2;
+      border-radius: 6px;
+      padding: 2px 5px;
+      overflow-wrap: anywhere;
+    }
+    .formula {
+      background: var(--navy);
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 8px 0;
+    }
+    @media (max-width: 980px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .stamp { text-align: left; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+      .metric-list { grid-template-columns: 1fr; }
+      .donut-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .shell { padding: 18px 12px 28px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .bar-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 8px 0;
+        border-bottom: 1px solid #edf0f5;
+      }
+      .bar-value { text-align: left; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Travel Agent Evaluation Dashboard</h1>
+        <div class="subtitle">Current-stage summary of resolution rate, response time, error rate, tokens, and cost. Designed for direct PPT screenshots.</div>
+      </div>
+      <div class="stamp">Generated at<br>2026-04-27 14:38:58</div>
+    </header>
+
+    <section class="kpi-grid">
+      
+    <section class="kpi kpi-blue">
+      <div class="kpi-title">Online Records</div>
+      <div class="kpi-value">34</div>
+      <div class="kpi-meta">SLA timeout rate 32.4%</div>
+    </section>
+    
+
+    <section class="kpi kpi-teal">
+      <div class="kpi-title">Avg Response Time</div>
+      <div class="kpi-value">30.0s</div>
+      <div class="kpi-meta">P95 102.9s</div>
+    </section>
+    
+
+    <section class="kpi kpi-amber">
+      <div class="kpi-title">Total Tokens</div>
+      <div class="kpi-value">21,384</div>
+      <div class="kpi-meta">Input 2,321 / Output 19,063</div>
+    </section>
+    
+
+    <section class="kpi kpi-green">
+      <div class="kpi-title">Estimated Cost</div>
+      <div class="kpi-value">$0.038706 / ¥0.2787</div>
+      <div class="kpi-meta">Avg $0.001138/turn</div>
+    </section>
+    
+
+    <section class="kpi kpi-teal">
+      <div class="kpi-title">Companion Avg Latency</div>
+      <div class="kpi-value">24.4s</div>
+      <div class="kpi-meta">3 records, SLA timeout 33.3%</div>
+    </section>
+    
+
+    <section class="kpi kpi-blue">
+      <div class="kpi-title">Travel Planner Avg Latency</div>
+      <div class="kpi-value">29.9s</div>
+      <div class="kpi-meta">3 records, SLA timeout 33.3%</div>
+    </section>
+    
+
+    <section class="kpi kpi-purple">
+      <div class="kpi-title">Legacy Avg Latency</div>
+      <div class="kpi-value">30.6s</div>
+      <div class="kpi-meta">28 records, SLA timeout 32.1%</div>
+    </section>
+    
+
+    <section class="kpi kpi-amber">
+      <div class="kpi-title">Companion Avg Tokens</div>
+      <div class="kpi-value">1,212 tok/turn</div>
+      <div class="kpi-meta">3,637 tok / 3 records</div>
+    </section>
+    
+
+    <section class="kpi kpi-amber">
+      <div class="kpi-title">Travel Planner Avg Tokens</div>
+      <div class="kpi-value">1,327 tok/turn</div>
+      <div class="kpi-meta">3,981 tok / 3 records</div>
+    </section>
+    
+
+    <section class="kpi kpi-amber">
+      <div class="kpi-title">Legacy Avg Tokens</div>
+      <div class="kpi-value">492 tok/turn</div>
+      <div class="kpi-meta">13,766 tok / 28 records</div>
+    </section>
+    
+
+    <section class="kpi kpi-purple">
+      <div class="kpi-title">Strict Resolution Rate</div>
+      <div class="kpi-value">43.4%</div>
+      <div class="kpi-meta">Pass@4 50.0%</div>
+    </section>
+    
+
+    <section class="kpi kpi-red">
+      <div class="kpi-title">Task Failure Rate</div>
+      <div class="kpi-value">56.6%</div>
+      <div class="kpi-meta">53 trials / 14 tasks</div>
+    </section>
+    
+
+    <section class="kpi kpi-blue">
+      <div class="kpi-title">RAGAS Overall</div>
+      <div class="kpi-value">86.0%</div>
+      <div class="kpi-meta">100 cases, gpt-5-mini judged by gpt-5</div>
+    </section>
+    
+
+    <section class="kpi kpi-green">
+      <div class="kpi-title">RAGAS Cost</div>
+      <div class="kpi-value">$1.159794 / ¥8.3505</div>
+      <div class="kpi-meta">Input 316,749 / Output 140,261</div>
+    </section>
+    
+
+    <section class="kpi kpi-teal">
+      <div class="kpi-title">RAG Hit Rate@5</div>
+      <div class="kpi-value">93.5%</div>
+      <div class="kpi-meta">40 golden queries, V7</div>
+    </section>
+    
+
+    <section class="kpi kpi-amber">
+      <div class="kpi-title">RAG Retrieval MRR</div>
+      <div class="kpi-value">0.98</div>
+      <div class="kpi-meta">Best params: vector_weight=0.5, fetch_k=40, city_filter=开启</div>
+    </section>
+    
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Response Time by Agent</h2>
+        <div class="panel-note">End-to-end latency from <code>eval_trace.jsonl</code>. SLA threshold: 30s.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">companion</div>
+              <div class="bar-track"><div class="bar-fill bar-blue" style="width: 79.8%"></div></div>
+              <div class="bar-value">24.4s</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">travel_planner</div>
+              <div class="bar-track"><div class="bar-fill bar-blue" style="width: 98.0%"></div></div>
+              <div class="bar-value">29.9s</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">travel_planner_legacy</div>
+              <div class="bar-track"><div class="bar-fill bar-blue" style="width: 100.0%"></div></div>
+              <div class="bar-value">30.6s</div>
+            </div>
+            
+      </div>
+      <div class="panel">
+        <h2>Tokens and Cost by Agent</h2>
+        <div class="panel-note">Estimated with the default gpt-5-mini pricing table. Older trace records without model metadata are backfilled with the current default model.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">companion</div>
+              <div class="bar-track"><div class="bar-fill bar-amber" style="width: 26.4%"></div></div>
+              <div class="bar-value">3,637 tok / $0.003622</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">travel_planner</div>
+              <div class="bar-track"><div class="bar-fill bar-amber" style="width: 28.9%"></div></div>
+              <div class="bar-value">3,981 tok / $0.00795</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">travel_planner_legacy</div>
+              <div class="bar-track"><div class="bar-fill bar-amber" style="width: 100.0%"></div></div>
+              <div class="bar-value">13,766 tok / $0.027135</div>
+            </div>
+            
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Companion Resolution and Capability Scores</h2>
+        <div class="panel-note">Run: <code>full_llm_k4</code>; progress 53/120 (44.2%).</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">Interaction</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 89.9%"></div></div>
+              <div class="bar-value">67.0%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Reasoning</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 100.0%"></div></div>
+              <div class="bar-value">74.5%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Tool</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 60.8%"></div></div>
+              <div class="bar-value">45.3%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Rubric Avg</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 84.1%"></div></div>
+              <div class="bar-value">62.6%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Strict</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 58.2%"></div></div>
+              <div class="bar-value">43.4%</div>
+            </div>
+            
+      </div>
+      <div class="panel">
+        <h2>RAGAS Generation Quality</h2>
+        <div class="panel-note">Faithfulness / Answer Relevancy / Context Precision / Overall. Answer model: gpt-5-mini; Judge model: gpt-5.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">Faithfulness</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 100.0%"></div></div>
+              <div class="bar-value">95.3%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Answer Relevancy</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 93.0%"></div></div>
+              <div class="bar-value">88.6%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Context Precision</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 77.9%"></div></div>
+              <div class="bar-value">74.2%</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">Overall</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 90.3%"></div></div>
+              <div class="bar-value">86.0%</div>
+            </div>
+            
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>RAGAS City Performance</h2>
+        <div class="panel-note">Overall score by city across 10 golden cases each. F = Faithfulness, R = Answer Relevancy, P = Context Precision.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">广州</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 100.0%"></div></div>
+              <div class="bar-value">89.6%  F 0.98 / R 0.91 / P 0.80</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">南京</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 98.1%"></div></div>
+              <div class="bar-value">87.9%  F 0.99 / R 0.91 / P 0.73</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">厦门</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 97.5%"></div></div>
+              <div class="bar-value">87.4%  F 0.98 / R 0.91 / P 0.73</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">北京</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 97.5%"></div></div>
+              <div class="bar-value">87.3%  F 0.93 / R 0.95 / P 0.75</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">重庆</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 97.2%"></div></div>
+              <div class="bar-value">87.0%  F 0.92 / R 0.91 / P 0.79</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">杭州</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 96.1%"></div></div>
+              <div class="bar-value">86.1%  F 0.96 / R 0.86 / P 0.76</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">成都</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 95.8%"></div></div>
+              <div class="bar-value">85.8%  F 0.91 / R 0.95 / P 0.72</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">深圳</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 95.6%"></div></div>
+              <div class="bar-value">85.6%  F 0.98 / R 0.86 / P 0.73</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">上海</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 94.0%"></div></div>
+              <div class="bar-value">84.2%  F 0.95 / R 0.85 / P 0.73</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">西安</div>
+              <div class="bar-track"><div class="bar-fill bar-green" style="width: 88.5%"></div></div>
+              <div class="bar-value">79.3%  F 0.93 / R 0.77 / P 0.68</div>
+            </div>
+            
+      </div>
+      <div class="panel">
+        <h2>RAGAS Score Distribution</h2>
+        <div class="panel-note">Overall score bands across all 100 RAGAS cases.</div>
+        
+    <div class="donut-wrap">
+      <svg class="donut-chart" viewBox="0 0 180 180" role="img" aria-label="RAGAS score distribution pie chart">
+        <circle class="donut-bg" cx="90" cy="90" r="64"></circle>
+        
+            <circle class="donut-segment donut-green" cx="90" cy="90" r="64"
+              pathLength="100" stroke-dasharray="50.0000 50.0000"
+              stroke-dashoffset="-0.0000" transform="rotate(-90 90 90)">
+              <title>&gt;= 0.90: 50 cases (50.0%)</title>
+            </circle>
+            
+            <circle class="donut-segment donut-teal" cx="90" cy="90" r="64"
+              pathLength="100" stroke-dasharray="25.0000 75.0000"
+              stroke-dashoffset="-50.0000" transform="rotate(-90 90 90)">
+              <title>0.80 - 0.89: 25 cases (25.0%)</title>
+            </circle>
+            
+            <circle class="donut-segment donut-amber" cx="90" cy="90" r="64"
+              pathLength="100" stroke-dasharray="14.0000 86.0000"
+              stroke-dashoffset="-75.0000" transform="rotate(-90 90 90)">
+              <title>0.70 - 0.79: 14 cases (14.0%)</title>
+            </circle>
+            
+            <circle class="donut-segment donut-red" cx="90" cy="90" r="64"
+              pathLength="100" stroke-dasharray="11.0000 89.0000"
+              stroke-dashoffset="-89.0000" transform="rotate(-90 90 90)">
+              <title>&lt; 0.70: 11 cases (11.0%)</title>
+            </circle>
+            
+        <text class="donut-total" x="90" y="84" text-anchor="middle">100</text>
+        <text class="donut-caption" x="90" y="105" text-anchor="middle">cases</text>
+      </svg>
+      <div class="donut-legend">
+        
+            <div class="donut-legend-row">
+              <span class="donut-swatch donut-green"></span>
+              <span class="donut-band">&gt;= 0.90</span>
+              <span class="donut-value">50 / 50.0%</span>
+            </div>
+            
+            <div class="donut-legend-row">
+              <span class="donut-swatch donut-teal"></span>
+              <span class="donut-band">0.80 - 0.89</span>
+              <span class="donut-value">25 / 25.0%</span>
+            </div>
+            
+            <div class="donut-legend-row">
+              <span class="donut-swatch donut-amber"></span>
+              <span class="donut-band">0.70 - 0.79</span>
+              <span class="donut-value">14 / 14.0%</span>
+            </div>
+            
+            <div class="donut-legend-row">
+              <span class="donut-swatch donut-red"></span>
+              <span class="donut-band">&lt; 0.70</span>
+              <span class="donut-value">11 / 11.0%</span>
+            </div>
+            
+      </div>
+    </div>
+    
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom: 14px;">
+      <h2>RAGAS City Score Table</h2>
+      <div class="panel-note">Sorted by city-level overall score. Green is >=0.90, amber is 0.70-0.89, red is below 0.70.</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>Cases</th>
+              <th>Overall</th>
+              <th>Faith</th>
+              <th>Relevancy</th>
+              <th>Precision</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>广州</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.90</span></td>
+              <td><span class="score-pill score-good">0.98</span></td>
+              <td><span class="score-pill score-good">0.91</span></td>
+              <td><span class="score-pill score-mid">0.80</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>南京</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.88</span></td>
+              <td><span class="score-pill score-good">0.99</span></td>
+              <td><span class="score-pill score-good">0.91</span></td>
+              <td><span class="score-pill score-mid">0.73</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>厦门</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.87</span></td>
+              <td><span class="score-pill score-good">0.98</span></td>
+              <td><span class="score-pill score-good">0.91</span></td>
+              <td><span class="score-pill score-mid">0.73</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>北京</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.87</span></td>
+              <td><span class="score-pill score-good">0.93</span></td>
+              <td><span class="score-pill score-good">0.95</span></td>
+              <td><span class="score-pill score-mid">0.75</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>重庆</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.87</span></td>
+              <td><span class="score-pill score-good">0.92</span></td>
+              <td><span class="score-pill score-good">0.91</span></td>
+              <td><span class="score-pill score-mid">0.79</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>杭州</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.86</span></td>
+              <td><span class="score-pill score-good">0.96</span></td>
+              <td><span class="score-pill score-mid">0.86</span></td>
+              <td><span class="score-pill score-mid">0.76</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>成都</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.86</span></td>
+              <td><span class="score-pill score-good">0.91</span></td>
+              <td><span class="score-pill score-good">0.95</span></td>
+              <td><span class="score-pill score-mid">0.72</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>深圳</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.86</span></td>
+              <td><span class="score-pill score-good">0.98</span></td>
+              <td><span class="score-pill score-mid">0.86</span></td>
+              <td><span class="score-pill score-mid">0.73</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>上海</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.84</span></td>
+              <td><span class="score-pill score-good">0.95</span></td>
+              <td><span class="score-pill score-mid">0.85</span></td>
+              <td><span class="score-pill score-mid">0.73</span></td>
+            </tr>
+            
+
+            <tr>
+              <td>西安</td>
+              <td>10</td>
+              <td><span class="score-pill score-mid">0.79</span></td>
+              <td><span class="score-pill score-good">0.93</span></td>
+              <td><span class="score-pill score-mid">0.77</span></td>
+              <td><span class="score-pill score-low">0.68</span></td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom: 14px;">
+      <h2>RAGAS Lowest Scoring Cases</h2>
+      <div class="panel-note">These cases explain the main quality loss: missing key facts, noisy context, or partially answered multi-part questions.</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>City</th>
+              <th>Query</th>
+              <th>Overall</th>
+              <th>Faith</th>
+              <th>Relevancy</th>
+              <th>Precision</th>
+              <th>Judge Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td><code>rag_096</code></td>
+              <td>深圳</td>
+              <td>深圳甘坑古镇适合晚上去吗</td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-good">1.00</span></td>
+              <td><span class="score-pill score-low">0.00</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答未直接给出夜间是否适合的信息，上下文也缺少夜间相关内容，仅为一般性介绍</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_037</code></td>
+              <td>西安</td>
+              <td>西安去华山一日游怎么安排</td>
+              <td><span class="score-pill score-low">0.53</span></td>
+              <td><span class="score-pill score-low">0.60</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>上下文未明确证明华山当日往返可行，且缺少交通与线路等关键细节，回答较笼统</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_001</code></td>
+              <td>成都</td>
+              <td>成都熊猫基地怎么去，几点开门</td>
+              <td><span class="score-pill score-low">0.57</span></td>
+              <td><span class="score-pill score-low">0.60</span></td>
+              <td><span class="score-pill score-low">0.60</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答中将“400多米”误解为地铁站至基地距离且未提供开门时间，仅部分回应问题；检索内容以游记为主、噪声多，缺少官方开放时间等关键信息。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_039</code></td>
+              <td>西安</td>
+              <td>西安小南门早市有什么值得吃</td>
+              <td><span class="score-pill score-low">0.61</span></td>
+              <td><span class="score-pill score-mid">0.88</span></td>
+              <td><span class="score-pill score-low">0.45</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答大多基于上下文但加入了“钟楼站C口附近”的未证据细节；未直接给出小南门早市具体可吃内容，相关性一般；上下文与问题相关但缺少核心‘吃什么’信息且噪声多。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_051</code></td>
+              <td>杭州</td>
+              <td>杭州西湖免费吗，有哪些必逛景点</td>
+              <td><span class="score-pill score-low">0.65</span></td>
+              <td><span class="score-pill score-good">0.94</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答基本基于上下文但对“可随意漫步”略有推断，未正面解答“是否免费”，且检索内容对收费信息缺失、与问题仅部分相关并含较多噪音</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_038</code></td>
+              <td>西安</td>
+              <td>西安四天三晚怎么安排比较完整</td>
+              <td><span class="score-pill score-low">0.66</span></td>
+              <td><span class="score-pill score-good">0.98</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>答案基本忠实于给定美食与酒店上下文，但未涵盖景点等核心行程要素，检索内容也缺少完整行程所需的关键信息</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_050</code></td>
+              <td>重庆</td>
+              <td>重庆大足石刻或武隆适合当天往返吗</td>
+              <td><span class="score-pill score-low">0.67</span></td>
+              <td><span class="score-pill score-good">1.00</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>大足部分有依据且结论谨慎，但未回答武隆是否可当日往返；检索内容多为游记与打卡信息，且不含武隆核心信息。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_059</code></td>
+              <td>杭州</td>
+              <td>杭州北高峰财神庙和法喜寺怎么安排</td>
+              <td><span class="score-pill score-low">0.67</span></td>
+              <td><span class="score-pill score-good">1.00</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答基本忠实于检索内容，但未提供法喜寺安排；检索上下文也缺失法喜寺信息，导致只部分回答了用户联游需求</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_062</code></td>
+              <td>南京</td>
+              <td>南京博物院怎么预约，逛多久合适</td>
+              <td><span class="score-pill score-low">0.67</span></td>
+              <td><span class="score-pill score-good">1.00</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>回答忠实于上下文但未给出具体预约方式与明确时长；检索内容有相关点但噪音多、缺少关键细节。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_088</code></td>
+              <td>广州</td>
+              <td>广州陈家祠值得去吗，逛多久合适</td>
+              <td><span class="score-pill score-low">0.67</span></td>
+              <td><span class="score-pill score-good">1.00</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td><span class="score-pill score-low">0.50</span></td>
+              <td>上下文支持其“值得去”“票价/地铁/开放时间”等表述，但缺少逛多久的关键信息，答案也未给出具体时长建议，因而相关性与上下文精准度打折。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_027</code></td>
+              <td>上海</td>
+              <td>上海苏州河沿线citywalk有哪些点</td>
+              <td><span class="score-pill score-low">0.67</span></td>
+              <td><span class="score-pill score-good">0.96</span></td>
+              <td><span class="score-pill score-low">0.54</span></td>
+              <td><span class="score-pill score-low">0.52</span></td>
+              <td>回答基本依托检索内容，但混入黄浦江/滨江等非苏州河点且遗漏外白渡桥、邮政博物馆等关键点；检索上下文也较分散，非苏州河信息较多。</td>
+            </tr>
+            
+
+            <tr>
+              <td><code>rag_014</code></td>
+              <td>北京</td>
+              <td>北京环球影城一天怎么玩更高效</td>
+              <td><span class="score-pill score-mid">0.71</span></td>
+              <td><span class="score-pill score-low">0.62</span></td>
+              <td><span class="score-pill score-good">0.90</span></td>
+              <td><span class="score-pill score-low">0.60</span></td>
+              <td>回答总体依托于上下文（App、周中人少、哈利波特机位、霸天虎、酷巧等），但加入了“早到更高效、先冲哈利波特”等未被直接证实的策略性推断，且检索内容夹杂大量游记噪声。</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>RAG Retrieval Quality</h2>
+        <div class="panel-note">Non-RAGAS retrieval metrics from golden queries. Report date: 2026-04-23; version V7.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">上海</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 95.9%"></div></div>
+              <div class="bar-value">94.0% hit / MRR 0.93</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">北京</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 91.8%"></div></div>
+              <div class="bar-value">90.0% hit / MRR 1.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">成都</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 100.0%"></div></div>
+              <div class="bar-value">98.0% hit / MRR 1.00</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">西安</div>
+              <div class="bar-track"><div class="bar-fill bar-teal" style="width: 93.9%"></div></div>
+              <div class="bar-value">92.0% hit / MRR 1.00</div>
+            </div>
+            
+      </div>
+      <div class="panel">
+        <h2>RAG Optimization Trend</h2>
+        <div class="panel-note">Historical Hit Rate@5 and MRR from the retrieval evaluation report.</div>
+        
+    <div class="line-chart-wrap">
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="legend-swatch legend-hit"></i>Hit Rate@5</span>
+        <span><i class="legend-swatch legend-mrr"></i>MRR</span>
+      </div>
+      <svg class="line-chart" viewBox="0 0 720 320" role="img" aria-label="RAG optimization trend: Hit Rate@5 and MRR">
+        <line class="chart-axis" x1="54" y1="24" x2="54" y2="268"></line>
+        <line class="chart-axis" x1="54" y1="268" x2="696" y2="268"></line>
+        
+            <line class="chart-grid" x1="54" y1="268.0" x2="696" y2="268.0"></line>
+            <text class="chart-y-label" x="44" y="272.0" text-anchor="end">0.0%</text>
+            
+            <line class="chart-grid" x1="54" y1="207.0" x2="696" y2="207.0"></line>
+            <text class="chart-y-label" x="44" y="211.0" text-anchor="end">25.0%</text>
+            
+            <line class="chart-grid" x1="54" y1="146.0" x2="696" y2="146.0"></line>
+            <text class="chart-y-label" x="44" y="150.0" text-anchor="end">50.0%</text>
+            
+            <line class="chart-grid" x1="54" y1="85.0" x2="696" y2="85.0"></line>
+            <text class="chart-y-label" x="44" y="89.0" text-anchor="end">75.0%</text>
+            
+            <line class="chart-grid" x1="54" y1="24.0" x2="696" y2="24.0"></line>
+            <text class="chart-y-label" x="44" y="28.0" text-anchor="end">100.0%</text>
+            
+        <polyline class="chart-line chart-hit-line" points="54.0,214.3 161.0,77.7 268.0,63.0 375.0,61.8 482.0,47.2 589.0,42.3 696.0,39.9"></polyline>
+        <polyline class="chart-line chart-mrr-line" points="54.0,175.3 161.0,58.2 268.0,36.2 375.0,36.2 482.0,36.2 589.0,36.2 696.0,28.9"></polyline>
+        
+            <circle class="chart-point chart-hit-point" cx="54.0" cy="214.3" r="4.5">
+              <title>V1 Hit Rate@5: 22.0%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="161.0" cy="77.7" r="4.5">
+              <title>V2 Hit Rate@5: 78.0%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="268.0" cy="63.0" r="4.5">
+              <title>V3 Hit Rate@5: 84.0%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="375.0" cy="61.8" r="4.5">
+              <title>V4 Hit Rate@5: 84.5%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="482.0" cy="47.2" r="4.5">
+              <title>V5 Hit Rate@5: 90.5%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="589.0" cy="42.3" r="4.5">
+              <title>V6 Hit Rate@5: 92.5%</title>
+            </circle>
+            
+            <circle class="chart-point chart-hit-point" cx="696.0" cy="39.9" r="4.5">
+              <title>V7 Hit Rate@5: 93.5%</title>
+            </circle>
+            
+        
+            <circle class="chart-point chart-mrr-point" cx="54.0" cy="175.3" r="4.5">
+              <title>V1 MRR: 0.38</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="161.0" cy="58.2" r="4.5">
+              <title>V2 MRR: 0.86</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="268.0" cy="36.2" r="4.5">
+              <title>V3 MRR: 0.95</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="375.0" cy="36.2" r="4.5">
+              <title>V4 MRR: 0.95</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="482.0" cy="36.2" r="4.5">
+              <title>V5 MRR: 0.95</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="589.0" cy="36.2" r="4.5">
+              <title>V6 MRR: 0.95</title>
+            </circle>
+            
+            <circle class="chart-point chart-mrr-point" cx="696.0" cy="28.9" r="4.5">
+              <title>V7 MRR: 0.98</title>
+            </circle>
+            
+        <text class="chart-x-label" x="54.0" y="300" text-anchor="middle">V1</text><text class="chart-x-label" x="161.0" y="300" text-anchor="middle">V2</text><text class="chart-x-label" x="268.0" y="300" text-anchor="middle">V3</text><text class="chart-x-label" x="375.0" y="300" text-anchor="middle">V4</text><text class="chart-x-label" x="482.0" y="300" text-anchor="middle">V5</text><text class="chart-x-label" x="589.0" y="300" text-anchor="middle">V6</text><text class="chart-x-label" x="696.0" y="300" text-anchor="middle">V7</text>
+      </svg>
+      <div class="chart-summary">
+        Latest V7: Hit Rate@5 93.5%; MRR 0.98
+      </div>
+    </div>
+    
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Lowest Retrieval Cases</h2>
+        <div class="panel-note">Queries with the lowest keyword hit ratio or ranking quality. These are the first places to improve data coverage or retrieval weighting.</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Query</th>
+              <th>Hit@5</th>
+              <th>MRR</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>上海-亲子</td>
+              <td>上海带小孩去哪玩</td>
+              <td>2/5</td>
+              <td>0.33</td>
+            </tr>
+            
+
+            <tr>
+              <td>北京-美食</td>
+              <td>北京烤鸭哪家好吃</td>
+              <td>3/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>北京-亲子</td>
+              <td>北京带孩子去哪玩</td>
+              <td>3/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>西安-小众</td>
+              <td>西安小众景点</td>
+              <td>3/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>西安-交通</td>
+              <td>西安交通怎么坐方便</td>
+              <td>3/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>成都-亲子游</td>
+              <td>成都带孩子去哪玩</td>
+              <td>4/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>北京-升旗</td>
+              <td>天安门升旗仪式几点</td>
+              <td>4/5</td>
+              <td>1.00</td>
+            </tr>
+            
+
+            <tr>
+              <td>成都-美食</td>
+              <td>成都火锅推荐</td>
+              <td>5/5</td>
+              <td>1.00</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>RAG Version Details</h2>
+        <div class="panel-note">Retrieval-side metrics are independent from LLM-as-judge RAGAS scores.</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Hit Rate</th>
+              <th>MRR</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>V1</td>
+              <td>22.0%</td>
+              <td>0.38</td>
+              <td>纯向量检索 + 基础清洗</td>
+            </tr>
+            
+
+            <tr>
+              <td>V2</td>
+              <td>78.0%</td>
+              <td>0.86</td>
+              <td>+加强清洗 +chunk标题前缀 +chunk去重 +换bge-small</td>
+            </tr>
+            
+
+            <tr>
+              <td>V3</td>
+              <td>84.0%</td>
+              <td>0.95</td>
+              <td>+混合检索（向量+BM25 RRF融合）</td>
+            </tr>
+            
+
+            <tr>
+              <td>V4</td>
+              <td>84.5%</td>
+              <td>0.95</td>
+              <td>+段内去重 +广告残留清理</td>
+            </tr>
+            
+
+            <tr>
+              <td>V5</td>
+              <td>90.5%</td>
+              <td>0.95</td>
+              <td>+城市过滤 +BGE查询前缀 +网格搜索 +扩展至4城</td>
+            </tr>
+            
+
+            <tr>
+              <td>V6</td>
+              <td>92.5%</td>
+              <td>0.95</td>
+              <td>+查询同义词扩展 +BM25停用词 +分城市BM25索引</td>
+            </tr>
+            
+
+            <tr>
+              <td>V7</td>
+              <td>93.5%</td>
+              <td>0.98</td>
+              <td>+Metadata Boosting +Title Boosting +Query-Type自适应权重 +MMR多样性 +扩展测试集关键词</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Top Failure Drivers</h2>
+        <div class="panel-note">Failure tags from the Companion benchmark, useful for explaining the error-rate sources.</div>
+        
+            <div class="bar-row">
+              <div class="bar-label">missed_deadline</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 100.0%"></div></div>
+              <div class="bar-value">8</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">no_route_check</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 100.0%"></div></div>
+              <div class="bar-value">8</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">drops_core_interest</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 62.5%"></div></div>
+              <div class="bar-value">5</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">keeps_bad_weather_outdoor</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 62.5%"></div></div>
+              <div class="bar-value">5</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">no_exit_plan</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 62.5%"></div></div>
+              <div class="bar-value">5</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">weather_guess</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 62.5%"></div></div>
+              <div class="bar-value">5</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">continues_itinerary</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 50.0%"></div></div>
+              <div class="bar-value">4</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">drops_core_preference</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 50.0%"></div></div>
+              <div class="bar-value">4</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">emergency_misclassified</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 50.0%"></div></div>
+              <div class="bar-value">4</div>
+            </div>
+            
+
+            <div class="bar-row">
+              <div class="bar-label">ignores_mobility</div>
+              <div class="bar-track"><div class="bar-fill bar-red" style="width: 50.0%"></div></div>
+              <div class="bar-value">4</div>
+            </div>
+            
+      </div>
+      <div class="panel">
+        <h2>RAGAS Average Latency Breakdown</h2>
+        <div class="metric-list">
+          <div class="metric-box"><div class="metric-label">Retrieve</div><div class="metric-value">1.2s</div></div>
+          <div class="metric-box"><div class="metric-label">Generate</div><div class="metric-value">18.3s</div></div>
+          <div class="metric-box"><div class="metric-label">Judge</div><div class="metric-value">21.0s</div></div>
+        </div>
+        <div class="panel-note" style="margin-top: 12px;">Average total latency per case is about 40.6s.</div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-bottom: 14px;">
+      <h2>Agent Detail Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Records</th>
+            <th>Avg Response</th>
+            <th>P95 Response</th>
+            <th>Timeout Rate</th>
+            <th>Token</th>
+            <th>Cost USD</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>companion</td>
+              <td>3</td>
+              <td>24.4s</td>
+              <td>41.6s</td>
+              <td>33.3%</td>
+              <td>3,637</td>
+              <td>$0.003622</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner</td>
+              <td>3</td>
+              <td>29.9s</td>
+              <td>86.0s</td>
+              <td>33.3%</td>
+              <td>3,981</td>
+              <td>$0.00795</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>28</td>
+              <td>30.6s</td>
+              <td>172.7s</td>
+              <td>32.1%</td>
+              <td>13,766</td>
+              <td>$0.027135</td>
+            </tr>
+            
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel" style="margin-bottom: 14px;">
+      <h2>Recent Per-Turn Cost</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>City</th>
+            <th>Turn</th>
+            <th>Latency</th>
+            <th>Token</th>
+            <th>Per-Turn Cost</th>
+            <th>Alerts</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>companion</td>
+              <td>Beijing</td>
+              <td>1</td>
+              <td>19.6s</td>
+              <td>1,272</td>
+              <td>$0.001328 / ¥0.0096</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>companion</td>
+              <td>Beijing</td>
+              <td>1</td>
+              <td>41.6s</td>
+              <td>1,351</td>
+              <td>$0.001475 / ¥0.0106</td>
+              <td>HIGH_LATENCY: 41560ms &gt; 30000ms</td>
+            </tr>
+            
+
+            <tr>
+              <td>companion</td>
+              <td>Beijing</td>
+              <td>1</td>
+              <td>12.0s</td>
+              <td>1,014</td>
+              <td>$0.000819 / ¥0.0059</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner</td>
+              <td>Xiamen</td>
+              <td>2</td>
+              <td>86.0s</td>
+              <td>3,934</td>
+              <td>$0.007864 / ¥0.0566</td>
+              <td>HIGH_LATENCY: 86050ms &gt; 30000ms</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner</td>
+              <td>Hong Kong</td>
+              <td>1</td>
+              <td>1.8s</td>
+              <td>25</td>
+              <td>$0.000043 / ¥0.0003</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner</td>
+              <td>Hong Kong</td>
+              <td>1</td>
+              <td>1.9s</td>
+              <td>22</td>
+              <td>$0.000042 / ¥0.0003</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>2</td>
+              <td>75.5s</td>
+              <td>1,338</td>
+              <td>$0.002662 / ¥0.0192</td>
+              <td>HIGH_LATENCY: 75520ms &gt; 30000ms</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>1</td>
+              <td>2.0s</td>
+              <td>50</td>
+              <td>$0.000053 / ¥0.0004</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>2</td>
+              <td>66.2s</td>
+              <td>1,338</td>
+              <td>$0.002662 / ¥0.0192</td>
+              <td>HIGH_LATENCY: 66154ms &gt; 30000ms</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>1</td>
+              <td>1.0s</td>
+              <td>50</td>
+              <td>$0.000053 / ¥0.0004</td>
+              <td>-</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>2</td>
+              <td>102.9s</td>
+              <td>1,341</td>
+              <td>$0.002668 / ¥0.0192</td>
+              <td>HIGH_LATENCY: 102937ms &gt; 30000ms</td>
+            </tr>
+            
+
+            <tr>
+              <td>travel_planner_legacy</td>
+              <td>Shanghai</td>
+              <td>1</td>
+              <td>0.9s</td>
+              <td>50</td>
+              <td>$0.000053 / ¥0.0004</td>
+              <td>-</td>
+            </tr>
+            
+        </tbody>
+      </table>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Cost Methodology</h2>
+        <div class="formula">cost = token_usage estimated_cost from each result when available
+mixed-model RAGAS runs sum child costs across answer and judge calls
+CNY = USD * 7.2</div>
+        <div class="panel-note" style="margin-top: 12px;">This is a token-based estimate using <code>token_costing.py</code>. It is not the actual cloud billing amount.</div>
+      </div>
+      <div class="panel">
+        <h2>Data Sources</h2>
+        <ul class="sources">
+          <li><span>Online trace</span><code>5-evaluate\eval_trace.jsonl</code></li>
+<li><span>Companion benchmark</span><code>5-evaluate\companion_eval_runs\full_llm_k4\partial_summary.json</code></li>
+<li><span>RAGAS result</span><code>5-evaluate\ragas_result.json</code></li>
+<li><span>RAG retrieval report</span><code>1-rag_pipeline_delivery\evaluation_report.md</code></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const grid = document.querySelector(".kpi-grid");
+      if (!grid) return;
+
+      const storageKey = "travel-agent-eval-dashboard-kpi-order";
+      let draggedCard = null;
+
+      const cardId = (card) => {
+        const existing = card.dataset.kpiId;
+        if (existing) return existing;
+        const title = card.querySelector(".kpi-title")?.textContent || "";
+        const id = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        card.dataset.kpiId = id;
+        return id;
+      };
+
+      const cards = () => Array.from(grid.querySelectorAll(".kpi"));
+
+      const saveOrder = () => {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(cards().map(cardId)));
+        } catch (_error) {
+        }
+      };
+
+      const restoreOrder = () => {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+          saved.forEach((id) => {
+            const card = cards().find((item) => cardId(item) === id);
+            if (card) grid.appendChild(card);
+          });
+        } catch (_error) {
+        }
+      };
+
+      restoreOrder();
+
+      cards().forEach((card) => {
+        card.draggable = true;
+        card.addEventListener("dragstart", (event) => {
+          draggedCard = card;
+          card.classList.add("is-dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", cardId(card));
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("is-dragging");
+          draggedCard = null;
+          saveOrder();
+        });
+      });
+
+      grid.addEventListener("dragover", (event) => {
+        if (!draggedCard) return;
+        event.preventDefault();
+        const target = event.target.closest(".kpi");
+        if (!target || target === draggedCard || !grid.contains(target)) return;
+
+        const rect = target.getBoundingClientRect();
+        const sameRow = event.clientY >= rect.top && event.clientY <= rect.bottom;
+        const insertAfter = sameRow
+          ? event.clientX > rect.left + rect.width / 2
+          : event.clientY > rect.top + rect.height / 2;
+
+        if (insertAfter) {
+          target.after(draggedCard);
+        } else {
+          target.before(draggedCard);
+        }
+      });
+
+      grid.addEventListener("drop", (event) => {
+        event.preventDefault();
+        saveOrder();
+      });
+    })();
+  </script>
+</body>
+</html>

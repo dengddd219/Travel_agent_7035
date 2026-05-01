@@ -1,0 +1,1563 @@
+{
+  "version": "0.1",
+  "benchmark": "travel_agent_7035_intent_understanding",
+  "description": "层次一：意图理解测试集。覆盖标准输入、口语模糊、隐含信息、多槽位、多轮增量五类场景，共110条，全中文。",
+  "scoring": {
+    "method": "per_slot_weighted",
+    "slots": {
+      "city":         { "weight": 1.0, "type": "exact_match_after_alias_normalize" },
+      "trip_days":    { "weight": 1.0, "type": "exact_int" },
+      "travel_type":  { "weight": 1.0, "type": "exact_match", "valid_values": ["family", "food", "theme", "leisure"] },
+      "budget_level": { "weight": 0.5, "type": "exact_match", "valid_values": ["low", "medium", "high"] },
+      "pace":         { "weight": 0.5, "type": "exact_match", "valid_values": ["slow", "balanced", "packed"] },
+      "must_visit":   { "weight": 0.5, "type": "set_exact" },
+      "avoid":        { "weight": 0.5, "type": "set_exact" }
+    },
+    "pass_threshold": 0.85
+  },
+  "categories": [
+    {
+      "id": "cat_1",
+      "name": "标准/结构化输入",
+      "description": "字段清晰，几乎无歧义，主要验证基础解析能力",
+      "cases": [
+        {
+          "id": "std_001",
+          "user_request": "我想去成都玩5天，亲子游，预算中等",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": 5,
+            "travel_type": "family",
+            "budget_level": "medium",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_002",
+          "user_request": "上海3天美食之旅，预算充足",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_003",
+          "user_request": "北京4天文化游，慢节奏，预算低",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": 4,
+            "travel_type": "leisure",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_004",
+          "user_request": "杭州2天休闲游，不限预算",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": 2,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_005",
+          "user_request": "西安7天历史文化游，中等预算，节奏适中",
+          "expected": {
+            "city": "Xian",
+            "trip_days": 7,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_006",
+          "user_request": "重庆5天美食探店，省钱为主",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_007",
+          "user_request": "广州3天亲子游，紧凑安排",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 3,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": "packed",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_008",
+          "user_request": "深圳4天小众主题游，预算中等偏高",
+          "expected": {
+            "city": "Shenzhen",
+            "trip_days": 4,
+            "travel_type": "theme",
+            "budget_level": "medium",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_009",
+          "user_request": "南京6天，历史文化，慢慢逛，预算适中",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": 6,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_010",
+          "user_request": "厦门4天休闲度假，悠闲节奏，不限预算",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": 4,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_011",
+          "user_request": "香港3天，逛街购物为主，预算高",
+          "expected": {
+            "city": "Hong Kong",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_012",
+          "user_request": "东京5天亲子游，带两个小孩，预算中等",
+          "expected": {
+            "city": "Tokyo",
+            "trip_days": 5,
+            "travel_type": "family",
+            "budget_level": "medium",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_013",
+          "user_request": "成都3天，专门吃火锅和小吃，低预算",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_014",
+          "user_request": "上海6天特种兵式旅游，中等预算",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 6,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "packed",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_015",
+          "user_request": "北京5天，节奏别太快，经济实惠",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": 5,
+            "travel_type": "leisure",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_016",
+          "user_request": "杭州3天美食游，节奏紧凑，预算不限",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": "packed",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_017",
+          "user_request": "重庆4天小众设计感旅游，预算适中",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": 4,
+            "travel_type": "theme",
+            "budget_level": "medium",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_018",
+          "user_request": "广州5天美食探索，预算低一些",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_019",
+          "user_request": "西安3天，文化历史，悠闲节奏，预算中等",
+          "expected": {
+            "city": "Xian",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "std_020",
+          "user_request": "深圳2天亲子游，安排紧凑一点，不限预算",
+          "expected": {
+            "city": "Shenzhen",
+            "trip_days": 2,
+            "travel_type": "family",
+            "budget_level": "high",
+            "pace": "packed",
+            "must_visit": [],
+            "avoid": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cat_2",
+      "name": "口语化/模糊输入",
+      "description": "非正式表达，需要语义推断，主要验证 LLM 理解路径",
+      "cases": [
+        {
+          "id": "vague_001",
+          "user_request": "带娃去成都玩几天，不要太贵",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "note": "trip_days 未明确，可接受 3-5 任意值或 null"
+        },
+        {
+          "id": "vague_002",
+          "user_request": "想去上海嗨一圈，吃吃喝喝，随便逛逛",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_003",
+          "user_request": "北京来一趟，主要想看看历史古迹，不赶时间",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_004",
+          "user_request": "去重庆溜达溜达，感受一下火锅文化",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_005",
+          "user_request": "杭州那边风景不错，带老婆去度个假，预算随意",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_006",
+          "user_request": "想去西安那边转一转，主要是想吃小吃",
+          "expected": {
+            "city": "Xian",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_007",
+          "user_request": "五一去哪里好，想带小孩玩，上海或者深圳都行",
+          "expected": {
+            "city": null,
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "note": "城市模糊，city 可能为 null 或其中一个，此条测试 needs_clarification 行为"
+        },
+        {
+          "id": "vague_008",
+          "user_request": "南京那边有什么好玩的，帮我规划一下",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_009",
+          "user_request": "厦门是不是很适合拍照？想去拍拍照片",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": null,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_010",
+          "user_request": "最近想出去走走，去广州或者成都都行，就是想吃东西",
+          "expected": {
+            "city": null,
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "note": "城市模糊，needs_clarification 应为 true"
+        },
+        {
+          "id": "vague_011",
+          "user_request": "香港购物天堂，想去扫货，钱不是问题",
+          "expected": {
+            "city": "Hong Kong",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_012",
+          "user_request": "想去日本，东京的话大概玩个一周左右吧",
+          "expected": {
+            "city": "Tokyo",
+            "trip_days": 7,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_013",
+          "user_request": "朋友说成都超好玩，我也想去，就是不知道去几天",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_014",
+          "user_request": "上海出差顺便玩两天，随便逛逛，不太想花太多钱",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 2,
+            "travel_type": "leisure",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_015",
+          "user_request": "北京有啥推荐的，下周打算去",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_016",
+          "user_request": "重庆夜景好看吗？想去看看，顺便吃点东西",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_017",
+          "user_request": "带小孩去哪玩好？想去主题乐园那种，深圳还是上海？",
+          "expected": {
+            "city": null,
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "note": "城市不确定，needs_clarification 应为 true"
+        },
+        {
+          "id": "vague_018",
+          "user_request": "西安兵马俑那边，想去看一看，就当历史课补课",
+          "expected": {
+            "city": "Xian",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["兵马俑"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_019",
+          "user_request": "杭州西湖应该去吧，帮我规划一下",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["西湖"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_020",
+          "user_request": "南京中山陵和夫子庙都想去，顺便带孩子感受一下历史",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["中山陵", "夫子庙"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_021",
+          "user_request": "去成都玩，想吃火锅，但不想踩雷，有推荐嘛",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_022",
+          "user_request": "香港三四天，主要逛街和吃东西，不差钱",
+          "expected": {
+            "city": "Hong Kong",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "note": "三四天可接受 3 或 4"
+        },
+        {
+          "id": "vague_023",
+          "user_request": "深圳有没有适合年轻人打卡的地方，想去拍照发小红书",
+          "expected": {
+            "city": "Shenzhen",
+            "trip_days": null,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_024",
+          "user_request": "厦门鼓浪屿听说很漂亮，想去感受一下文艺氛围",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": null,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": ["鼓浪屿"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_025",
+          "user_request": "东京迪士尼必去吧，还想逛秋叶原，大概五六天",
+          "expected": {
+            "city": "Tokyo",
+            "trip_days": 5,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["东京迪士尼", "秋叶原"],
+            "avoid": []
+          },
+          "note": "五六天可接受 5 或 6"
+        },
+        {
+          "id": "vague_026",
+          "user_request": "广州美食太多了，专门去吃，三天够不够",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_027",
+          "user_request": "重庆洪崖洞必须去，还有解放碑，其他随便",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["洪崖洞", "解放碑"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_028",
+          "user_request": "上海迪士尼带小孩去，两天玩一玩",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 2,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["上海迪士尼"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_029",
+          "user_request": "去北京，故宫长城都想去，大概一周",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": 7,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["故宫", "长城"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "vague_030",
+          "user_request": "杭州西湖断桥残雪那种，浪漫一点，带女朋友去",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": ["西湖"],
+            "avoid": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cat_3",
+      "name": "隐含信息输入",
+      "description": "约束藏在语境中，不直接说槽位名称，需要推断",
+      "cases": [
+        {
+          "id": "implicit_001",
+          "user_request": "带老人去重庆，不要爬太多楼梯，慢慢逛就好",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["老人 → 低体力，slow pace，避免高强度爬坡景点"]
+        },
+        {
+          "id": "implicit_002",
+          "user_request": "穷游成都，能省则省，但要吃正宗火锅",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": null,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_003",
+          "user_request": "上海五天，小孩7岁，不能太累，要有趣",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 5,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["小孩7岁 → family travel_type，slow pace"]
+        },
+        {
+          "id": "implicit_004",
+          "user_request": "北京不想去人多的地方，安静的历史景点就好",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["不想去人多的地方 → 偏好小众/安静"]
+        },
+        {
+          "id": "implicit_005",
+          "user_request": "西安暑假带孩子去，要有互动性的项目，不能太学术",
+          "expected": {
+            "city": "Xian",
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_006",
+          "user_request": "深圳不去华强北，想去有设计感的地方",
+          "expected": {
+            "city": "Shenzhen",
+            "trip_days": null,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": ["华强北"]
+          }
+        },
+        {
+          "id": "implicit_007",
+          "user_request": "杭州三天，不去西湖（太拥挤），想找点小众的",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": 3,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": ["西湖"]
+          }
+        },
+        {
+          "id": "implicit_008",
+          "user_request": "广州出差三天，晚上有空，想吃点好的不限预算",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["出差 → 白天不可用，pace slow；晚上吃 → food type"]
+        },
+        {
+          "id": "implicit_009",
+          "user_request": "去厦门避暑，不想晒太阳，室内为主",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["不想晒太阳 → prefer_indoor，影响 planner 选 POI"]
+        },
+        {
+          "id": "implicit_010",
+          "user_request": "南京毕业旅行，四个人，预算每人800以内",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": "low",
+            "pace": null,
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["每人800 → low budget"]
+        },
+        {
+          "id": "implicit_011",
+          "user_request": "成都熊猫基地一定要去，其他不太重要",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["熊猫基地"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_012",
+          "user_request": "香港不想去大商场，想感受本地市井气息",
+          "expected": {
+            "city": "Hong Kong",
+            "trip_days": null,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": ["大商场"]
+          }
+        },
+        {
+          "id": "implicit_013",
+          "user_request": "东京不去迪士尼，不去环球影城，想找点日本本土文化",
+          "expected": {
+            "city": "Tokyo",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": ["迪士尼", "环球影城"]
+          }
+        },
+        {
+          "id": "implicit_014",
+          "user_request": "上海外滩和豫园必须去，其他随意，一共三天",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["外滩", "豫园"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_015",
+          "user_request": "重庆五天，不去太商业化的地方，想看真实的山城生活",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": 5,
+            "travel_type": "theme",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_016",
+          "user_request": "带三岁宝宝去广州，安全第一，不要走太多路",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": null,
+            "travel_type": "family",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          },
+          "implicit_constraints": ["三岁宝宝 → family，slow pace，低体力路线"]
+        },
+        {
+          "id": "implicit_017",
+          "user_request": "北京蜜月旅行，两个人，想要浪漫一点，不差钱",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        },
+        {
+          "id": "implicit_018",
+          "user_request": "西安5天，一定要吃羊肉泡馍和肉夹馍，其他都行",
+          "expected": {
+            "city": "Xian",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": ["羊肉泡馍", "肉夹馍"],
+            "avoid": []
+          },
+          "note": "食物作为 must_visit 的边界情况"
+        },
+        {
+          "id": "implicit_019",
+          "user_request": "厦门四天，绝对不去鼓浪屿（人太多了），帮我找替代",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": 4,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": null,
+            "must_visit": [],
+            "avoid": ["鼓浪屿"]
+          }
+        },
+        {
+          "id": "implicit_020",
+          "user_request": "南京六朝古都，想深度感受历史，时间够的话可以多停几天",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": null,
+            "travel_type": "leisure",
+            "budget_level": null,
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cat_4",
+      "name": "多槽位同时出现",
+      "description": "单条输入同时包含 4 个以上槽位，验证槽位提取完整性",
+      "cases": [
+        {
+          "id": "multi_001",
+          "user_request": "成都5天亲子游，必去熊猫基地，不去商场，慢节奏，预算中等",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": 5,
+            "travel_type": "family",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": ["熊猫基地"],
+            "avoid": ["商场"]
+          }
+        },
+        {
+          "id": "multi_002",
+          "user_request": "北京7天历史文化游，必去故宫、长城、天坛，不去购物中心，节奏悠闲，低预算",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": 7,
+            "travel_type": "leisure",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": ["故宫", "长城", "天坛"],
+            "avoid": ["购物中心"]
+          }
+        },
+        {
+          "id": "multi_003",
+          "user_request": "上海4天美食游，必须去外滩和豫园，不去迪士尼，节奏紧凑，预算高",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 4,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": "packed",
+            "must_visit": ["外滩", "豫园"],
+            "avoid": ["迪士尼"]
+          }
+        },
+        {
+          "id": "multi_004",
+          "user_request": "重庆3天，带两个小孩，必去洪崖洞，不要爬很高的地方，节奏慢一点，不限预算",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": 3,
+            "travel_type": "family",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": ["洪崖洞"],
+            "avoid": []
+          },
+          "implicit_constraints": ["不要爬很高的地方 → avoid 高海拔/爬坡景点"]
+        },
+        {
+          "id": "multi_005",
+          "user_request": "杭州5天小众游，必去西湖断桥，不去雷峰塔（人太多），悠闲节奏，预算适中",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": 5,
+            "travel_type": "theme",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": ["西湖断桥"],
+            "avoid": ["雷峰塔"]
+          }
+        },
+        {
+          "id": "multi_006",
+          "user_request": "西安6天美食+历史混合游，必去兵马俑和回民街，不去大雁塔（太商业化），节奏均衡，经济实惠",
+          "expected": {
+            "city": "Xian",
+            "trip_days": 6,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": "balanced",
+            "must_visit": ["兵马俑", "回民街"],
+            "avoid": ["大雁塔"]
+          }
+        },
+        {
+          "id": "multi_007",
+          "user_request": "厦门4天，亲子游，必去海边，不去鼓浪屿（人太多），轻松节奏，预算不限",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": 4,
+            "travel_type": "family",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": ["鼓浪屿"]
+          }
+        },
+        {
+          "id": "multi_008",
+          "user_request": "广州5天美食专项，必去顺德吃鱼生，不去景区，节奏紧凑，低预算",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": "packed",
+            "must_visit": ["顺德"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "multi_009",
+          "user_request": "南京3天历史游，必去中山陵和夫子庙，不去现代商业区，节奏适中，预算中等",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "must_visit": ["中山陵", "夫子庙"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "multi_010",
+          "user_request": "深圳4天主题游，必去华侨城创意园，不去华强北，紧凑安排，预算不限",
+          "expected": {
+            "city": "Shenzhen",
+            "trip_days": 4,
+            "travel_type": "theme",
+            "budget_level": "high",
+            "pace": "packed",
+            "must_visit": ["华侨城创意园"],
+            "avoid": ["华强北"]
+          }
+        },
+        {
+          "id": "multi_011",
+          "user_request": "香港3天，购物+美食，必去铜锣湾和旺角，不去迪士尼，节奏快，不差钱",
+          "expected": {
+            "city": "Hong Kong",
+            "trip_days": 3,
+            "travel_type": "food",
+            "budget_level": "high",
+            "pace": "packed",
+            "must_visit": ["铜锣湾", "旺角"],
+            "avoid": ["迪士尼"]
+          }
+        },
+        {
+          "id": "multi_012",
+          "user_request": "东京7天，亲子游，必去迪士尼和teamLab，不去秋叶原（不感兴趣），节奏适中，预算中等",
+          "expected": {
+            "city": "Tokyo",
+            "trip_days": 7,
+            "travel_type": "family",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "must_visit": ["迪士尼", "teamLab"],
+            "avoid": ["秋叶原"]
+          }
+        },
+        {
+          "id": "multi_013",
+          "user_request": "成都5天美食游，必去宽窄巷子和锦里，不去商场，慢节奏，每天预算控制在200以内",
+          "expected": {
+            "city": "Chengdu",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": ["宽窄巷子", "锦里"],
+            "avoid": ["商场"]
+          },
+          "implicit_constraints": ["每天200 → low budget"]
+        },
+        {
+          "id": "multi_014",
+          "user_request": "上海6天，带8岁孩子，必去科技馆和自然博物馆，不去太吵的地方，节奏不要太快，预算中等",
+          "expected": {
+            "city": "Shanghai",
+            "trip_days": 6,
+            "travel_type": "family",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": ["科技馆", "自然博物馆"],
+            "avoid": []
+          }
+        },
+        {
+          "id": "multi_015",
+          "user_request": "北京5天，小众文化探索，必去798艺术区，不去故宫（排队太久），节奏均衡，预算适中",
+          "expected": {
+            "city": "Beijing",
+            "trip_days": 5,
+            "travel_type": "theme",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "must_visit": ["798艺术区"],
+            "avoid": ["故宫"]
+          }
+        },
+        {
+          "id": "multi_016",
+          "user_request": "重庆4天，美食+夜景，必去洪崖洞夜景和解放碑，不去磁器口（太商业），节奏适中，低预算",
+          "expected": {
+            "city": "Chongqing",
+            "trip_days": 4,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": "balanced",
+            "must_visit": ["洪崖洞", "解放碑"],
+            "avoid": ["磁器口"]
+          }
+        },
+        {
+          "id": "multi_017",
+          "user_request": "杭州4天，亲子游，必去西湖船游，不去灵隐寺（孩子不感兴趣），轻松节奏，预算不限",
+          "expected": {
+            "city": "Hangzhou",
+            "trip_days": 4,
+            "travel_type": "family",
+            "budget_level": "high",
+            "pace": "slow",
+            "must_visit": ["西湖"],
+            "avoid": ["灵隐寺"]
+          }
+        },
+        {
+          "id": "multi_018",
+          "user_request": "广州3天，必去陈家祠和沙面，不去天河城（购物不感兴趣），节奏适中，中等预算",
+          "expected": {
+            "city": "Guangzhou",
+            "trip_days": 3,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "balanced",
+            "must_visit": ["陈家祠", "沙面"],
+            "avoid": ["天河城"]
+          }
+        },
+        {
+          "id": "multi_019",
+          "user_request": "厦门5天美食游，必去沙茶面和海蛎煎发源地，不去鼓浪屿，节奏慢，预算低",
+          "expected": {
+            "city": "Xiamen",
+            "trip_days": 5,
+            "travel_type": "food",
+            "budget_level": "low",
+            "pace": "slow",
+            "must_visit": [],
+            "avoid": ["鼓浪屿"]
+          }
+        },
+        {
+          "id": "multi_020",
+          "user_request": "南京7天历史深度游，必去明孝陵、中山陵、夫子庙，不去现代购物区，节奏慢，预算适中",
+          "expected": {
+            "city": "Nanjing",
+            "trip_days": 7,
+            "travel_type": "leisure",
+            "budget_level": "medium",
+            "pace": "slow",
+            "must_visit": ["明孝陵", "中山陵", "夫子庙"],
+            "avoid": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cat_5",
+      "name": "多轮增量更新",
+      "description": "测试 continue_conversation 的增量槽位合并逻辑，每条 case 包含多轮对话",
+      "cases": [
+        {
+          "id": "multi_turn_001",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "我想去成都",
+              "expected_after_turn": {
+                "city": "Chengdu",
+                "trip_days": null,
+                "travel_type": "leisure",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "玩5天，亲子游",
+              "expected_after_turn": {
+                "city": "Chengdu",
+                "trip_days": 5,
+                "travel_type": "family",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "加上熊猫基地必去，不去商场",
+              "expected_after_turn": {
+                "city": "Chengdu",
+                "trip_days": 5,
+                "travel_type": "family",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": ["熊猫基地"],
+                "avoid": ["商场"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_002",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "帮我规划北京7天行程，历史文化游",
+              "expected_after_turn": {
+                "city": "Beijing",
+                "trip_days": 7,
+                "travel_type": "leisure",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "节奏慢一点，预算低",
+              "expected_after_turn": {
+                "city": "Beijing",
+                "trip_days": 7,
+                "travel_type": "leisure",
+                "budget_level": "low",
+                "pace": "slow",
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "故宫和长城必须去，购物中心不去",
+              "expected_after_turn": {
+                "city": "Beijing",
+                "trip_days": 7,
+                "travel_type": "leisure",
+                "budget_level": "low",
+                "pace": "slow",
+                "must_visit": ["故宫", "长城"],
+                "avoid": ["购物中心"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_003",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "上海出发，想吃东西",
+              "expected_after_turn": {
+                "city": "Shanghai",
+                "trip_days": null,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "玩3天，带小孩",
+              "expected_after_turn": {
+                "city": "Shanghai",
+                "trip_days": 3,
+                "travel_type": "family",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              },
+              "note": "travel_type 从 food 被 family 覆盖，测试 replace 逻辑"
+            },
+            {
+              "turn": 3,
+              "user_request": "预算不限，节奏慢，迪士尼必去",
+              "expected_after_turn": {
+                "city": "Shanghai",
+                "trip_days": 3,
+                "travel_type": "family",
+                "budget_level": "high",
+                "pace": "slow",
+                "must_visit": ["迪士尼"],
+                "avoid": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_004",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "西安5天美食游",
+              "expected_after_turn": {
+                "city": "Xian",
+                "trip_days": 5,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "兵马俑也想去，加进去",
+              "expected_after_turn": {
+                "city": "Xian",
+                "trip_days": 5,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": ["兵马俑"],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "大雁塔去掉，不感兴趣",
+              "expected_after_turn": {
+                "city": "Xian",
+                "trip_days": 5,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": ["兵马俑"],
+                "avoid": ["大雁塔"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_005",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "重庆帮我规划一下",
+              "expected_after_turn": {
+                "city": "Chongqing",
+                "trip_days": null,
+                "travel_type": "leisure",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "4天，主要是美食，洪崖洞必去",
+              "expected_after_turn": {
+                "city": "Chongqing",
+                "trip_days": 4,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": ["洪崖洞"],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "磁器口不去，太商业化了，节奏慢一点",
+              "expected_after_turn": {
+                "city": "Chongqing",
+                "trip_days": 4,
+                "travel_type": "food",
+                "budget_level": null,
+                "pace": "slow",
+                "must_visit": ["洪崖洞"],
+                "avoid": ["磁器口"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_006",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "去杭州玩",
+              "expected_after_turn": {
+                "city": "Hangzhou",
+                "trip_days": null,
+                "travel_type": "leisure",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "3天，预算低，节奏快一点",
+              "expected_after_turn": {
+                "city": "Hangzhou",
+                "trip_days": 3,
+                "travel_type": "leisure",
+                "budget_level": "low",
+                "pace": "packed",
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "等等，改成5天，节奏悠闲，带女朋友去",
+              "expected_after_turn": {
+                "city": "Hangzhou",
+                "trip_days": 5,
+                "travel_type": "leisure",
+                "budget_level": "low",
+                "pace": "slow",
+                "must_visit": [],
+                "avoid": []
+              },
+              "note": "trip_days 和 pace 被覆盖，budget_level 保留，测试 replace 不清空其他槽位"
+            }
+          ]
+        },
+        {
+          "id": "multi_turn_007",
+          "turns": [
+            {
+              "turn": 1,
+              "user_request": "深圳4天主题游",
+              "expected_after_turn": {
+                "city": "Shenzhen",
+                "trip_days": 4,
+                "travel_type": "theme",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": [],
+                "avoid": []
+              }
+            },
+            {
+              "turn": 2,
+              "user_request": "华侨城创意园必去，华强北不去",
+              "expected_after_turn": {
+                "city": "Shenzhen",
+                "trip_days": 4,
+                "travel_type": "theme",
+                "budget_level": null,
+                "pace": null,
+                "must_visit": ["华侨城创意园"],
+                "avoid": ["华强北"]
+              }
+            },
+            {
+              "turn": 3,
+              "user_request": "预算高一些，节奏不要太快",
+              "expected_after_turn": {
+                "city": "Shenzhen",
+                "trip_days": 4,
+                "travel_type": "theme",
+                "budget_level": "high",
+                "pace": "slow",
+                "must_visit": ["华侨城创意园"],
+                "avoid": ["华强北"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_single_turn_cases": 90,
+    "total_multi_turn_cases": 7,
+    "total_turns_in_multi_turn": 21,
+    "category_breakdown": {
+      "cat_1_standard": 20,
+      "cat_2_vague": 30,
+      "cat_3_implicit": 20,
+      "cat_4_multi_slot": 20,
+      "cat_5_multi_turn": 7
+    }
+  }
+}

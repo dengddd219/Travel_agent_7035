@@ -1,0 +1,3 @@
+﻿pid=31512
+out=5-evaluate\ragas_full_100_final2_20260427_124055.out.log
+err=5-evaluate\ragas_full_100_final2_20260427_124055.err.log

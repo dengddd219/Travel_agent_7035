@@ -1,0 +1,728 @@
+﻿{
+    "user_request":  "北京4天亲子游，同行朋友，低预算，节奏适中，没有必去或避开的地方",
+    "user_profile":  {
+                         "city":  "Beijing",
+                         "start_date":  "",
+                         "trip_days":  4,
+                         "travel_type":  "family",
+                         "travelers":  "friends",
+                         "budget_level":  "low",
+                         "pace":  "balanced",
+                         "interests":  [
+                                           "family friendly"
+                                       ],
+                         "must_visit":  [
+
+                                        ],
+                         "avoid":  [
+                                       "çå°æ¹"
+                                   ],
+                         "notes":  "",
+                         "extra_request":  ""
+                     },
+    "itinerary_json":  {
+                           "city":  "Beijing",
+                           "trip_days":  4,
+                           "overview":  "A 4-day family itinerary in Beijing with a slow pace and low budget profile.",
+                           "total_estimated_cost":  36.0,
+                           "selected_pois":  [
+                                                 {
+                                                     "name":  "å¤©å",
+                                                     "category":  "attraction",
+                                                     "district":  "ä¸ååº",
+                                                     "lat":  39.8837,
+                                                     "lon":  116.412,
+                                                     "duration_hours":  2.0,
+                                                     "ticket_price":  34.0,
+                                                     "price_level":  2,
+                                                     "indoor_outdoor":  "outdoor",
+                                                     "tags":  [
+                                                                  "history",
+                                                                  "park",
+                                                                  "culture"
+                                                              ],
+                                                     "source":  [
+                                                                    "profile_seed"
+                                                                ],
+                                                     "address":  "1 Tiantan East Road, Dongcheng District",
+                                                     "open_hours":  "06:00-22:00",
+                                                     "rating":  4.7,
+                                                     "visit_reason":  "Major historic landmark with easier pacing than the palace core."
+                                                 },
+                                                 {
+                                                     "name":  "å¤©åå\u0085¬å­-åä¸",
+                                                     "category":  "attraction",
+                                                     "district":  "ä¸ååº",
+                                                     "lat":  39.876964,
+                                                     "lon":  116.413162,
+                                                     "duration_hours":  1.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "mixed",
+                                                     "tags":  [
+                                                                  "family"
+                                                              ],
+                                                     "source":  [
+                                                                    "amap"
+                                                                ],
+                                                     "address":  "å¤©åè·¯ç²1å·å¤©åå\u0085¬å­å\u0085(ä¸åè§)",
+                                                     "open_hours":  "08:00-22:00",
+                                                     "rating":  null,
+                                                     "visit_reason":  "Matched from POI search for \u0027åä¸\u0027."
+                                                 },
+                                                 {
+                                                     "name":  "å¤©åå\u0085¬å­-çç",
+                                                     "category":  "attraction",
+                                                     "district":  "ä¸ååº",
+                                                     "lat":  39.882667,
+                                                     "lon":  116.413566,
+                                                     "duration_hours":  1.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "mixed",
+                                                     "tags":  [
+                                                                  "family"
+                                                              ],
+                                                     "source":  [
+                                                                    "amap"
+                                                                ],
+                                                     "address":  "å¤©åå\u0085ä¸é7å·å¤©åå\u0085¬å­åä¸å\u0085",
+                                                     "open_hours":  "",
+                                                     "rating":  null,
+                                                     "visit_reason":  "Matched from POI search for \u0027åä¸\u0027."
+                                                 },
+                                                 {
+                                                     "name":  "åäº¬ç¯çåº¦ååº",
+                                                     "category":  "attraction",
+                                                     "district":  "éå·åº",
+                                                     "lat":  39.852698,
+                                                     "lon":  116.681212,
+                                                     "duration_hours":  1.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "mixed",
+                                                     "tags":  [
+                                                                  "attraction"
+                                                              ],
+                                                     "source":  [
+                                                                    "amap"
+                                                                ],
+                                                     "address":  "æ¢¨å­éç¯çå¤§é",
+                                                     "open_hours":  "09:00-20:00",
+                                                     "rating":  null,
+                                                     "visit_reason":  "Matched from POI search for \u0027åäº¬ç¯çå½±å\u0027."
+                                                 },
+                                                 {
+                                                     "name":  "åå©Â·æ³¢ç¹çé­æ³ä¸ç",
+                                                     "category":  "attraction",
+                                                     "district":  "éå·åº",
+                                                     "lat":  39.856678,
+                                                     "lon":  116.686716,
+                                                     "duration_hours":  1.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "mixed",
+                                                     "tags":  [
+                                                                  "attraction"
+                                                              ],
+                                                     "source":  [
+                                                                    "amap"
+                                                                ],
+                                                     "address":  "åäº¬ç¯çåº¦ååº",
+                                                     "open_hours":  "09:00-20:00",
+                                                     "rating":  null,
+                                                     "visit_reason":  "Matched from POI search for \u0027åå©æ³¢ç¹å­åº\u0027."
+                                                 },
+                                                 {
+                                                     "name":  "åå©Â·æ³¢ç¹ä¸ç¦å¿ä¹æ\u0085â¢",
+                                                     "category":  "attraction",
+                                                     "district":  "éå·åº",
+                                                     "lat":  39.856904,
+                                                     "lon":  116.686896,
+                                                     "duration_hours":  1.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "mixed",
+                                                     "tags":  [
+                                                                  "attraction"
+                                                              ],
+                                                     "source":  [
+                                                                    "amap"
+                                                                ],
+                                                     "address":  "åäº¬ç¯çåº¦ååº",
+                                                     "open_hours":  "09:00-21:00",
+                                                     "rating":  null,
+                                                     "visit_reason":  "Matched from POI search for \u0027åå©æ³¢ç¹å­åº\u0027."
+                                                 },
+                                                 {
+                                                     "name":  "ä¸­å½å½å®¶åç©é¦",
+                                                     "category":  "attraction",
+                                                     "district":  "ä¸ååº",
+                                                     "lat":  39.9051,
+                                                     "lon":  116.4013,
+                                                     "duration_hours":  2.5,
+                                                     "ticket_price":  0.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "indoor",
+                                                     "tags":  [
+                                                                  "museum",
+                                                                  "history",
+                                                                  "culture"
+                                                              ],
+                                                     "source":  [
+                                                                    "profile_seed"
+                                                                ],
+                                                     "address":  "16 East Chang\u0027an Avenue",
+                                                     "open_hours":  "09:00-17:00",
+                                                     "rating":  4.7,
+                                                     "visit_reason":  "High-value indoor history anchor for bad-weather days."
+                                                 },
+                                                 {
+                                                     "name":  "æ¯å±±å\u0085¬å­",
+                                                     "category":  "attraction",
+                                                     "district":  "è¥¿ååº",
+                                                     "lat":  39.9254,
+                                                     "lon":  116.3962,
+                                                     "duration_hours":  1.2,
+                                                     "ticket_price":  2.0,
+                                                     "price_level":  1,
+                                                     "indoor_outdoor":  "outdoor",
+                                                     "tags":  [
+                                                                  "view",
+                                                                  "park",
+                                                                  "landmark"
+                                                              ],
+                                                     "source":  [
+                                                                    "profile_seed"
+                                                                ],
+                                                     "address":  "44 Jingshan West Street, Xicheng District",
+                                                     "open_hours":  "06:30-21:00",
+                                                     "rating":  4.6,
+                                                     "visit_reason":  "Great skyline and palace-overlook anchor."
+                                                 }
+                                             ],
+                           "days":  [
+                                        {
+                                            "day_index":  1,
+                                            "area":  "ä¸ååº",
+                                            "theme":  "Scenic landmark day",
+                                            "estimated_cost":  34.0,
+                                            "weather_summary":  "æ´",
+                                            "inter_stop_distance_m":  1084,
+                                            "inter_stop_duration_min":  14,
+                                            "items":  [
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "å¤©å",
+                                                              "category":  "attraction",
+                                                              "district":  "ä¸ååº",
+                                                              "duration_hours":  2.0,
+                                                              "est_cost":  34.0,
+                                                              "reasoning":  "å½å¤©æ´éåå®ææ·å¤ç¹ï¼è¿éè½åå°è¾å¥½çå¤©æ°çªå£ï¼æ¬å°æç¤ºéä¹ç¹å«æå°ï¼ãæä¸å¤©åð§§ãï¼å®æ¯æ»ç¥è·¯çº¿éçæ ¸å¿åé ç¹ï¼æ»ç¥ãåäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼ãæå®åæ\u0085å®«ãéåå®«æ¾å¨åä¸æ¡è·¯çº¿é",
+                                                              "weather_fit":  "æ´: outdoor plan, monitor rain risk.",
+                                                              "transport_hint":  "Start the day in ä¸ååº.",
+                                                              "arrival_mode":  "start",
+                                                              "arrival_distance_m":  0,
+                                                              "arrival_duration_min":  0,
+                                                              "guide_evidence":  "ä¹ä¼æ¯è¾ç´¯ï¼ä¸åå¨é\u0085åºä¼æ¯ä¼æ¯ï¼æä¸å¯ä»¥å»æåçå°æ¹éé å®æ3 ä¸åï¼é¿å ä¸åï¼ä¼æ¯ PSï¼ç¼è½¦ä¸ï¼ç¼è½¦ä¸ å®æ4 ä¸åï¼éåå®« ä¸åï¼å¤©å PSï¼å¦æå¿«çè¯ï¼è¿ä¸¤ä¸ªæ¯ç¹å¯ä»¥ä¸â¦",
+                                                              "local_note":  "å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  "åäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼"
+                                                          },
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "å¤©åå\u0085¬å­-çç",
+                                                              "category":  "attraction",
+                                                              "district":  "ä¸ååº",
+                                                              "duration_hours":  1.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°",
+                                                              "weather_fit":  "æ´: flexible mixed-environment stop.",
+                                                              "transport_hint":  "Walking about 5 min (0.4 km). åä¸åæ­¥è¡387ç±³å°è¾¾ç®çå° -\u003e åä¸åæ­¥è¡387ç±³å°è¾¾ç®çå°",
+                                                              "arrival_mode":  "walking",
+                                                              "arrival_distance_m":  387,
+                                                              "arrival_duration_min":  5,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          },
+                                                          {
+                                                              "time_slot":  "afternoon",
+                                                              "poi_name":  "å¤©åå\u0085¬å­-åä¸",
+                                                              "category":  "attraction",
+                                                              "district":  "ä¸ååº",
+                                                              "duration_hours":  1.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°",
+                                                              "weather_fit":  "æ´: flexible mixed-environment stop.",
+                                                              "transport_hint":  "Walking about 9 min (0.7 km). åè¥¿æ­¥è¡57ç±³å·¦è½¬ -\u003e åè¥¿æ­¥è¡2ç±³å°è¾¾ç®çå°",
+                                                              "arrival_mode":  "walking",
+                                                              "arrival_distance_m":  697,
+                                                              "arrival_duration_min":  9,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          }
+                                                      ],
+                                            "notes":  [
+                                                          "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                          "Avoid overly dense historic-site stacking and keep transit simple.",
+                                                          "Inter-stop travel time is about 14 min across 1.1 km."
+                                                      ]
+                                        },
+                                        {
+                                            "day_index":  2,
+                                            "area":  "éå·åº",
+                                            "theme":  "Scenic landmark day",
+                                            "estimated_cost":  0.0,
+                                            "weather_summary":  "å¤äº",
+                                            "inter_stop_distance_m":  3100,
+                                            "inter_stop_duration_min":  42,
+                                            "items":  [
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "åäº¬ç¯çåº¦ååº",
+                                                              "category":  "attraction",
+                                                              "district":  "éå·åº",
+                                                              "duration_hours":  1.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡",
+                                                              "weather_fit":  "å¤äº: flexible mixed-environment stop.",
+                                                              "transport_hint":  "Start the day in éå·åº.",
+                                                              "arrival_mode":  "start",
+                                                              "arrival_distance_m":  0,
+                                                              "arrival_duration_min":  0,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          },
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "åå©Â·æ³¢ç¹çé­æ³ä¸ç",
+                                                              "category":  "attraction",
+                                                              "district":  "éå·åº",
+                                                              "duration_hours":  1.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡",
+                                                              "weather_fit":  "å¤äº: flexible mixed-environment stop.",
+                                                              "transport_hint":  "Walking about 41 min (3.1 km). æ²¿æ¥åºå··åä¸æ­¥è¡377ç±³å³è½¬ -\u003e åä¸åæ­¥è¡64ç±³å°è¾¾ç®çå°",
+                                                              "arrival_mode":  "walking",
+                                                              "arrival_distance_m":  3079,
+                                                              "arrival_duration_min":  41,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          },
+                                                          {
+                                                              "time_slot":  "afternoon",
+                                                              "poi_name":  "åå©Â·æ³¢ç¹ä¸ç¦å¿ä¹æ\u0085â¢",
+                                                              "category":  "attraction",
+                                                              "district":  "éå·åº",
+                                                              "duration_hours":  1.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡",
+                                                              "weather_fit":  "å¤äº: flexible mixed-environment stop.",
+                                                              "transport_hint":  "Walking about 1 min (0.0 km). åä¸åæ­¥è¡21ç±³å°è¾¾ç®çå° -\u003e åä¸åæ­¥è¡21ç±³å°è¾¾ç®çå°",
+                                                              "arrival_mode":  "walking",
+                                                              "arrival_distance_m":  21,
+                                                              "arrival_duration_min":  1,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          }
+                                                      ],
+                                            "notes":  [
+                                                          "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                          "Inter-stop travel time is about 42 min across 3.1 km."
+                                                      ]
+                                        },
+                                        {
+                                            "day_index":  3,
+                                            "area":  "è¥¿ååº",
+                                            "theme":  "Scenic landmark day",
+                                            "estimated_cost":  2.0,
+                                            "weather_summary":  "æ´",
+                                            "inter_stop_distance_m":  0,
+                                            "inter_stop_duration_min":  0,
+                                            "items":  [
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "æ¯å±±å\u0085¬å­",
+                                                              "category":  "attraction",
+                                                              "district":  "è¥¿ååº",
+                                                              "duration_hours":  1.2,
+                                                              "est_cost":  2.0,
+                                                              "reasoning":  "å½å¤©æ´éåå®ææ·å¤ç¹ï¼è¿éè½åå°è¾å¥½çå¤©æ°çªå£",
+                                                              "weather_fit":  "æ´: outdoor plan, monitor rain risk.",
+                                                              "transport_hint":  "Start the day in è¥¿ååº.",
+                                                              "arrival_mode":  "start",
+                                                              "arrival_distance_m":  0,
+                                                              "arrival_duration_min":  0,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          }
+                                                      ],
+                                            "notes":  [
+                                                          "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥"
+                                                      ]
+                                        },
+                                        {
+                                            "day_index":  4,
+                                            "area":  "ä¸ååº",
+                                            "theme":  "Scenic landmark day",
+                                            "estimated_cost":  0.0,
+                                            "weather_summary":  "æ´",
+                                            "inter_stop_distance_m":  0,
+                                            "inter_stop_duration_min":  0,
+                                            "items":  [
+                                                          {
+                                                              "time_slot":  "morning",
+                                                              "poi_name":  "ä¸­å½å½å®¶åç©é¦",
+                                                              "category":  "attraction",
+                                                              "district":  "ä¸ååº",
+                                                              "duration_hours":  2.5,
+                                                              "est_cost":  0.0,
+                                                              "reasoning":  "å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°",
+                                                              "weather_fit":  "æ´: indoor-friendly choice.",
+                                                              "transport_hint":  "Start the day in ä¸ååº.",
+                                                              "arrival_mode":  "start",
+                                                              "arrival_distance_m":  0,
+                                                              "arrival_duration_min":  0,
+                                                              "guide_evidence":  "",
+                                                              "local_note":  "",
+                                                              "pitfall_note":  "",
+                                                              "guide_source":  ""
+                                                          }
+                                                      ],
+                                            "notes":  [
+                                                          "å¤©æ°èéï¼éåç©¿é¿è¢"
+                                                      ]
+                                        }
+                                    ],
+                           "planning_notes":  [
+                                                  "Planner groups stops by district first, then balances weather fit and preference match.",
+                                                  "High-risk weather days bias the plan toward indoor or mixed venues.",
+                                                  "Budget pressure lowers the priority of higher-cost attractions unless they are must-visit locations.",
+                                                  "Within each day, stop order is optimized against real Amap route durations when coordinates and an Amap key are available.",
+                                                  "A post-planning review checks pace, weather fit, budget pressure, and route coherence.",
+                                                  "RAG strategy signals now directly affect POI scoring, district priority, and route clustering.",
+                                                  "Review triggered one automatic replan pass to reduce route, weather, or budget risks."
+                                              ],
+                           "local_tips":  [
+                                              "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+                                              "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+                                              "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+                                              "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+                                              "Move by district, not by attraction popularity alone.",
+                                              "Keep major imperial sites and modern districts on separate days because the city is large."
+                                          ],
+                           "review_summary":  "Review passed without major routing, weather, or budget issues.",
+                           "review_findings":  [
+
+                                               ],
+                           "replan_summary":  "Review triggered one automatic replan pass and the safer version replaced the original draft.",
+                           "replan_metadata":  {
+                                                   "attempted":  true,
+                                                   "applied":  true,
+                                                   "trigger_rules":  [
+
+                                                                     ]
+                                               },
+                           "guide_references":  [
+                                                    "åäº¬ç¯çå½±å - åå©æ³¢ç¹å­åº: ãç¯çè¿ä¸ªæºä½åä¸èä¼ ð°ã è¯¥å¥½ç ç¶åå°±åä¸å» æäº åºå¾äº ææå¾å¥½ åæ¥æ¯æå¡æºä½ åäº¬ç¯çå½±ååå©æ³¢ç¹å­åºççä¸è¦å¤ªå¥½æ ä¸ææ«å¸æ­£å¯¹é¢åº§ä½è¿éåä¸å»æççå¾åºç",
+                                                    "åå©æ³¢ç¹å­åº - ä¸ææ«å¸: ãç¯çè¿ä¸ªæºä½åä¸èä¼ ð°ã è¯¥å¥½ç ç¶åå°±åä¸å» æäº åºå¾äº ææå¾å¥½ åæ¥æ¯æå¡æºä½ åäº¬ç¯çå½±ååå©æ³¢ç¹å­åºççä¸è¦å¤ªå¥½æ ä¸ææ«å¸æ­£å¯¹é¢åº§ä½è¿éåä¸å»æççå¾åºç",
+                                                    "åäº¬ç¯ç - åäº¬ååé¢å\u0085çæ¶®ç¾è: ãæ¥å¸¸plogä¹ââåäº¬ç¯çç»ææé±ã å¹¿åçæè§ ååå ä¸è¿åäº¬ç¯çä¹å°±é¸å¤©èæå¾ç© å\u0085¶ä»ä¸ç¹é½ä¸å¥½ç©â¦ä¸ä¼åä¸å·äº å¾6å¥½åæäº å¹ç æ¯ä¸éèé½å¾å¥½å ä¸æ¬¡è¿è¦æ¥ð å¾7-10è¿å»åäºåäº¬åå",
+                                                    "ç¯çè¿ä¸ªæºä½åä¸èä¼ ð°: ãç¯çè¿ä¸ªæºä½åä¸èä¼ ð°ã è¯¥å¥½ç ç¶åå°±åä¸å» æäº åºå¾äº ææå¾å¥½ åæ¥æ¯æå¡æºä½ åäº¬ç¯çå½±ååå©æ³¢ç¹å­åºççä¸è¦å¤ªå¥½æ ä¸ææ«å¸æ­£å¯¹é¢åº§ä½è¿éåä¸å»æççå¾åºç",
+                                                    "åäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼: ãåäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼ã æ\u0085å®« ä¸åï¼ä¼æ¯ PSï¼æ\u0085å®«å¾å¤§ï¼ä¸ä¸åéå®ä¹ä¼æ¯è¾ç´¯ï¼ä¸åå¨é\u0085åºä¼æ¯ä¼æ¯ï¼æä¸å¯ä»¥å»æåçå°æ¹ééæ\u0085å®« ä¸åï¼ä¼æ¯ PSï¼æ\u0085å®«å¾å¤§ï¼ä¸ä¸åéå®ä¹ä¼æ¯è¾ç´¯ï¼ä¸åå¨é\u0085åºä¼æ¯ä¼æ¯ï¼æä¸å¯ä»¥å»æåçå°"
+                                                ],
+                           "strategy_summary":  {
+                                                    "recommended_pois":  [
+                                                                             "åäº¬ç¯çå½±å",
+                                                                             "åå©æ³¢ç¹å­åº",
+                                                                             "ä¸ææ«å¸",
+                                                                             "å¤©å®é¨å¹¿åº",
+                                                                             "æ¯ä¸»å¸­çºªå¿µå ",
+                                                                             "å½å®¶åç©é¦",
+                                                                             "æ\u0085å®«",
+                                                                             "å\u0085«è¾¾å²­é¿å",
+                                                                             "éåå®«",
+                                                                             "å¤©å",
+                                                                             "é¢åå­",
+                                                                             "åä¸"
+                                                                         ],
+                                                    "theme_suggestions":  [
+                                                                              "leisure",
+                                                                              "culture",
+                                                                              "æå¡",
+                                                                              "family",
+                                                                              "åäº¬",
+                                                                              "food"
+                                                                          ],
+                                                    "neighborhood_notes":  [
+
+                                                                           ]
+                                                },
+                           "weather_payload":  {
+                                                   "city":  "Beijing",
+                                                   "start_date":  "",
+                                                   "forecast":  [
+                                                                    {
+                                                                        "date":  "2026-04-27",
+                                                                        "summary":  "æ´",
+                                                                        "temp_min":  9.0,
+                                                                        "temp_max":  22.0,
+                                                                        "precipitation_probability":  10,
+                                                                        "outdoor_suitability":  "good",
+                                                                        "suggestions":  [
+                                                                                            "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                            "Good weather window for outdoor districts and viewpoints."
+                                                                                        ],
+                                                                        "source":  "amap_api"
+                                                                    },
+                                                                    {
+                                                                        "date":  "2026-04-28",
+                                                                        "summary":  "å¤äº",
+                                                                        "temp_min":  9.0,
+                                                                        "temp_max":  22.0,
+                                                                        "precipitation_probability":  35,
+                                                                        "outdoor_suitability":  "good",
+                                                                        "suggestions":  [
+                                                                                            "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                            "Good weather window for outdoor districts and viewpoints."
+                                                                                        ],
+                                                                        "source":  "amap_api"
+                                                                    },
+                                                                    {
+                                                                        "date":  "2026-04-29",
+                                                                        "summary":  "æ´",
+                                                                        "temp_min":  10.0,
+                                                                        "temp_max":  24.0,
+                                                                        "precipitation_probability":  10,
+                                                                        "outdoor_suitability":  "good",
+                                                                        "suggestions":  [
+                                                                                            "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                            "Good weather window for outdoor districts and viewpoints."
+                                                                                        ],
+                                                                        "source":  "amap_api"
+                                                                    },
+                                                                    {
+                                                                        "date":  "2026-04-30",
+                                                                        "summary":  "æ´",
+                                                                        "temp_min":  15.0,
+                                                                        "temp_max":  29.0,
+                                                                        "precipitation_probability":  10,
+                                                                        "outdoor_suitability":  "good",
+                                                                        "suggestions":  [
+                                                                                            "å¤©æ°èéï¼éåç©¿é¿è¢",
+                                                                                            "Good weather window for outdoor districts and viewpoints."
+                                                                                        ],
+                                                                        "source":  "amap_api"
+                                                                    }
+                                                                ],
+                                                   "best_outdoor_days":  [
+                                                                             "2026-04-27",
+                                                                             "2026-04-28",
+                                                                             "2026-04-29",
+                                                                             "2026-04-30"
+                                                                         ],
+                                                   "risky_days":  [
+
+                                                                  ],
+                                                   "source":  "group_c_weather_adapter",
+                                                   "provider_city":  "åäº¬",
+                                                   "window_note":  ""
+                                               },
+                           "conditions_context":  {
+                                                      "weather":  {
+                                                                      "city":  "Beijing",
+                                                                      "start_date":  "",
+                                                                      "forecast":  [
+                                                                                       {
+                                                                                           "date":  "2026-04-27",
+                                                                                           "summary":  "æ´",
+                                                                                           "temp_min":  9.0,
+                                                                                           "temp_max":  22.0,
+                                                                                           "precipitation_probability":  10,
+                                                                                           "outdoor_suitability":  "good",
+                                                                                           "suggestions":  [
+                                                                                                               "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                                               "Good weather window for outdoor districts and viewpoints."
+                                                                                                           ],
+                                                                                           "source":  "amap_api"
+                                                                                       },
+                                                                                       {
+                                                                                           "date":  "2026-04-28",
+                                                                                           "summary":  "å¤äº",
+                                                                                           "temp_min":  9.0,
+                                                                                           "temp_max":  22.0,
+                                                                                           "precipitation_probability":  35,
+                                                                                           "outdoor_suitability":  "good",
+                                                                                           "suggestions":  [
+                                                                                                               "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                                               "Good weather window for outdoor districts and viewpoints."
+                                                                                                           ],
+                                                                                           "source":  "amap_api"
+                                                                                       },
+                                                                                       {
+                                                                                           "date":  "2026-04-29",
+                                                                                           "summary":  "æ´",
+                                                                                           "temp_min":  10.0,
+                                                                                           "temp_max":  24.0,
+                                                                                           "precipitation_probability":  10,
+                                                                                           "outdoor_suitability":  "good",
+                                                                                           "suggestions":  [
+                                                                                                               "å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥",
+                                                                                                               "Good weather window for outdoor districts and viewpoints."
+                                                                                                           ],
+                                                                                           "source":  "amap_api"
+                                                                                       },
+                                                                                       {
+                                                                                           "date":  "2026-04-30",
+                                                                                           "summary":  "æ´",
+                                                                                           "temp_min":  15.0,
+                                                                                           "temp_max":  29.0,
+                                                                                           "precipitation_probability":  10,
+                                                                                           "outdoor_suitability":  "good",
+                                                                                           "suggestions":  [
+                                                                                                               "å¤©æ°èéï¼éåç©¿é¿è¢",
+                                                                                                               "Good weather window for outdoor districts and viewpoints."
+                                                                                                           ],
+                                                                                           "source":  "amap_api"
+                                                                                       }
+                                                                                   ],
+                                                                      "best_outdoor_days":  [
+                                                                                                "2026-04-27",
+                                                                                                "2026-04-28",
+                                                                                                "2026-04-29",
+                                                                                                "2026-04-30"
+                                                                                            ],
+                                                                      "risky_days":  [
+
+                                                                                     ],
+                                                                      "source":  "group_c_weather_adapter",
+                                                                      "provider_city":  "åäº¬",
+                                                                      "window_note":  ""
+                                                                  },
+                                                      "cost_summary":  {
+                                                                           "city":  "Beijing",
+                                                                           "days":  4,
+                                                                           "budget_level":  "low",
+                                                                           "currency":  "CNY",
+                                                                           "breakdown":  {
+                                                                                             "hotel_per_night":  {
+                                                                                                                     "min":  120.0,
+                                                                                                                     "max":  200.0
+                                                                                                                 },
+                                                                                             "food_per_day":  {
+                                                                                                                  "min":  80.0,
+                                                                                                                  "max":  120.0
+                                                                                                              },
+                                                                                             "local_transport_total":  {
+                                                                                                                           "min":  50.0,
+                                                                                                                           "max":  100.0
+                                                                                                                       }
+                                                                                         },
+                                                                           "totals":  {
+                                                                                          "min":  850.0,
+                                                                                          "max":  1380.0,
+                                                                                          "mid":  1115.0
+                                                                                      },
+                                                                           "budget_fit":  {
+                                                                                              "user_budget":  null,
+                                                                                              "within_budget":  null,
+                                                                                              "minimum_feasible":  null
+                                                                                          },
+                                                                           "pricing_notes":  [
+                                                                                                 "Budget currently covers hotel, food, and local transport only.",
+                                                                                                 "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+                                                                                             ],
+                                                                           "source":  "group_c_cost_adapter",
+                                                                           "provider_city":  "åäº¬",
+                                                                           "raw_response":  {
+                                                                                                "é\u0085åºæ¯æ":  "120-200å\u0085",
+                                                                                                "é¤é¥®æ¯å¤©":  "80-120å\u0085",
+                                                                                                "äº¤éåè®¡":  "50.0-100.0å\u0085",
+                                                                                                "æ»è®¡æä½":  850,
+                                                                                                "æ»è®¡æé«":  1380
+                                                                                            }
+                                                                       },
+                                                      "budget_summary":  {
+                                                                             "budget_level":  "low",
+                                                                             "estimated_core_attraction_cost":  36.0,
+                                                                             "candidate_poi_average_ticket_price":  33.09,
+                                                                             "assumption":  "Accommodation, food, and local transport come from Group C; attraction cost remains our own estimate.",
+                                                                             "trip_budget_estimate":  {
+                                                                                                          "min":  850.0,
+                                                                                                          "max":  1380.0,
+                                                                                                          "mid":  1115.0
+                                                                                                      },
+                                                                             "pricing_notes":  [
+                                                                                                   "Budget currently covers hotel, food, and local transport only.",
+                                                                                                   "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+                                                                                               ],
+                                                                             "budget_fit":  {
+                                                                                                "user_budget":  null,
+                                                                                                "within_budget":  null,
+                                                                                                "minimum_feasible":  null
+                                                                                            },
+                                                                             "stay_and_food_breakdown":  {
+                                                                                                             "hotel_per_night":  {
+                                                                                                                                     "min":  120.0,
+                                                                                                                                     "max":  200.0
+                                                                                                                                 },
+                                                                                                             "food_per_day":  {
+                                                                                                                                  "min":  80.0,
+                                                                                                                                  "max":  120.0
+                                                                                                                              },
+                                                                                                             "local_transport_total":  {
+                                                                                                                                           "min":  50.0,
+                                                                                                                                           "max":  100.0
+                                                                                                                                       }
+                                                                                                         }
+                                                                         }
+                                                  },
+                           "lodging_context":  {
+                                                   "city":  "Beijing",
+                                                   "provider_city":  "åäº¬",
+                                                   "check_in_date":  "2026-04-27",
+                                                   "check_out_date":  "2026-04-30",
+                                                   "budget_level":  "low",
+                                                   "target_districts":  [
+                                                                            "ä¸ååº",
+                                                                            "éå·åº",
+                                                                            "è¥¿ååº"
+                                                                        ],
+                                                   "recommended_areas":  [
+                                                                             {
+                                                                                 "district":  "ä¸ååº",
+                                                                                 "reason":  "Matches the itinerary\u0027s highest-frequency districts."
+                                                                             },
+                                                                             {
+                                                                                 "district":  "éå·åº",
+                                                                                 "reason":  "Matches the itinerary\u0027s highest-frequency districts."
+                                                                             },
+                                                                             {
+                                                                                 "district":  "è¥¿ååº",
+                                                                                 "reason":  "Matches the itinerary\u0027s highest-frequency districts."
+                                                                             }
+                                                                         ],
+                                                   "hotel_candidates":  [
+
+                                                                        ],
+                                                   "selection_notes":  [
+                                                                           "Hotels are ranked by itinerary district match first, then by price visibility and source quality.",
+                                                                           "Current hotel budget reference is up to CNY 200 per night.",
+                                                                           "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide."
+                                                                       ],
+                                                   "source":  "hotel_adapter"
+                                               }
+                       },
+    "report":  "# åäº¬ æºè½æ\u0085è¡è§å\n\n**åºè¡é£æ ¼**: äº²å­æ¸¸\n**åè¡äººå**: æå\n**é¢ç®ç­çº§**: ä½é¢ç®\n**è¡ç¨èå¥**: éä¸­\n**æ¯ç¹è´¹ç¨é¢ä¼°**: 36.00\n\n## è§åæè¦\nè¿æ¯ä¸çä¸º åäº¬ è®¾è®¡ç 4 å¤©äº²å­æ¸¸è¡ç¨ï¼æ´ä½èå¥åéä¸­ï¼é¢ç®æç\u0085§ä½é¢ç®æ¥æ§å¶ã\n\n**å\u0085´è¶£åå¥½**: family friendly\n\n## æ¯æ¥è¡ç¨\n\n### ç¬¬ 1 å¤©: ä¸ååº\n- ä¸»é¢: é£æ¯å°æ æ¥\n- å¤©æ°: æ´\n- é¢è®¡è´¹ç¨: 34.00\n- è·¯éæ¶é´: çº¦ 14 åé / 1.1 å\u0085¬é\n- ä¸å: **å¤©å** (æ¯ç¹, ä¸ååº)\n  åå : å½å¤©æ´éåå®ææ·å¤ç¹ï¼è¿éè½åå°è¾å¥½çå¤©æ°çªå£ï¼æ¬å°æç¤ºéä¹ç¹å«æå°ï¼ãæä¸å¤©åð§§ãï¼å®æ¯æ»ç¥è·¯çº¿éçæ ¸å¿åé ç¹ï¼æ»ç¥ãåäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼ãæå®åæ\u0085å®«ãéåå®«æ¾å¨åä¸æ¡è·¯çº¿éã\n  å¤©æ°éé\u0085: æ´ï¼éåæ·å¤æ´»å¨ï¼ä½è¦çæéé¨ååã\n  äº¤é: ä»ä¸ååºå¼å§å½å¤©è¡ç¨ã\n  æ»ç¥ä¾æ®: ä¹ä¼æ¯è¾ç´¯ï¼ä¸åå¨é\u0085åºä¼æ¯ä¼æ¯ï¼æä¸å¯ä»¥å»æåçå°æ¹éé å®æ3 ä¸åï¼é¿å ä¸åï¼ä¼æ¯ PSï¼ç¼è½¦ä¸ï¼ç¼è½¦ä¸ å®æ4 ä¸åï¼éåå®« ä¸åï¼å¤©å PSï¼å¦æå¿«çè¯ï¼è¿ä¸¤ä¸ªæ¯ç¹å¯ä»¥ä¸â¦ï¼åäº¬æ\u0085æ¸¸ï¼å¸¦èäººçï¼ï¼\n  æ¬å°æé: å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã\n- ä¸å: **å¤©åå\u0085¬å­-çç** (æ¯ç¹, ä¸ååº)\n  åå : å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°ã\n  å¤©æ°éé\u0085: æ´ï¼éåä½ä¸ºå®¤å\u0085å¤é½è½çµæ´»è°æ´çå®æã\n  äº¤é: æ­¥è¡çº¦5åéï¼0.4å\u0085¬éï¼ãåä¸åæ­¥è¡387ç±³å°è¾¾ç®çå° -\u003e åä¸åæ­¥è¡387ç±³å°è¾¾ç®çå°\n  æ¬å°æé: å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã\n- ä¸å: **å¤©åå\u0085¬å­-åä¸** (æ¯ç¹, ä¸ååº)\n  åå : å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°ã\n  å¤©æ°éé\u0085: æ´ï¼éåä½ä¸ºå®¤å\u0085å¤é½è½çµæ´»è°æ´çå®æã\n  äº¤é: æ­¥è¡çº¦9åéï¼0.7å\u0085¬éï¼ãåè¥¿æ­¥è¡57ç±³å·¦è½¬ -\u003e åè¥¿æ­¥è¡2ç±³å°è¾¾ç®çå°\n  æ¬å°æé: å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã\n- å¤æ³¨: å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥\n- å¤æ³¨: ç¹ä½ä¹é´çè·¯éæ¶é´çº¦ä¸º14åéï¼æ»è·¯ç¨çº¦1.1å\u0085¬éã\n\n### ç¬¬ 2 å¤©: éå·åº\n- ä¸»é¢: é£æ¯å°æ æ¥\n- å¤©æ°: å¤äº\n- é¢è®¡è´¹ç¨: 0.00\n- è·¯éæ¶é´: çº¦ 42 åé / 3.1 å\u0085¬é\n- ä¸å: **åäº¬ç¯çåº¦ååº** (æ¯ç¹, éå·åº)\n  åå : ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡ã\n  å¤©æ°éé\u0085: å¤äºï¼éåä½ä¸ºå®¤å\u0085å¤é½è½çµæ´»è°æ´çå®æã\n  äº¤é: ä»éå·åºå¼å§å½å¤©è¡ç¨ã\n  æ¬å°æé: å¯ä½ä¸ºå½å¤©ä¸»è½´åé ç¹ï¼åæ­é\u0085éè¿é¡ºè·¯ç¹ã\n- ä¸å: **åå©Â·æ³¢ç¹çé­æ³ä¸ç** (æ¯ç¹, éå·åº)\n  åå : ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡ã\n  å¤©æ°éé\u0085: å¤äºï¼éåä½ä¸ºå®¤å\u0085å¤é½è½çµæ´»è°æ´çå®æã\n  äº¤é: æ­¥è¡çº¦41åéï¼3.1å\u0085¬éï¼ãæ²¿æ¥åºå··åä¸æ­¥è¡377ç±³å³è½¬ -\u003e åä¸åæ­¥è¡64ç±³å°è¾¾ç®çå°\n- ä¸å: **åå©Â·æ³¢ç¹ä¸ç¦å¿ä¹æ\u0085â¢** (æ¯ç¹, éå·åº)\n  åå : ä¸»è¦åºäºå°çé¡ºè·¯åæ´ä½èå¥å¹³è¡¡ã\n  å¤©æ°éé\u0085: å¤äºï¼éåä½ä¸ºå®¤å\u0085å¤é½è½çµæ´»è°æ´çå®æã\n  äº¤é: æ­¥è¡çº¦1åéï¼0.0å\u0085¬éï¼ãåä¸åæ­¥è¡21ç±³å°è¾¾ç®çå° -\u003e åä¸åæ­¥è¡21ç±³å°è¾¾ç®çå°\n- å¤æ³¨: å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥\n- å¤æ³¨: ç¹ä½ä¹é´çè·¯éæ¶é´çº¦ä¸º42åéï¼æ»è·¯ç¨çº¦3.1å\u0085¬éã\n\n### ç¬¬ 3 å¤©: è¥¿ååº\n- ä¸»é¢: é£æ¯å°æ æ¥\n- å¤©æ°: æ´\n- é¢è®¡è´¹ç¨: 2.00\n- è·¯éæ¶é´: çº¦ 0 åé / 0.0 å\u0085¬é\n- ä¸å: **æ¯å±±å\u0085¬å­** (æ¯ç¹, è¥¿ååº)\n  åå : å½å¤©æ´éåå®ææ·å¤ç¹ï¼è¿éè½åå°è¾å¥½çå¤©æ°çªå£ã\n  å¤©æ°éé\u0085: æ´ï¼éåæ·å¤æ´»å¨ï¼ä½è¦çæéé¨ååã\n  äº¤é: ä»è¥¿ååºå¼å§å½å¤©è¡ç¨ã\n- å¤æ³¨: å¤©æ°åç½ï¼å»ºè®®ç©¿èå¤å¥\n\n### ç¬¬ 4 å¤©: ä¸ååº\n- ä¸»é¢: é£æ¯å°æ æ¥\n- å¤©æ°: æ´\n- é¢è®¡è´¹ç¨: 0.00\n- è·¯éæ¶é´: çº¦ 0 åé / 0.0 å\u0085¬é\n- ä¸å: **ä¸­å½å½å®¶åç©é¦** (æ¯ç¹, ä¸ååº)\n  åå : å¨æ£ç´¢å°çæ»ç¥éè¢«å¤æ¬¡æå°ã\n  å¤©æ°éé\u0085: æ´ï¼æ´éåå®æå®¤å\u0085æ´»å¨ã\n  äº¤é: ä»ä¸ååºå¼å§å½å¤©è¡ç¨ã\n- å¤æ³¨: å¤©æ°èéï¼éåç©¿é¿è¢\n\n## å¤©æ°é¢æ¥\n- 2026-04-27: æ´ï¼9-22âï¼éæ°´æ¦ç 10%ã\n- 2026-04-28: å¤äºï¼9-22âï¼éæ°´æ¦ç 35%ã\n- 2026-04-29: æ´ï¼10-24âï¼éæ°´æ¦ç 10%ã\n- 2026-04-30: æ´ï¼15-29âï¼éæ°´æ¦ç 10%ã\n\n## åå¸åºè¡è´´å£«\n\n## æ¬å°æ»ç¥\n- è¿ä¸ªç¹æ´éååéè¿å°ç¹ä¸èµ·å®æï¼ä¸å»ºè®®ä¸ºäºåç¬æå¡èè·¨åºæè¿ã\n- è¿ä¸ªç¹æ´éååéè¿å°ç¹ä¸èµ·å®æï¼ä¸å»ºè®®ä¸ºäºåç¬æå¡èè·¨åºæè¿ã\n- è¿ä¸ªç¹æ´éååéè¿å°ç¹ä¸èµ·å®æï¼ä¸å»ºè®®ä¸ºäºåç¬æå¡èè·¨åºæè¿ã\n- è¿ä¸ªç¹æ´éååéè¿å°ç¹ä¸èµ·å®æï¼ä¸å»ºè®®ä¸ºäºåç¬æå¡èè·¨åºæè¿ã\n- å°½éæçåºç§»å¨ï¼ä¸è¦åªæç­é¨ç¨åº¦å¨åå¸éæ¥åç©¿æ¢­ã\n\n## è¡ç¨å®¡æ¥\n- è¿çè¡ç¨å¨è·¯çº¿ãå¤©æ°åé¢ç®ä¸æ²¡æææ¾é®é¢ã\n\n## éè§åè¯´æ\n- ç³»ç»è§¦åäºä¸æ¬¡èªå¨éæï¼å¹¶éç¨äºæ´ç¨³å¦¥ççæ¬ã\n\n## è§åè¯´æ\n- è§åå¨ä¼å\u0085æçåºèç±»ï¼åç»¼åå¤©æ°éé\u0085ååå¥½å¹é\u0085æ¥æç¹ã\n- å¦ææå¤©çå¤©æ°é£é©è¾é«ï¼è¡ç¨ä¼æ´ååå®¤å\u0085æå¯çµæ´»åæ¢çå°ç¹ã\n- å¨é¢ç®è¾ç´§æ¶ï¼é«ææ¬æ¯ç¹çä¼å\u0085çº§ä¼éä½ï¼ä½å¿\u0085å»ç¹ä»ä¼ä¿çã\n- å¦æåæ åé«å¾· Key å¯ç¨ï¼ç³»ç»ä¼æ ¹æ®çå®è·¯ç¨æ¶é´ä¼åæ¯å¤©çæ¸¸ç©é¡ºåºã\n- ç³»ç»å¨åºè¡ç¨åï¼è¿ä¼æ£æ¥èå¥ãå¤©æ°éé\u0085ãé¢ç®åååè·¯çº¿è¿è´¯æ§ã\n- æ»ç¥æ£ç´¢ä¿¡å·ä¼ç´æ¥å½±åæ¯ç¹è¯åãçåºä¼å\u0085çº§åè·¯çº¿èç±»ã\n- ç³»ç»åè¿ä¸æ¬¡èªå¨éæï¼ç¨æ¥éä½è·¯çº¿ãå¤©æ°æé¢ç®æ¹é¢çé£é©ã\n\n## é¢ç®æ¦è§\n- è¡ç¨æ»é¢ç®ä¼°ç®ï¼Â¥ 850-1380\n- å½åè¡ç¨æ¯ç¹é¨ç¥¨ä¼°ç®ï¼Â¥ 36\n- é\u0085åºæ¯æåèï¼Â¥ 120-200\n- æ¯æ¥é¤é¥®åèï¼Â¥ 80-120\n- å½å°äº¤éåèï¼Â¥ 50-100\n- è¯´æ: å½åé¢ç®åªè¦çé\u0085åºãé¤é¥®åæ¬å°äº¤éã\n- è¯´æ: é¿éäº¤éåæ¯ç¹é¨ç¥¨ææªè®¡å\u0085¥ï¼é¤éåç»­æå\u0085¶ä»æ°æ®æºè¡¥å\u0085\u0085ã\n\n## ä½å®¿å»ºè®®\n- åºå: ä¸ååº â ä¸å½åè¡ç¨æéä¸­çæ´»å¨çåºæå¹é\u0085ã\n- åºå: éå·åº â ä¸å½åè¡ç¨æéä¸­çæ´»å¨çåºæå¹é\u0085ã\n- åºå: è¥¿ååº â ä¸å½åè¡ç¨æéä¸­çæ´»å¨çåºæå¹é\u0085ã\n- è¯´æ: é\u0085åºä¼å\u0085æåè¡ç¨çåºçå¹é\u0085åº¦æåºï¼å\u0085¶æ¬¡åèä»·æ ¼å¯è§æ§åæ°æ®æ¥æºè´¨éã\n- è¯´æ: å½åé\u0085åºé¢ç®åèä¸éçº¦ä¸ºæ¯æ Â¥ 200ã"
+}

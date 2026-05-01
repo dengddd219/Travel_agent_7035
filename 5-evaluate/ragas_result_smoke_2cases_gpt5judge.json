@@ -1,0 +1,193 @@
+{
+  "timestamp": "2026-04-27T04:39:30.300522Z",
+  "model": "gpt-5-mini",
+  "answer_model": "gpt-5-mini",
+  "judge_model": "gpt-5",
+  "models": {
+    "answer": "gpt-5-mini",
+    "judge": "gpt-5"
+  },
+  "case_count": 2,
+  "top_k": 5,
+  "avg_scores": {
+    "faithfulness": 0.84,
+    "answer_relevancy": 0.725,
+    "context_precision": 0.6,
+    "overall": 0.7217
+  },
+  "token_usage": {
+    "input_tokens": 7131,
+    "output_tokens": 2986,
+    "total_tokens": 10117,
+    "llm_call_count": 4,
+    "record_count": 4,
+    "model": null,
+    "models": [
+      "gpt-5",
+      "gpt-5-mini"
+    ],
+    "sources": [
+      "api_usage_field",
+      "judge_retries"
+    ],
+    "source": "ragas_evaluator",
+    "estimated_cost": {
+      "currency": "USD",
+      "model": null,
+      "priced_model": null,
+      "pricing_source": "summed_child_costs",
+      "input_usd_per_1m_tokens": null,
+      "output_usd_per_1m_tokens": null,
+      "input_usd": 0.00631575,
+      "output_usd": 0.017588,
+      "total_usd": 0.02390375,
+      "total_cny": 0.172107,
+      "cny_per_usd": 7.2
+    },
+    "total_input_tokens": 7131,
+    "total_output_tokens": 2986
+  },
+  "thresholds": {
+    "faithfulness": {
+      "target": 0.7,
+      "pass": true
+    },
+    "answer_relevancy": {
+      "target": 0.7,
+      "pass": true
+    },
+    "context_precision": {
+      "target": 0.6,
+      "pass": true
+    },
+    "overall": {
+      "target": 0.67,
+      "pass": true
+    }
+  },
+  "details": [
+    {
+      "id": "rag_001",
+      "query": "成都熊猫基地怎么去，几点开门",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "怎么去（根据检索资料）\n- 地铁：乘坐地铁3号线可到熊猫基地站，从车站出站步行约400多米可达（资料提到“3号线……5站到熊猫基地（约400多米）”）。资料也多次提到常见路线为“西门进、南门出”（西门和南门对应不同地铁/站口，游览时注意进出门）。\n- 出租/自驾：成都打车很便宜，市区或机场均可打车前往（资料示例：从机场打车约一小时）。  \n- 购票建议：有资料提到可提前在小程序买票。\n\n几点开门\n- 检索到的参考资料中未给出熊猫基地的具体开门时间（资料有关于“建议早上去”“9–10点熊猫更活跃”、以及熊猫谷下午1:30–2:00有饲养员投喂的时间），但没有明确的开门时间。",
+      "ground_truth": "成都大熊猫繁育研究基地通常早上约7:30开放，建议早上去看熊猫活动和喂食。市区可坐地铁3号线到熊猫大道站或附近站点后换乘接驳车、公交或打车前往。",
+      "scores": {
+        "faithfulness": 0.7,
+        "answer_relevancy": 0.5,
+        "context_precision": 0.6
+      },
+      "reasoning": "答案大多基于检索内容（3号线、西门进南门出、打车、小程序购票），但臆造了“熊猫基地站”和步行约400米等细节且未给出开门时间，且上下文多为游记杂信息未覆盖具体开放时间。",
+      "latency_ms": {
+        "retrieve": 33031,
+        "generate": 10561,
+        "judge": 14629
+      },
+      "token_usage": {
+        "input_tokens": 3412,
+        "output_tokens": 1282,
+        "total_tokens": 4694,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field",
+          "judge_retries"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.002888,
+          "output_usd": 0.009284,
+          "total_usd": 0.012172,
+          "total_cny": 0.087638,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    },
+    {
+      "id": "rag_002",
+      "query": "第一次来成都三天两晚怎么安排不绕路",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "下面给你一份“不绕路”的三天两晚成都第一访客行程，完全依据你提供的参考资料拼合，路线按地理顺序与交通便利性安排，尽量减少来回折返。若某些具体时刻/票务信息资料中未提及，我会标注说明。\n\n总体建议（来自资料）\n- 建议落地双流机场（资料提到更方便）。住宿首选春熙路附近，靠近地铁1/2/3号线，出行最方便；IFS/太古里周边会堵、打车难且嘈杂，选步行或短车程可达的酒店更好。  \n- 注意景点与餐饮：人民公园/鹤鸣茶社、武侯祠/锦里、宽窄巷子、熊猫基地、望平街/九眼桥等是高频推荐点。\n\n行程（3天2晚，按顺路、不绕路设计）\n\nDay 1（到达日 — 市中心逛吃为主）\n- 抵达：落地双流机场 → 前往春熙路附近酒店（安顿行李）。  \n- 下午/傍晚：步行逛太古里 + IFS（参考中多次推荐作为首日逛街区）。  \n- 晚饭：可选资料中推荐的连锁火锅（如吼堂）或望平街/九眼桥一带夜宵、小吃。\n\nDay 2（城市慢生活 + 历史文化半日）\n- 早晨：人民公园 → 直奔鹤鸣茶社（参考建议10点之前去，可更容易坐到靠湖边的位置）。也可顺带逛公园里的相亲角体验本地生活。  \n- 中午/下午：从人民公园方向顺路前往附近的武侯祠/锦里（资料提示武侯祠红墙拍照免费，可选择不进门拍照），或再探望春熙路周边其他点（宽窄巷子在资料中也常与市区行程并列，可按体力选择）。  \n- 晚上：安顺廊桥、锦里夜景或望平街酒吧/夜生活（资料列为夜景/夜生活推荐）。\n\nDay 3（半天/出发前的必去）\n- 早起选择1个郊区/半天景点：推荐熊猫基地（资料多次提到“治愈熊猫”、熊猫邮局等为成都限定体验）。根据返程航班时间决定是否成行。  \n- 返回：收包直奔双流机场（资料建议双流为首选机场）。  \n\n补充/注意事项（资料中提到）\n- 若计划去博物馆类景点要注意闭馆日（资料提到博物馆周一闭馆，记得提前查）。  \n- 春秋/9-11和4-5为最佳出行季节（资料提到），但具体天气/票务资料这里未检索到。  \n- 交通：资料建议优先选双流机场，住宿尽量沿地铁1/2/3号线，能最大减少绕路。  \n- 若想把三星堆或都江堰/青城山纳入行程，需要更多时间或一日单独成行（资料中这些为近郊一日/半日项目，但三天行程难兼顾，资料未给出具体联程时间安排）。\n\n如果你告诉我：到达/离开航班时间和是否一定想去熊猫基地或三星堆/都江堰其中一个，我可以在以上框架下把每一天的时间段排得更具体；注意我只能基于这些参考资料提供信息。",
+      "ground_truth": "成都三天两晚可安排市区慢游加一个近郊点：春熙路、太古里、宽窄巷子和人民公园适合同一天；熊猫基地建议放在上午；都江堰、青城山、三星堆或乐山可选一个作为单日往返。",
+      "scores": {
+        "faithfulness": 0.98,
+        "answer_relevancy": 0.95,
+        "context_precision": 0.6
+      },
+      "reasoning": "回答大体基于检索内容且切题，但检索上下文噪音较多、信息分散，未完全提供细化行程所需的精准细节",
+      "latency_ms": {
+        "retrieve": 1948,
+        "generate": 15049,
+        "judge": 10553
+      },
+      "token_usage": {
+        "input_tokens": 3719,
+        "output_tokens": 1704,
+        "total_tokens": 5423,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field",
+          "judge_retries"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.00342775,
+          "output_usd": 0.008304,
+          "total_usd": 0.01173175,
+          "total_cny": 0.084469,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    }
+  ],
+  "route_quality_summary": {
+    "avg_evidence_chunks": 5.0,
+    "cases_with_pitfall_coverage": 0,
+    "cases_with_route_plan_coverage": 2,
+    "pitfall_coverage_rate": 0.0,
+    "route_plan_coverage_rate": 1.0
+  }
+}

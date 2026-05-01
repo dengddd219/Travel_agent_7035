@@ -1,0 +1,361 @@
+{
+  "timestamp": "2026-04-27T03:55:44.741077Z",
+  "model": "gpt-5-mini",
+  "answer_model": "gpt-5-mini",
+  "judge_model": "gpt-5",
+  "models": {
+    "answer": "gpt-5-mini",
+    "judge": "gpt-5"
+  },
+  "case_count": 5,
+  "top_k": 5,
+  "avg_scores": {
+    "faithfulness": 0.912,
+    "answer_relevancy": 0.69,
+    "context_precision": 0.66,
+    "overall": 0.754
+  },
+  "token_usage": {
+    "input_tokens": 16372,
+    "output_tokens": 7096,
+    "total_tokens": 23468,
+    "llm_call_count": 10,
+    "record_count": 10,
+    "model": null,
+    "models": [
+      "gpt-5",
+      "gpt-5-mini"
+    ],
+    "sources": [
+      "api_usage_field"
+    ],
+    "source": "ragas_evaluator",
+    "estimated_cost": {
+      "currency": "USD",
+      "model": null,
+      "priced_model": null,
+      "pricing_source": "summed_child_costs",
+      "input_usd_per_1m_tokens": null,
+      "output_usd_per_1m_tokens": null,
+      "input_usd": 0.013923,
+      "output_usd": 0.05096,
+      "total_usd": 0.064883,
+      "total_cny": 0.467158,
+      "cny_per_usd": 7.2
+    },
+    "total_input_tokens": 16372,
+    "total_output_tokens": 7096
+  },
+  "thresholds": {
+    "faithfulness": {
+      "target": 0.7,
+      "pass": true
+    },
+    "answer_relevancy": {
+      "target": 0.7,
+      "pass": false
+    },
+    "context_precision": {
+      "target": 0.6,
+      "pass": true
+    },
+    "overall": {
+      "target": 0.67,
+      "pass": true
+    }
+  },
+  "details": [
+    {
+      "id": "rag_001",
+      "query": "成都熊猫基地怎么去，几点开门",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "根据以上参考资料，关于“怎么去”和“几点开门”的信息如下（仅限资料中提到的内容）：\n\n怎么去\n- 地铁：可乘坐地铁3号线到熊猫基地附近。资料中提到从红星桥站坐3号线，约5站到熊猫基地，出站后约400米可到。注意西门和南门对应的地铁站不一样（若打算“西门进、南门出”要看清对应站点）。\n- 出租/打车：成都打车价格很便宜，直接打车到熊猫基地很方便（资料中有从机场打车约一小时的描述）。\n- 步行/周边交通：有些住宿在熊",
+      "ground_truth": "成都大熊猫繁育研究基地通常早上约7:30开放，建议早上去看熊猫活动和喂食。市区可坐地铁3号线到熊猫大道站或附近站点后换乘接驳车、公交或打车前往。",
+      "scores": {
+        "faithfulness": 0.6,
+        "answer_relevancy": 0.45,
+        "context_precision": 0.5
+      },
+      "reasoning": "回答对“怎么去”部分基本基于上下文，但误读了“400多米”（更像价格而非距离）且未给出开门时间；检索内容与“怎么去”相关但不含明确开放时间且噪声较多。",
+      "latency_ms": {
+        "retrieve": 34806,
+        "generate": 10131,
+        "judge": 14396
+      },
+      "token_usage": {
+        "input_tokens": 3318,
+        "output_tokens": 1550,
+        "total_tokens": 4868,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.0027985,
+          "output_usd": 0.0115,
+          "total_usd": 0.0142985,
+          "total_cny": 0.102949,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    },
+    {
+      "id": "rag_002",
+      "query": "第一次来成都三天两晚怎么安排不绕路",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "下面给你一份“不绕路”的三天两晚成都行程（首访向、尽量顺路、参考资料均来自你给出的摘录）：\n\n行前提醒（资料内建议）\n- 优先选择落地“双流机场”，更方便（资料多次建议）。天府机场离市区远。  \n- 住宿建议：住春熙路附近或靠近地铁1/2/3号线，交通最方便（资料内推荐）。  \n- 博物馆类景点周一闭馆、需提前预约（资料提示，",
+      "ground_truth": "成都三天两晚可安排市区慢游加一个近郊点：春熙路、太古里、宽窄巷子和人民公园适合同一天；熊猫基地建议放在上午；都江堰、青城山、三星堆或乐山可选一个作为单日往返。",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.1,
+        "context_precision": 0.6
+      },
+      "reasoning": "系统回答不完整，仅有行前提醒未给出具体3天2晚不绕路行程；已给出的要点与上下文一致，但检索内容虽相关噪声较多。",
+      "latency_ms": {
+        "retrieve": 2986,
+        "generate": 9866,
+        "judge": 13311
+      },
+      "token_usage": {
+        "input_tokens": 2974,
+        "output_tokens": 1472,
+        "total_tokens": 4446,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.0025245,
+          "output_usd": 0.01072,
+          "total_usd": 0.0132445,
+          "total_cny": 0.09536,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    },
+    {
+      "id": "rag_003",
+      "query": "成都宽窄巷子值得去吗，有没有更本地的街区",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "结论（根据给的参考资料）\n- 宽窄巷子是典型的游客打卡点，人多且有些店铺偏贵（有人觉得“没什么可逛的”、“有点贵”）。所以“值不值得去”取决于你想体验游客景点还是更本地的生活：想打卡、拍照、体验某种“老成都”商业化氛围可以去；想避开人群、体验本地烟火和慢生活，就有更好的选择。\n\n更本地/更值得逛的街区（参考资料中推荐）\n- 青莲上街 / 金泉街：老成都的小巷，文艺咖啡、文创、花店，拍照打卡好看。  \n- 镋钯街：同样属老成都烟火小巷，适合感受本地氛围。  \n- 祠堂街 / 斌升街 / 东胜街：比热门景区更松弛",
+      "ground_truth": "宽窄巷子适合第一次来成都打卡，但商业化较强。想更本地和适合citywalk，可考虑玉林路、望平街、镗钯街、东郊记忆等街区，逛吃、咖啡和拍照体验更松弛。",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.9
+      },
+      "reasoning": "回答观点与上下文一致并给出本地街区示例，直接回应问题；但检索内容较杂冗，关键信息分散。",
+      "latency_ms": {
+        "retrieve": 1948,
+        "generate": 10736,
+        "judge": 14144
+      },
+      "token_usage": {
+        "input_tokens": 3085,
+        "output_tokens": 1393,
+        "total_tokens": 4478,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.00265525,
+          "output_usd": 0.00993,
+          "total_usd": 0.01258525,
+          "total_cny": 0.090614,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    },
+    {
+      "id": "rag_004",
+      "query": "成都除了火锅还应该吃什么本地小吃",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "根据提供的参考资料，成都除了火锅外常见的本地小吃有：\n\n- 蛋烘糕（街头小吃，作者回忆为三轮车上的传统小吃）  \n- 钟水饺（参考里多次被当作早餐或小吃提到）  \n- 钵钵鸡（街头串串类小吃，资料中多处出现）  \n- 甜皮鸭（如“朱三甜皮鸭”，乐山/成都一带的小吃）  \n- 跷脚牛肉（如“冯三嬢跷脚牛肉”，地方小吃）  \n- 糯米饭（文创街区推荐的主食小吃之一）  \n- 豆花（如小谭豆花，街区推荐）  \n- 雪多冰（街区推荐的小吃/",
+      "ground_truth": "成都美食除火锅外，还可吃串串、冒菜、担担面、钟水饺、龙抄手、兔头、蛋烘糕、甜水面和各类苍蝇馆子川菜；不太能吃辣的人应提前说明微辣或少辣。",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.95,
+        "context_precision": 0.6
+      },
+      "reasoning": "答案列举的小吃均可在上下文找到依据且切题，但上下文包含大量与美食无关的旅游信息，噪声较多",
+      "latency_ms": {
+        "retrieve": 1559,
+        "generate": 9432,
+        "judge": 13002
+      },
+      "token_usage": {
+        "input_tokens": 3309,
+        "output_tokens": 1304,
+        "total_tokens": 4613,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.00280425,
+          "output_usd": 0.00904,
+          "total_usd": 0.01184425,
+          "total_cny": 0.085279,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 4,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    },
+    {
+      "id": "rag_005",
+      "query": "杜甫草堂怎么逛，适合安排多久",
+      "city": "成都",
+      "context_chunk_count": 5,
+      "answer_model": "gpt-5-mini",
+      "judge_model": "gpt-5",
+      "answer": "建议行程与游览时长（均依据参考资料）\n\n- 最佳时段：早上。参考资料多次强调清晨人少、空气好、阳光透过竹林映在湖面上风景尤美，强烈推荐早上去。\n- 购票与开放时间：门票约50元，开放时间为8:30—18:00，分上午场和下午场。建议上午场门票提前一天购买，下午场当天可买（资料中建议）。\n- 主要看点与游览顺序建议：\n  1. 先从正门进入，沿路参观杜甫故居陈列与馆藏，了解杜甫生平与诗作。  \n  2. 前往竹林与湖区（红墙竹影、湖面光影是草堂的经典场景），清晨光线最佳，拍照与感受古风氛围最合适。  \n  3. 到各处庭院、展厅细看介绍，可选择租讲解器或参加现场讲解/诗歌主题行程以更深入了解（资料建议租讲解器约20元，或参加“杜甫草堂里的奇妙诗歌会”等讲解线路）。\n- 建议停留时长：约2小时左右，资料中提到“逛",
+      "ground_truth": "杜甫草堂适合安排2到3小时，重点看红墙竹影、茅屋故居、诗史堂和园林景观。它与浣花溪公园距离近，适合上午或下午慢逛，拍照和人文体验都比较强。",
+      "scores": {
+        "faithfulness": 0.96,
+        "answer_relevancy": 0.95,
+        "context_precision": 0.7
+      },
+      "reasoning": "答案依据了上下文的早晨时段、票价与开放时间、讲解器与讲解线路、约2小时停留等信息，但检索内容噪音较多且部分游览动线描述略泛化。",
+      "latency_ms": {
+        "retrieve": 1365,
+        "generate": 8943,
+        "judge": 11390
+      },
+      "token_usage": {
+        "input_tokens": 3686,
+        "output_tokens": 1377,
+        "total_tokens": 5063,
+        "llm_call_count": 2,
+        "record_count": 2,
+        "model": null,
+        "models": [
+          "gpt-5",
+          "gpt-5-mini"
+        ],
+        "sources": [
+          "api_usage_field"
+        ],
+        "source": "rag_case",
+        "estimated_cost": {
+          "currency": "USD",
+          "model": null,
+          "priced_model": null,
+          "pricing_source": "summed_child_costs",
+          "input_usd_per_1m_tokens": null,
+          "output_usd_per_1m_tokens": null,
+          "input_usd": 0.0031405,
+          "output_usd": 0.00977,
+          "total_usd": 0.0129105,
+          "total_cny": 0.092956,
+          "cny_per_usd": 7.2
+        }
+      },
+      "route_quality": {
+        "evidence_chunk_count": 5,
+        "route_plan_chunk_count": 5,
+        "pitfall_chunk_count": 0,
+        "has_pitfall_coverage": false,
+        "has_route_plan_coverage": true
+      }
+    }
+  ],
+  "route_quality_summary": {
+    "avg_evidence_chunks": 5.0,
+    "cases_with_pitfall_coverage": 0,
+    "cases_with_route_plan_coverage": 5,
+    "pitfall_coverage_rate": 0.0,
+    "route_plan_coverage_rate": 1.0
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "eval_timestamp": "2026-04-27T15:52:04.344900",
+  "layer_results": [
+    {
+      "layer": 2,
+      "source": "5-evaluate\\main_agent_runs\\beijing_family_low_4d_layer2_input_utf8.json",
+      "all_passed": true,
+      "passed": true,
+      "checks": {
+        "must_visit_completeness": {
+          "passed": true,
+          "message": "PASS"
+        },
+        "avoid_filter": {
+          "passed": true,
+          "message": "PASS"
+        },
+        "cross_district_limit": {
+          "passed": true,
+          "message": "PASS"
+        },
+        "daily_poi_count": {
+          "passed": true,
+          "message": "PASS"
+        },
+        "field_completeness": {
+          "passed": true,
+          "message": "PASS"
+        },
+        "day_count_match": {
+          "passed": true,
+          "message": "PASS"
+        }
+      }
+    }
+  ]
+}

@@ -313,8 +313,9 @@ TOOL_SCHEMAS = [
 
 
 class CompanionAgent:
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, force_agentic_llm: bool = False) -> None:
         self.settings = settings or Settings.from_env()
+        self.force_agentic_llm = force_agentic_llm
         self.tool_impls = {
             "resolve_location": self._tool_resolve_location,
             "retrieve_candidates": self._tool_retrieve_candidates,
@@ -418,7 +419,9 @@ class CompanionAgent:
         )
 
         try:
-            task_result = self._maybe_handle_task_flow(user_input, state)
+            task_result = None
+            if not (self.force_agentic_llm and self.client is not None):
+                task_result = self._maybe_handle_task_flow(user_input, state)
             if task_result is not None:
                 trace.event(
                     "Companion execution path",

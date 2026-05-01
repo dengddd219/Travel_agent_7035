@@ -11,6 +11,7 @@ RAGAS 生成质量评测脚本
     python 5-evaluate/ragas_evaluator.py
     python 5-evaluate/ragas_evaluator.py --cases 5   # 只跑前 5 条
     python 5-evaluate/ragas_evaluator.py --out result.json
+    python 5-evaluate/ragas_evaluator.py --judge-model gpt-5
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +33,7 @@ for _p in [str(_ROOT), str(_RAG_RETRIVAL), str(_RAG_PIPELINE)]:
         sys.path.insert(0, _p)
 
 from search_notes import search_notes  # noqa: E402
-from token_costing import aggregate_token_usage, token_usage_from_response_usage, with_token_cost  # noqa: E402
+from token_costing import aggregate_token_usage, token_usage_from_response_usage  # noqa: E402
 
 # ── Azure OpenAI 客户端 ───────────────────────────────────────────────────────
 try:
@@ -45,117 +46,114 @@ from dotenv import load_dotenv
 load_dotenv(_ROOT / ".env", override=False)
 load_dotenv(override=False)
 
-_ENDPOINT   = os.getenv("FOUNDRY_PROJECT_ENDPOINT", "").strip()
-_API_KEY    = os.getenv("FOUNDRY_PROJECT_API_KEY", "").strip()
-_DEPLOYMENT = os.getenv("FOUNDRY_PROJECT_DEPLOYMENT", "").strip()
-_API_VER    = os.getenv("FOUNDRY_API_VERSION", os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview")).strip()
+_ANSWER_ENDPOINT = os.getenv("FOUNDRY_PROJECT_ENDPOINT", "").strip()
+_ANSWER_API_KEY = os.getenv("FOUNDRY_PROJECT_API_KEY", "").strip()
+_ANSWER_MODEL = os.getenv("FOUNDRY_PROJECT_DEPLOYMENT", "").strip()
+_ANSWER_API_VER = os.getenv(
+    "FOUNDRY_API_VERSION",
+    os.getenv("AZURE_OPENAI_API_VERSION", "2025-04-01-preview"),
+).strip()
+
+_JUDGE_ENDPOINT = os.getenv("RAGAS_JUDGE_ENDPOINT", os.getenv("AZURE_OPENAI_ENDPOINT", "")).strip()
+_JUDGE_API_KEY = os.getenv("RAGAS_JUDGE_API_KEY", os.getenv("AZURE_OPENAI_API_KEY", "")).strip()
+_JUDGE_MODEL = os.getenv("RAGAS_JUDGE_MODEL", "gpt-5").strip()
+_JUDGE_API_VER = os.getenv(
+    "RAGAS_JUDGE_API_VERSION",
+    os.getenv("AZURE_OPENAI_API_VERSION", _ANSWER_API_VER),
+).strip()
 
 
-def _make_client():
+def _make_responses_client(endpoint: str, api_key: str, api_version: str, *, label: str):
     if OpenAI is None:
         raise RuntimeError("openai package not installed")
-    if not (_ENDPOINT and _API_KEY and _DEPLOYMENT):
+    if not (endpoint and api_key):
         raise RuntimeError(
-            "Missing Azure OpenAI credentials. "
-            "Set FOUNDRY_PROJECT_ENDPOINT / FOUNDRY_PROJECT_API_KEY / FOUNDRY_PROJECT_DEPLOYMENT in .env"
+            f"Missing {label} credentials. "
+            "Set the corresponding endpoint and API key in .env"
         )
     # gpt-5-mini on Azure AI Foundry only returns content via the Responses API;
     # chat.completions returns empty strings. Use OpenAI client at the *resource*
     # level with api-version as a default query parameter.
-    endpoint = _ENDPOINT.rstrip("/")
+    endpoint = endpoint.rstrip("/")
     if "services.ai.azure.com" in endpoint:
         import re as _re
         m = _re.match(r"(https://[^/]+\.services\.ai\.azure\.com)", endpoint)
         resource_base = m.group(1) if m else endpoint
         return OpenAI(
             base_url=resource_base + "/openai/",
-            api_key=_API_KEY,
+            api_key=api_key,
             default_query={"api-version": "2025-03-01-preview"},
+            timeout=120.0,
+            max_retries=2,
         )
     return AzureOpenAI(
-        azure_endpoint=_ENDPOINT,
-        api_key=_API_KEY,
-        api_version=_API_VER,
+        azure_endpoint=endpoint,
+        api_key=api_key,
+        api_version=api_version,
+        timeout=120.0,
+        max_retries=2,
     )
+
+
+def _make_answer_client(answer_model: str):
+    if not answer_model:
+        raise RuntimeError("Missing answer model. Set FOUNDRY_PROJECT_DEPLOYMENT in .env or pass --answer-model.")
+    return _make_responses_client(
+        _ANSWER_ENDPOINT,
+        _ANSWER_API_KEY,
+        _ANSWER_API_VER,
+        label="answer model",
+    )
+
+
+def _make_judge_client(judge_model: str):
+    if not judge_model:
+        raise RuntimeError("Missing judge model. Set RAGAS_JUDGE_MODEL in .env or pass --judge-model.")
+    return _make_responses_client(
+        _JUDGE_ENDPOINT,
+        _JUDGE_API_KEY,
+        _JUDGE_API_VER,
+        label="judge model",
+    )
+
+
+def _response_extra_kwargs(model: str) -> dict[str, Any]:
+    normalized = (model or "").strip().lower()
+    if normalized.startswith(("gpt-5", "o1", "o3", "o4")):
+        return {"reasoning": {"effort": "low"}}
+    return {}
 
 
 # ── Golden Test Set ───────────────────────────────────────────────────────────
 # 每条包含 query / city / ground_truth（人工写的标准答案关键点）
 # ground_truth 不需要是完整段落，列出必须覆盖的事实点即可
-GOLDEN_CASES: list[dict[str, Any]] = [
-    {
-        "id": "rag_001",
-        "query": "成都熊猫基地怎么去，几点开门",
-        "city": "成都",
-        "ground_truth": "熊猫基地正式名称是中国大熊猫保护研究中心成都基地，早上开门时间约为7:30-8:00，建议早上去看喂食，可乘坐地铁3号线或专线大巴前往。",
-    },
-    {
-        "id": "rag_002",
-        "query": "北京故宫门票怎么买，需要提前预约吗",
-        "city": "北京",
-        "ground_truth": "故宫门票需要在官方小程序或官网提前网上预约购票，不支持现场购票，旺季需提前数天甚至一周预约，门票价格60元（淡季40元）。",
-    },
-    {
-        "id": "rag_003",
-        "query": "上海外滩夜景怎么看，最佳观景点在哪",
-        "city": "上海",
-        "ground_truth": "上海外滩夜景可从外滩沿岸直接欣赏对岸陆家嘴夜景，也可去东方明珠观光层或上海中心观景台俯瞰，推荐傍晚6-9点，灯光最好。",
-    },
-    {
-        "id": "rag_004",
-        "query": "西安回民街必吃什么",
-        "city": "西安",
-        "ground_truth": "西安回民街必吃肉夹馍、biangbiang面、羊肉泡馍、凉皮、灌汤包，另外葫芦头也值得一试，街上小吃摊多，价格实惠。",
-    },
-    {
-        "id": "rag_005",
-        "query": "重庆洪崖洞适合几点去看夜景",
-        "city": "重庆",
-        "ground_truth": "重庆洪崖洞看夜景建议晚上7点以后，灯光全开后配合嘉陵江倒影效果最佳，节假日人多，工作日较好，可从解放碑步行约10分钟到达。",
-    },
-    {
-        "id": "rag_006",
-        "query": "杭州西湖免费吗，有哪些必逛景点",
-        "city": "杭州",
-        "ground_truth": "西湖核心景区免费开放，苏堤、白堤、断桥、雷峰塔（雷峰塔内部收费）均可步行游览，推荐路线：断桥→白堤→平湖秋月→苏堤，绕湖一圈约15公里。",
-    },
-    {
-        "id": "rag_007",
-        "query": "香港维多利亚港夜景怎么看最好",
-        "city": "香港",
-        "ground_truth": "香港维港夜景最佳观赏点是尖沙咀海滨长廊，每晚8点有幻彩咏香江灯光秀，也可乘坐天星小轮渡海欣赏两岸夜景，票价仅3-5港元。",
-    },
-    {
-        "id": "rag_008",
-        "query": "南京夫子庙秦淮河怎么玩",
-        "city": "南京",
-        "ground_truth": "南京夫子庙秦淮河景区免费，可沿河散步欣赏古建筑，乘坐秦淮画舫游览（约80元），夜晚灯火通明最美，周边有桂花鸭、鸭血粉丝汤等特色美食。",
-    },
-    {
-        "id": "rag_009",
-        "query": "厦门鼓浪屿怎么去，值得住一晚吗",
-        "city": "厦门",
-        "ground_truth": "从厦门轮渡码头乘船约10分钟可到鼓浪屿，船票约35元，岛上禁止机动车，适合步行游览日光岩、菽庄花园，住一晚可感受安静的小岛氛围，民宿价格偏高。",
-    },
-    {
-        "id": "rag_010",
-        "query": "广州早茶推荐哪些茶楼，有什么必点",
-        "city": "广州",
-        "ground_truth": "广州早茶推荐陶陶居、莲香楼、广州酒家等老字号，必点虾饺、烧卖、叉烧包、蛋挞、肠粉，广式早茶讲究一盅两件，人均约50-100元。",
-    },
-    {
-        "id": "rag_011",
-        "query": "深圳有哪些适合周末一日游的地方",
-        "city": "深圳",
-        "ground_truth": "深圳周末一日游推荐大梅沙海滩（免费）、华侨城欢乐谷（需购票）、东部华侨城、南澳岛，深圳地铁发达，大部分景点交通便利。",
-    },
-    {
-        "id": "rag_012",
-        "query": "东京浅草寺附近怎么逛，有什么推荐",
-        "city": "东京",
-        "ground_truth": "浅草寺仲见世通商店街可购买和果子、人形烧等传统小吃，雷门是必拍打卡点，附近有浅草文化观光中心可俯瞰全景，步行可到押上晴空塔。",
-    },
-]
+_GOLDEN_CASES_PATH = Path(__file__).with_name("golden_cases.json")
+
+
+def load_golden_cases(path: Path = _GOLDEN_CASES_PATH) -> list[dict[str, Any]]:
+    """Load and validate the external golden test set."""
+    with path.open("r", encoding="utf-8") as f:
+        cases = json.load(f)
+
+    if not isinstance(cases, list):
+        raise ValueError(f"{path} must contain a JSON list")
+
+    required = {"id", "query", "city", "ground_truth"}
+    seen_ids: set[str] = set()
+    for idx, case in enumerate(cases, start=1):
+        if not isinstance(case, dict):
+            raise ValueError(f"Case #{idx} must be an object")
+        missing = required - set(case)
+        if missing:
+            raise ValueError(f"Case #{idx} missing required fields: {sorted(missing)}")
+        for key in required:
+            if not isinstance(case[key], str) or not case[key].strip():
+                raise ValueError(f"Case #{idx} field {key!r} must be a non-empty string")
+        if case["id"] in seen_ids:
+            raise ValueError(f"Duplicate golden case id: {case['id']}")
+        seen_ids.add(case["id"])
+
+    return cases
 
 
 # ── RAGAS 评测核心逻辑 ────────────────────────────────────────────────────────
@@ -231,7 +229,7 @@ def _compute_route_quality(raw_results: list[dict]) -> dict:
     }
 
 
-def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str, dict]:
+def _generate_answer(client, model: str, query: str, context_chunks: list[str]) -> tuple[str, dict]:
     """用检索上下文生成回答，返回 (answer, token_usage)。"""
     if not context_chunks:
         return "暂无相关信息。", {}
@@ -239,8 +237,8 @@ def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str
     context_text = "\n\n---\n\n".join(context_chunks[:5])
     messages = [
         {
-            "role": "system",
-            "content": "你是一个旅行助手，请仅根据以下检索到的参考资料回答用户问题，不要添加资料中没有的信息。",
+            "role": "developer",
+            "content": "你是一个旅行助手，请仅根据以下检索到的参考资料回答用户问题，不要添加资料中没有的信息。请完整但精炼地回答；如果资料缺少某个问题的关键信息，明确说明未检索到。",
         },
         {
             "role": "user",
@@ -248,55 +246,86 @@ def _generate_answer(client, query: str, context_chunks: list[str]) -> tuple[str
         },
     ]
     resp = client.responses.create(
-        model=_DEPLOYMENT,
+        model=model,
         input=messages,
-        max_output_tokens=500,
+        max_output_tokens=1600,
+        **_response_extra_kwargs(model),
     )
     answer = (resp.output_text or "").strip()
-    usage = token_usage_from_response_usage(resp.usage, model=_DEPLOYMENT)
+    usage = token_usage_from_response_usage(resp.usage, model=model)
     return answer, usage
 
 
-def _judge(client, query: str, context_chunks: list[str], answer: str, ground_truth: str) -> dict:
+def _judge(client, model: str, query: str, context_chunks: list[str], answer: str, ground_truth: str) -> dict:
     """让 LLM 作 Judge，返回三维评分 dict。"""
     context_text = "\n\n---\n\n".join(context_chunks[:5]) if context_chunks else "（无检索结果）"
-    prompt = _JUDGE_PROMPT.format(
+    base_prompt = _JUDGE_PROMPT.format(
         query=query,
         context=context_text,
         answer=answer,
         ground_truth=ground_truth,
     )
-    resp = client.responses.create(
-        model=_DEPLOYMENT,
-        input=[
-            {"role": "system", "content": _JUDGE_SYSTEM},
-            {"role": "user", "content": prompt},
-        ],
-        max_output_tokens=200,
-    )
-    raw = (resp.output_text or "").strip()
-    try:
-        scores = json.loads(raw)
-    except json.JSONDecodeError:
-        # 容错：尝试提取 JSON 块
-        import re
-        m = re.search(r"\{.*\}", raw, re.DOTALL)
-        scores = json.loads(m.group()) if m else {}
 
-    usage = token_usage_from_response_usage(resp.usage, model=_DEPLOYMENT)
+    raw = ""
+    scores: dict[str, Any] = {}
+    usage_records: list[dict[str, Any]] = []
+    import re
+
+    for attempt in range(2):
+        prompt = base_prompt
+        if attempt:
+            prompt += "\n\n注意：上一次输出未能解析为 JSON。本次只能输出一个 JSON object，不要输出 Markdown 或解释。"
+
+        resp = client.responses.create(
+            model=model,
+            input=[
+                {"role": "developer", "content": _JUDGE_SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+            max_output_tokens=2000,
+            **_response_extra_kwargs(model),
+        )
+        raw = (resp.output_text or "").strip()
+        usage_records.append(token_usage_from_response_usage(resp.usage, model=model))
+
+        try:
+            scores = json.loads(raw)
+        except json.JSONDecodeError:
+            m = re.search(r"\{.*\}", raw, re.DOTALL)
+            if m:
+                try:
+                    scores = json.loads(m.group())
+                except json.JSONDecodeError:
+                    scores = {}
+        if isinstance(scores, dict) and {"faithfulness", "answer_relevancy", "context_precision"} <= set(scores):
+            break
+
+    usage = aggregate_token_usage(usage_records, source="judge_retries")
+    if not scores:
+        scores = {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "reasoning": f"Judge output parse failed; raw output prefix: {raw[:200]}",
+        }
     return {"scores": scores, "token_usage": usage, "raw_judge_output": raw}
 
 
-def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> dict:
+def run_evaluation(
+    cases: list[dict],
+    top_k: int = 5,
+    delay_s: float = 1.0,
+    answer_model: str = _ANSWER_MODEL,
+    judge_model: str = _JUDGE_MODEL,
+) -> dict:
     """
     对所有 case 跑完整的 Retrieve → Generate → Judge 流程。
     返回汇总结果 dict。
     """
-    client = _make_client()
+    answer_client = _make_answer_client(answer_model)
+    judge_client = _make_judge_client(judge_model)
 
     results = []
-    total_input_tokens = 0
-    total_output_tokens = 0
     all_token_usages = []
 
     for i, case in enumerate(cases):
@@ -315,20 +344,40 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
 
         # Step 2: Generate
         t0 = time.monotonic()
-        answer, gen_usage = _generate_answer(client, query, context_chunks)
+        generate_error = ""
+        try:
+            answer, gen_usage = _generate_answer(answer_client, answer_model, query, context_chunks)
+        except Exception as exc:
+            generate_error = f"{type(exc).__name__}: {str(exc)[:200]}"
+            answer = f"生成失败：{generate_error}"
+            gen_usage = {}
         gen_ms = int((time.monotonic() - t0) * 1000)
-        total_input_tokens += gen_usage.get("input_tokens", 0)
-        total_output_tokens += gen_usage.get("output_tokens", 0)
         all_token_usages.append(gen_usage)
         print(f"  生成: {len(answer)} 字 ({gen_ms}ms)", flush=True)
+        if generate_error:
+            print(f"  生成错误: {generate_error}", flush=True)
 
         # Step 3: Judge
         t0 = time.monotonic()
-        judge_result = _judge(client, query, context_chunks, answer, ground_truth)
+        judge_error = ""
+        try:
+            judge_result = _judge(judge_client, judge_model, query, context_chunks, answer, ground_truth)
+        except Exception as exc:
+            judge_error = f"{type(exc).__name__}: {str(exc)[:200]}"
+            judge_result = {
+                "scores": {
+                    "faithfulness": 0.0,
+                    "answer_relevancy": 0.0,
+                    "context_precision": 0.0,
+                    "reasoning": f"Judge failed: {judge_error}",
+                },
+                "token_usage": {},
+                "raw_judge_output": "",
+            }
         judge_ms = int((time.monotonic() - t0) * 1000)
-        total_input_tokens += judge_result["token_usage"].get("input_tokens", 0)
-        total_output_tokens += judge_result["token_usage"].get("output_tokens", 0)
         all_token_usages.append(judge_result["token_usage"])
+        if judge_error:
+            print(f"  Judge 错误: {judge_error}", flush=True)
 
         scores = judge_result["scores"]
         faithfulness = scores.get("faithfulness", 0.0)
@@ -350,6 +399,8 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
             "query": query,
             "city": city,
             "context_chunk_count": len(context_chunks),
+            "answer_model": answer_model,
+            "judge_model": judge_model,
             "answer": answer,
             "ground_truth": ground_truth,
             "scores": {
@@ -358,6 +409,10 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
                 "context_precision": context_precision,
             },
             "reasoning": reasoning,
+            "errors": {
+                "generate": generate_error,
+                "judge": judge_error,
+            },
             "latency_ms": {
                 "retrieve": retrieve_ms,
                 "generate": gen_ms,
@@ -365,7 +420,6 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
             },
             "token_usage": aggregate_token_usage(
                 [gen_usage, judge_result["token_usage"]],
-                model=_DEPLOYMENT,
                 source="rag_case",
             ),
             "route_quality": _compute_route_quality(raw_results),
@@ -381,9 +435,19 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
     avg_precision = sum(r["scores"]["context_precision"] for r in results) / n
     avg_all = (avg_faithfulness + avg_relevancy + avg_precision) / 3
 
+    token_summary = aggregate_token_usage(all_token_usages, source="ragas_evaluator")
+    token_summary["total_input_tokens"] = token_summary["input_tokens"]
+    token_summary["total_output_tokens"] = token_summary["output_tokens"]
+
     summary = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "model": _DEPLOYMENT,
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "model": answer_model,
+        "answer_model": answer_model,
+        "judge_model": judge_model,
+        "models": {
+            "answer": answer_model,
+            "judge": judge_model,
+        },
         "case_count": n,
         "top_k": top_k,
         "avg_scores": {
@@ -392,19 +456,7 @@ def run_evaluation(cases: list[dict], top_k: int = 5, delay_s: float = 1.0) -> d
             "context_precision": round(avg_precision, 4),
             "overall": round(avg_all, 4),
         },
-        "token_usage": with_token_cost(
-            {
-                "total_input_tokens": total_input_tokens,
-                "total_output_tokens": total_output_tokens,
-                "input_tokens": total_input_tokens,
-                "output_tokens": total_output_tokens,
-                "total_tokens": total_input_tokens + total_output_tokens,
-                "llm_call_count": sum(item.get("llm_call_count", 0) for item in all_token_usages),
-                "model": _DEPLOYMENT,
-                "source": "ragas_evaluator",
-            },
-            model=_DEPLOYMENT,
-        ),
+        "token_usage": token_summary,
         "thresholds": {
             "faithfulness": {"target": 0.7, "pass": avg_faithfulness >= 0.7},
             "answer_relevancy": {"target": 0.7, "pass": avg_relevancy >= 0.7},
@@ -438,20 +490,21 @@ def print_report(summary: dict) -> None:
     print("\n" + "=" * 60)
     print("  RAGAS 生成质量评测报告")
     print("=" * 60)
-    print(f"  模型: {summary['model']}")
+    print(f"  Answer 模型: {summary.get('answer_model', summary.get('model'))}")
+    print(f"  Judge 模型: {summary.get('judge_model', summary.get('model'))}")
     print(f"  测试集: {n} 条  |  Top-K: {summary['top_k']}")
     print(f"  时间: {summary['timestamp']}")
     print()
 
     def _mark(passed: bool) -> str:
-        return "✅" if passed else "❌"
+        return "PASS" if passed else "FAIL"
 
     print(f"  {'指标':<20} {'均值':>8}  {'目标':>6}  状态")
     print("  " + "-" * 44)
-    print(f"  {'Faithfulness':<20} {avg['faithfulness']:>8.4f}  {'≥0.70':>6}  {_mark(thr['faithfulness']['pass'])}")
-    print(f"  {'Answer Relevancy':<20} {avg['answer_relevancy']:>8.4f}  {'≥0.70':>6}  {_mark(thr['answer_relevancy']['pass'])}")
-    print(f"  {'Context Precision':<20} {avg['context_precision']:>8.4f}  {'≥0.60':>6}  {_mark(thr['context_precision']['pass'])}")
-    print(f"  {'Overall':<20} {avg['overall']:>8.4f}  {'≥0.67':>6}  {_mark(thr['overall']['pass'])}")
+    print(f"  {'Faithfulness':<20} {avg['faithfulness']:>8.4f}  {'>=0.70':>6}  {_mark(thr['faithfulness']['pass'])}")
+    print(f"  {'Answer Relevancy':<20} {avg['answer_relevancy']:>8.4f}  {'>=0.70':>6}  {_mark(thr['answer_relevancy']['pass'])}")
+    print(f"  {'Context Precision':<20} {avg['context_precision']:>8.4f}  {'>=0.60':>6}  {_mark(thr['context_precision']['pass'])}")
+    print(f"  {'Overall':<20} {avg['overall']:>8.4f}  {'>=0.67':>6}  {_mark(thr['overall']['pass'])}")
     print()
 
     tok = summary["token_usage"]
@@ -493,12 +546,25 @@ if __name__ == "__main__":
     parser.add_argument("--top-k", type=int, default=5, help="检索返回 chunk 数")
     parser.add_argument("--delay", type=float, default=1.0, help="每条 case 间隔秒数（防限流）")
     parser.add_argument("--out", type=str, default="", help="结果 JSON 输出路径")
+    parser.add_argument("--golden-cases", type=str, default=str(_GOLDEN_CASES_PATH), help="golden cases JSON 路径")
+    parser.add_argument("--answer-model", type=str, default=_ANSWER_MODEL, help="Answer 生成模型部署名")
+    parser.add_argument("--judge-model", type=str, default=_JUDGE_MODEL, help="LLM-as-Judge 模型部署名")
     args = parser.parse_args()
 
-    cases = GOLDEN_CASES[: args.cases] if args.cases > 0 else GOLDEN_CASES
-    print(f"开始 RAGAS 评测: {len(cases)} 条 case，top_k={args.top_k}")
+    all_cases = load_golden_cases(Path(args.golden_cases))
+    cases = all_cases[: args.cases] if args.cases > 0 else all_cases
+    print(
+        f"开始 RAGAS 评测: {len(cases)} 条 case，top_k={args.top_k}，"
+        f"answer_model={args.answer_model}，judge_model={args.judge_model}"
+    )
 
-    summary = run_evaluation(cases, top_k=args.top_k, delay_s=args.delay)
+    summary = run_evaluation(
+        cases,
+        top_k=args.top_k,
+        delay_s=args.delay,
+        answer_model=args.answer_model,
+        judge_model=args.judge_model,
+    )
     print_report(summary)
 
     out_path = Path(args.out) if args.out else Path(__file__).parent / "ragas_result.json"

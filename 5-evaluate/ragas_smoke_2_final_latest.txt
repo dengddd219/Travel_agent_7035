@@ -1,0 +1,3 @@
+﻿pid=31368
+out=5-evaluate\ragas_smoke_2_final_20260427_123801.out.log
+err=5-evaluate\ragas_smoke_2_final_20260427_123801.err.log

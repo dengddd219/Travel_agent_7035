@@ -1,0 +1,2265 @@
+{
+  "conversation_id": "conv_ef7a28b8a184",
+  "conversation_state": {
+    "preference_memory": {
+      "city": "Beijing",
+      "start_date": "",
+      "trip_days": 4,
+      "travel_type": "family",
+      "travelers": "friends",
+      "budget_level": "low",
+      "pace": "balanced",
+      "interests": [
+        "family friendly"
+      ],
+      "must_visit": [],
+      "avoid": [
+        "地点无"
+      ],
+      "notes": "",
+      "extra_request": ""
+    },
+    "latest_user_profile": {
+      "city": "Beijing",
+      "start_date": "",
+      "trip_days": 4,
+      "travel_type": "family",
+      "travelers": "friends",
+      "budget_level": "low",
+      "pace": "balanced",
+      "interests": [
+        "family friendly"
+      ],
+      "must_visit": [],
+      "avoid": [
+        "地点无"
+      ],
+      "notes": "",
+      "extra_request": ""
+    },
+    "latest_plan": {
+      "city": "Beijing",
+      "trip_days": 4,
+      "overview": "A 4-day family itinerary in Beijing with a slow pace and low budget profile.",
+      "total_estimated_cost": 36.0,
+      "selected_pois": [
+        {
+          "name": "天坛",
+          "category": "attraction",
+          "district": "东城区",
+          "lat": 39.8837,
+          "lon": 116.412,
+          "duration_hours": 2.0,
+          "ticket_price": 34.0,
+          "price_level": 2,
+          "indoor_outdoor": "outdoor",
+          "tags": [
+            "history",
+            "park",
+            "culture"
+          ],
+          "source": [
+            "profile_seed"
+          ],
+          "address": "1 Tiantan East Road, Dongcheng District",
+          "open_hours": "06:00-22:00",
+          "rating": 4.7,
+          "visit_reason": "Major historic landmark with easier pacing than the palace core."
+        },
+        {
+          "name": "天坛公园-圜丘",
+          "category": "attraction",
+          "district": "东城区",
+          "lat": 39.876964,
+          "lon": 116.413162,
+          "duration_hours": 1.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "mixed",
+          "tags": [
+            "family"
+          ],
+          "source": [
+            "amap"
+          ],
+          "address": "天坛路甲1号天坛公园内(东南角)",
+          "open_hours": "08:00-22:00",
+          "rating": null,
+          "visit_reason": "Matched from POI search for '圜丘'."
+        },
+        {
+          "name": "天坛公园-燎炉",
+          "category": "attraction",
+          "district": "东城区",
+          "lat": 39.882667,
+          "lon": 116.413566,
+          "duration_hours": 1.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "mixed",
+          "tags": [
+            "family"
+          ],
+          "source": [
+            "amap"
+          ],
+          "address": "天坛内东里7号天坛公园圜丘内",
+          "open_hours": "",
+          "rating": null,
+          "visit_reason": "Matched from POI search for '圜丘'."
+        },
+        {
+          "name": "北京环球度假区",
+          "category": "attraction",
+          "district": "通州区",
+          "lat": 39.852698,
+          "lon": 116.681212,
+          "duration_hours": 1.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "mixed",
+          "tags": [
+            "attraction"
+          ],
+          "source": [
+            "amap"
+          ],
+          "address": "梨园镇环球大道",
+          "open_hours": "09:00-20:00",
+          "rating": null,
+          "visit_reason": "Matched from POI search for '北京环球影城'."
+        },
+        {
+          "name": "哈利·波特的魔法世界",
+          "category": "attraction",
+          "district": "通州区",
+          "lat": 39.856678,
+          "lon": 116.686716,
+          "duration_hours": 1.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "mixed",
+          "tags": [
+            "attraction"
+          ],
+          "source": [
+            "amap"
+          ],
+          "address": "北京环球度假区",
+          "open_hours": "09:00-20:00",
+          "rating": null,
+          "visit_reason": "Matched from POI search for '哈利波特园区'."
+        },
+        {
+          "name": "哈利·波特与禁忌之旅™",
+          "category": "attraction",
+          "district": "通州区",
+          "lat": 39.856904,
+          "lon": 116.686896,
+          "duration_hours": 1.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "mixed",
+          "tags": [
+            "attraction"
+          ],
+          "source": [
+            "amap"
+          ],
+          "address": "北京环球度假区",
+          "open_hours": "09:00-21:00",
+          "rating": null,
+          "visit_reason": "Matched from POI search for '哈利波特园区'."
+        },
+        {
+          "name": "中国国家博物馆",
+          "category": "attraction",
+          "district": "东城区",
+          "lat": 39.9051,
+          "lon": 116.4013,
+          "duration_hours": 2.5,
+          "ticket_price": 0.0,
+          "price_level": 1,
+          "indoor_outdoor": "indoor",
+          "tags": [
+            "museum",
+            "history",
+            "culture"
+          ],
+          "source": [
+            "profile_seed"
+          ],
+          "address": "16 East Chang'an Avenue",
+          "open_hours": "09:00-17:00",
+          "rating": 4.7,
+          "visit_reason": "High-value indoor history anchor for bad-weather days."
+        },
+        {
+          "name": "景山公园",
+          "category": "attraction",
+          "district": "西城区",
+          "lat": 39.9254,
+          "lon": 116.3962,
+          "duration_hours": 1.2,
+          "ticket_price": 2.0,
+          "price_level": 1,
+          "indoor_outdoor": "outdoor",
+          "tags": [
+            "view",
+            "park",
+            "landmark"
+          ],
+          "source": [
+            "profile_seed"
+          ],
+          "address": "44 Jingshan West Street, Xicheng District",
+          "open_hours": "06:30-21:00",
+          "rating": 4.6,
+          "visit_reason": "Great skyline and palace-overlook anchor."
+        }
+      ],
+      "days": [
+        {
+          "day_index": 1,
+          "area": "东城区",
+          "theme": "Scenic landmark day",
+          "estimated_cost": 34.0,
+          "weather_summary": "晴",
+          "inter_stop_distance_m": 1084,
+          "inter_stop_duration_min": 14,
+          "items": [
+            {
+              "time_slot": "morning",
+              "poi_name": "天坛",
+              "category": "attraction",
+              "district": "东城区",
+              "duration_hours": 2.0,
+              "est_cost": 34.0,
+              "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里",
+              "weather_fit": "晴: outdoor plan, monitor rain risk.",
+              "transport_hint": "Start the day in 东城区.",
+              "arrival_mode": "start",
+              "arrival_distance_m": 0,
+              "arrival_duration_min": 0,
+              "guide_evidence": "也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛 安排3 上午：长城 下午：休息 PS：缆车上，缆车下 安排4 上午：雍和宫 下午：天坛 PS：如果快的话，这两个景点可以一…",
+              "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+              "pitfall_note": "",
+              "guide_source": "北京旅游（带老人版）"
+            },
+            {
+              "time_slot": "morning",
+              "poi_name": "天坛公园-燎炉",
+              "category": "attraction",
+              "district": "东城区",
+              "duration_hours": 1.5,
+              "est_cost": 0.0,
+              "reasoning": "在检索到的攻略里被多次提到",
+              "weather_fit": "晴: flexible mixed-environment stop.",
+              "transport_hint": "Walking about 5 min (0.4 km). 向东南步行387米到达目的地 -> 向东南步行387米到达目的地",
+              "arrival_mode": "walking",
+              "arrival_distance_m": 387,
+              "arrival_duration_min": 5,
+              "guide_evidence": "",
+              "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+              "pitfall_note": "",
+              "guide_source": ""
+            },
+            {
+              "time_slot": "afternoon",
+              "poi_name": "天坛公园-圜丘",
+              "category": "attraction",
+              "district": "东城区",
+              "duration_hours": 1.5,
+              "est_cost": 0.0,
+              "reasoning": "在检索到的攻略里被多次提到",
+              "weather_fit": "晴: flexible mixed-environment stop.",
+              "transport_hint": "Walking about 9 min (0.7 km). 向西步行57米左转 -> 向西步行2米到达目的地",
+              "arrival_mode": "walking",
+              "arrival_distance_m": 697,
+              "arrival_duration_min": 9,
+              "guide_evidence": "",
+              "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+              "pitfall_note": "",
+              "guide_source": ""
+            }
+          ],
+          "notes": [
+            "天气凉爽，建议穿薄外套",
+            "Avoid overly dense historic-site stacking and keep transit simple.",
+            "Inter-stop travel time is about 14 min across 1.1 km."
+          ]
+        },
+        {
+          "day_index": 2,
+          "area": "通州区",
+          "theme": "Scenic landmark day",
+          "estimated_cost": 0.0,
+          "weather_summary": "多云",
+          "inter_stop_distance_m": 3100,
+          "inter_stop_duration_min": 42,
+          "items": [
+            {
+              "time_slot": "morning",
+              "poi_name": "北京环球度假区",
+              "category": "attraction",
+              "district": "通州区",
+              "duration_hours": 1.5,
+              "est_cost": 0.0,
+              "reasoning": "主要基于地理顺路和整体节奏平衡",
+              "weather_fit": "多云: flexible mixed-environment stop.",
+              "transport_hint": "Start the day in 通州区.",
+              "arrival_mode": "start",
+              "arrival_distance_m": 0,
+              "arrival_duration_min": 0,
+              "guide_evidence": "",
+              "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+              "pitfall_note": "",
+              "guide_source": ""
+            },
+            {
+              "time_slot": "morning",
+              "poi_name": "哈利·波特的魔法世界",
+              "category": "attraction",
+              "district": "通州区",
+              "duration_hours": 1.5,
+              "est_cost": 0.0,
+              "reasoning": "主要基于地理顺路和整体节奏平衡",
+              "weather_fit": "多云: flexible mixed-environment stop.",
+              "transport_hint": "Walking about 41 min (3.1 km). 沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地",
+              "arrival_mode": "walking",
+              "arrival_distance_m": 3079,
+              "arrival_duration_min": 41,
+              "guide_evidence": "",
+              "local_note": "",
+              "pitfall_note": "",
+              "guide_source": ""
+            },
+            {
+              "time_slot": "afternoon",
+              "poi_name": "哈利·波特与禁忌之旅™",
+              "category": "attraction",
+              "district": "通州区",
+              "duration_hours": 1.5,
+              "est_cost": 0.0,
+              "reasoning": "主要基于地理顺路和整体节奏平衡",
+              "weather_fit": "多云: flexible mixed-environment stop.",
+              "transport_hint": "Walking about 1 min (0.0 km). 向东北步行21米到达目的地 -> 向东北步行21米到达目的地",
+              "arrival_mode": "walking",
+              "arrival_distance_m": 21,
+              "arrival_duration_min": 1,
+              "guide_evidence": "",
+              "local_note": "",
+              "pitfall_note": "",
+              "guide_source": ""
+            }
+          ],
+          "notes": [
+            "天气凉爽，建议穿薄外套",
+            "Inter-stop travel time is about 42 min across 3.1 km."
+          ]
+        },
+        {
+          "day_index": 3,
+          "area": "西城区",
+          "theme": "Scenic landmark day",
+          "estimated_cost": 2.0,
+          "weather_summary": "晴",
+          "inter_stop_distance_m": 0,
+          "inter_stop_duration_min": 0,
+          "items": [
+            {
+              "time_slot": "morning",
+              "poi_name": "景山公园",
+              "category": "attraction",
+              "district": "西城区",
+              "duration_hours": 1.2,
+              "est_cost": 2.0,
+              "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口",
+              "weather_fit": "晴: outdoor plan, monitor rain risk.",
+              "transport_hint": "Start the day in 西城区.",
+              "arrival_mode": "start",
+              "arrival_distance_m": 0,
+              "arrival_duration_min": 0,
+              "guide_evidence": "",
+              "local_note": "",
+              "pitfall_note": "",
+              "guide_source": ""
+            }
+          ],
+          "notes": [
+            "天气凉爽，建议穿薄外套"
+          ]
+        },
+        {
+          "day_index": 4,
+          "area": "东城区",
+          "theme": "Scenic landmark day",
+          "estimated_cost": 0.0,
+          "weather_summary": "晴",
+          "inter_stop_distance_m": 0,
+          "inter_stop_duration_min": 0,
+          "items": [
+            {
+              "time_slot": "morning",
+              "poi_name": "中国国家博物馆",
+              "category": "attraction",
+              "district": "东城区",
+              "duration_hours": 2.5,
+              "est_cost": 0.0,
+              "reasoning": "在检索到的攻略里被多次提到",
+              "weather_fit": "晴: indoor-friendly choice.",
+              "transport_hint": "Start the day in 东城区.",
+              "arrival_mode": "start",
+              "arrival_distance_m": 0,
+              "arrival_duration_min": 0,
+              "guide_evidence": "",
+              "local_note": "",
+              "pitfall_note": "",
+              "guide_source": ""
+            }
+          ],
+          "notes": [
+            "天气舒适，适合穿长袖"
+          ]
+        }
+      ],
+      "planning_notes": [
+        "Planner groups stops by district first, then balances weather fit and preference match.",
+        "High-risk weather days bias the plan toward indoor or mixed venues.",
+        "Budget pressure lowers the priority of higher-cost attractions unless they are must-visit locations.",
+        "Within each day, stop order is optimized against real Amap route durations when coordinates and an Amap key are available.",
+        "A post-planning review checks pace, weather fit, budget pressure, and route coherence.",
+        "RAG strategy signals now directly affect POI scoring, district priority, and route clustering.",
+        "Review triggered one automatic replan pass to reduce route, weather, or budget risks."
+      ],
+      "local_tips": [
+        "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+        "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+        "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+        "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+        "Move by district, not by attraction popularity alone.",
+        "Keep major imperial sites and modern districts on separate days because the city is large."
+      ],
+      "review_summary": "Review passed without major routing, weather, or budget issues.",
+      "review_findings": [],
+      "replan_summary": "Review triggered one automatic replan pass and the safer version replaced the original draft.",
+      "replan_metadata": {
+        "attempted": true,
+        "applied": true,
+        "trigger_rules": []
+      },
+      "guide_references": [
+        "北京环球影城 - 哈利波特园区: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+        "哈利波特园区 - 三把扫帚: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+        "北京环球 - 北京四合院内的涮羊肉: 【日常plog之——北京环球给我打钱】 广告的感觉 哈哈哈 不过北京环球也就霸天虎有得玩 其他一点都不好玩…不会再三刷了 图6好吃极了 吹爆 每一道菜都很好吃 下次还要来😋 图7-10还去吃了北京四合",
+        "环球这个机位名不虚传🏰: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+        "北京旅游（带老人版）: 【北京旅游（带老人版）】 故宫 下午：休息 PS：故宫很大，一上午逛完也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛故宫 下午：休息 PS：故宫很大，一上午逛完也会比较累，下午在酒店休息休息，晚上可以去有名的地"
+      ],
+      "strategy_summary": {
+        "recommended_pois": [
+          "北京环球影城",
+          "哈利波特园区",
+          "三把扫帚",
+          "天安门广场",
+          "毛主席纪念堂",
+          "国家博物馆",
+          "故宫",
+          "八达岭长城",
+          "雍和宫",
+          "天坛",
+          "颐和园",
+          "圜丘"
+        ],
+        "theme_suggestions": [
+          "leisure",
+          "culture",
+          "打卡",
+          "family",
+          "北京",
+          "food"
+        ],
+        "neighborhood_notes": []
+      },
+      "weather_payload": {
+        "city": "Beijing",
+        "start_date": "",
+        "forecast": [
+          {
+            "date": "2026-04-27",
+            "summary": "晴",
+            "temp_min": 9.0,
+            "temp_max": 22.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-28",
+            "summary": "多云",
+            "temp_min": 9.0,
+            "temp_max": 22.0,
+            "precipitation_probability": 35,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-29",
+            "summary": "晴",
+            "temp_min": 10.0,
+            "temp_max": 24.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-30",
+            "summary": "晴",
+            "temp_min": 15.0,
+            "temp_max": 29.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气舒适，适合穿长袖",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          }
+        ],
+        "best_outdoor_days": [
+          "2026-04-27",
+          "2026-04-28",
+          "2026-04-29",
+          "2026-04-30"
+        ],
+        "risky_days": [],
+        "source": "group_c_weather_adapter",
+        "provider_city": "北京",
+        "window_note": ""
+      },
+      "conditions_context": {
+        "weather": {
+          "city": "Beijing",
+          "start_date": "",
+          "forecast": [
+            {
+              "date": "2026-04-27",
+              "summary": "晴",
+              "temp_min": 9.0,
+              "temp_max": 22.0,
+              "precipitation_probability": 10,
+              "outdoor_suitability": "good",
+              "suggestions": [
+                "天气凉爽，建议穿薄外套",
+                "Good weather window for outdoor districts and viewpoints."
+              ],
+              "source": "amap_api"
+            },
+            {
+              "date": "2026-04-28",
+              "summary": "多云",
+              "temp_min": 9.0,
+              "temp_max": 22.0,
+              "precipitation_probability": 35,
+              "outdoor_suitability": "good",
+              "suggestions": [
+                "天气凉爽，建议穿薄外套",
+                "Good weather window for outdoor districts and viewpoints."
+              ],
+              "source": "amap_api"
+            },
+            {
+              "date": "2026-04-29",
+              "summary": "晴",
+              "temp_min": 10.0,
+              "temp_max": 24.0,
+              "precipitation_probability": 10,
+              "outdoor_suitability": "good",
+              "suggestions": [
+                "天气凉爽，建议穿薄外套",
+                "Good weather window for outdoor districts and viewpoints."
+              ],
+              "source": "amap_api"
+            },
+            {
+              "date": "2026-04-30",
+              "summary": "晴",
+              "temp_min": 15.0,
+              "temp_max": 29.0,
+              "precipitation_probability": 10,
+              "outdoor_suitability": "good",
+              "suggestions": [
+                "天气舒适，适合穿长袖",
+                "Good weather window for outdoor districts and viewpoints."
+              ],
+              "source": "amap_api"
+            }
+          ],
+          "best_outdoor_days": [
+            "2026-04-27",
+            "2026-04-28",
+            "2026-04-29",
+            "2026-04-30"
+          ],
+          "risky_days": [],
+          "source": "group_c_weather_adapter",
+          "provider_city": "北京",
+          "window_note": ""
+        },
+        "cost_summary": {
+          "city": "Beijing",
+          "days": 4,
+          "budget_level": "low",
+          "currency": "CNY",
+          "breakdown": {
+            "hotel_per_night": {
+              "min": 120.0,
+              "max": 200.0
+            },
+            "food_per_day": {
+              "min": 80.0,
+              "max": 120.0
+            },
+            "local_transport_total": {
+              "min": 50.0,
+              "max": 100.0
+            }
+          },
+          "totals": {
+            "min": 850.0,
+            "max": 1380.0,
+            "mid": 1115.0
+          },
+          "budget_fit": {
+            "user_budget": null,
+            "within_budget": null,
+            "minimum_feasible": null
+          },
+          "pricing_notes": [
+            "Budget currently covers hotel, food, and local transport only.",
+            "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+          ],
+          "source": "group_c_cost_adapter",
+          "provider_city": "北京",
+          "raw_response": {
+            "酒店每晚": "120-200元",
+            "餐饮每天": "80-120元",
+            "交通合计": "50.0-100.0元",
+            "总计最低": 850,
+            "总计最高": 1380
+          }
+        },
+        "budget_summary": {
+          "budget_level": "low",
+          "estimated_core_attraction_cost": 36.0,
+          "candidate_poi_average_ticket_price": 33.09,
+          "assumption": "Accommodation, food, and local transport come from Group C; attraction cost remains our own estimate.",
+          "trip_budget_estimate": {
+            "min": 850.0,
+            "max": 1380.0,
+            "mid": 1115.0
+          },
+          "pricing_notes": [
+            "Budget currently covers hotel, food, and local transport only.",
+            "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+          ],
+          "budget_fit": {
+            "user_budget": null,
+            "within_budget": null,
+            "minimum_feasible": null
+          },
+          "stay_and_food_breakdown": {
+            "hotel_per_night": {
+              "min": 120.0,
+              "max": 200.0
+            },
+            "food_per_day": {
+              "min": 80.0,
+              "max": 120.0
+            },
+            "local_transport_total": {
+              "min": 50.0,
+              "max": 100.0
+            }
+          }
+        }
+      },
+      "lodging_context": {
+        "city": "Beijing",
+        "provider_city": "北京",
+        "check_in_date": "2026-04-27",
+        "check_out_date": "2026-04-30",
+        "budget_level": "low",
+        "target_districts": [
+          "东城区",
+          "通州区",
+          "西城区"
+        ],
+        "recommended_areas": [
+          {
+            "district": "东城区",
+            "reason": "Matches the itinerary's highest-frequency districts."
+          },
+          {
+            "district": "通州区",
+            "reason": "Matches the itinerary's highest-frequency districts."
+          },
+          {
+            "district": "西城区",
+            "reason": "Matches the itinerary's highest-frequency districts."
+          }
+        ],
+        "hotel_candidates": [],
+        "selection_notes": [
+          "Hotels are ranked by itinerary district match first, then by price visibility and source quality.",
+          "Current hotel budget reference is up to CNY 200 per night.",
+          "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide."
+        ],
+        "source": "hotel_adapter"
+      }
+    },
+    "latest_hotel_recommendations": {
+      "city": "Beijing",
+      "provider_city": "北京",
+      "check_in_date": "2026-04-27",
+      "check_out_date": "2026-04-30",
+      "budget_level": "low",
+      "target_districts": [
+        "东城区",
+        "通州区",
+        "西城区"
+      ],
+      "recommended_areas": [
+        {
+          "district": "东城区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        },
+        {
+          "district": "通州区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        },
+        {
+          "district": "西城区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        }
+      ],
+      "hotel_candidates": [],
+      "selection_notes": [
+        "Hotels are ranked by itinerary district match first, then by price visibility and source quality.",
+        "Current hotel budget reference is up to CNY 200 per night.",
+        "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide."
+      ],
+      "source": "hotel_adapter"
+    },
+    "latest_report": "# 北京 智能旅行规划\n\n**出行风格**: 亲子游\n**同行人员**: 朋友\n**预算等级**: 低预算\n**行程节奏**: 适中\n**景点费用预估**: 36.00\n\n## 规划摘要\n这是一版为 北京 设计的 4 天亲子游行程，整体节奏偏适中，预算按照低预算来控制。\n\n**兴趣偏好**: family friendly\n\n## 每日行程\n\n### 第 1 天: 东城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 34.00\n- 路途时间: 约 14 分钟 / 1.1 公里\n- 上午: **天坛** (景点, 东城区)\n  原因: 当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里。\n  天气适配: 晴：适合户外活动，但要留意降雨变化。\n  交通: 从东城区开始当天行程。\n  攻略依据: 也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛 安排3 上午：长城 下午：休息 PS：缆车上，缆车下 安排4 上午：雍和宫 下午：天坛 PS：如果快的话，这两个景点可以一…（北京旅游（带老人版））\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 上午: **天坛公园-燎炉** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：适合作为室内外都能灵活调整的安排。\n  交通: 步行约5分钟（0.4公里）。向东南步行387米到达目的地 -> 向东南步行387米到达目的地\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 下午: **天坛公园-圜丘** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：适合作为室内外都能灵活调整的安排。\n  交通: 步行约9分钟（0.7公里）。向西步行57米左转 -> 向西步行2米到达目的地\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 备注: 天气凉爽，建议穿薄外套\n- 备注: 点位之间的路途时间约为14分钟，总路程约1.1公里。\n\n### 第 2 天: 通州区\n- 主题: 风景地标日\n- 天气: 多云\n- 预计费用: 0.00\n- 路途时间: 约 42 分钟 / 3.1 公里\n- 上午: **北京环球度假区** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 从通州区开始当天行程。\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 上午: **哈利·波特的魔法世界** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 步行约41分钟（3.1公里）。沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地\n- 下午: **哈利·波特与禁忌之旅™** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 步行约1分钟（0.0公里）。向东北步行21米到达目的地 -> 向东北步行21米到达目的地\n- 备注: 天气凉爽，建议穿薄外套\n- 备注: 点位之间的路途时间约为42分钟，总路程约3.1公里。\n\n### 第 3 天: 西城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 2.00\n- 路途时间: 约 0 分钟 / 0.0 公里\n- 上午: **景山公园** (景点, 西城区)\n  原因: 当天更适合安排户外点，这里能吃到较好的天气窗口。\n  天气适配: 晴：适合户外活动，但要留意降雨变化。\n  交通: 从西城区开始当天行程。\n- 备注: 天气凉爽，建议穿薄外套\n\n### 第 4 天: 东城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 0.00\n- 路途时间: 约 0 分钟 / 0.0 公里\n- 上午: **中国国家博物馆** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：更适合安排室内活动。\n  交通: 从东城区开始当天行程。\n- 备注: 天气舒适，适合穿长袖\n\n## 天气预报\n- 2026-04-27: 晴，9-22℃，降水概率 10%。\n- 2026-04-28: 多云，9-22℃，降水概率 35%。\n- 2026-04-29: 晴，10-24℃，降水概率 10%。\n- 2026-04-30: 晴，15-29℃，降水概率 10%。\n\n## 城市出行贴士\n\n## 本地攻略\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 尽量按片区移动，不要只按热门程度在城市里来回穿梭。\n\n## 行程审查\n- 这版行程在路线、天气和预算上没有明显问题。\n\n## 重规划说明\n- 系统触发了一次自动重排，并采用了更稳妥的版本。\n\n## 规划说明\n- 规划器会先按片区聚类，再综合天气适配和偏好匹配来排点。\n- 如果某天的天气风险较高，行程会更偏向室内或可灵活切换的地点。\n- 在预算较紧时，高成本景点的优先级会降低，但必去点仍会保留。\n- 如果坐标和高德 Key 可用，系统会根据真实路程时间优化每天的游玩顺序。\n- 系统在出行程后，还会检查节奏、天气适配、预算压力和路线连贯性。\n- 攻略检索信号会直接影响景点评分、片区优先级和路线聚类。\n- 系统做过一次自动重排，用来降低路线、天气或预算方面的风险。\n\n## 预算概览\n- 行程总预算估算：¥ 850-1380\n- 当前行程景点门票估算：¥ 36\n- 酒店每晚参考：¥ 120-200\n- 每日餐饮参考：¥ 80-120\n- 当地交通参考：¥ 50-100\n- 说明: 当前预算只覆盖酒店、餐饮和本地交通。\n- 说明: 长途交通和景点门票暂未计入，除非后续有其他数据源补充。\n\n## 住宿建议\n- 区域: 东城区 — 与当前行程最集中的活动片区最匹配。\n- 区域: 通州区 — 与当前行程最集中的活动片区最匹配。\n- 区域: 西城区 — 与当前行程最集中的活动片区最匹配。\n- 说明: 酒店优先按和行程片区的匹配度排序，其次参考价格可见性和数据来源质量。\n- 说明: 当前酒店预算参考上限约为每晚 ¥ 200。",
+    "confirmed_profile_slots": [
+      "city",
+      "trip_days",
+      "travel_style",
+      "budget_level",
+      "pace",
+      "constraints"
+    ],
+    "pending_profile_slots": [],
+    "needs_clarification": false,
+    "turn_history": [
+      {
+        "user_message": "北京4天亲子游，和朋友一起，低预算，节奏适中，必去景点无，避开地点无",
+        "resolved_profile": {
+          "city": "Beijing",
+          "start_date": "",
+          "trip_days": 4,
+          "travel_type": "family",
+          "travelers": "friends",
+          "budget_level": "low",
+          "pace": "balanced",
+          "interests": [
+            "family friendly"
+          ],
+          "must_visit": [],
+          "avoid": [
+            "地点无"
+          ],
+          "notes": "",
+          "extra_request": ""
+        },
+        "trip_city": "Beijing",
+        "trip_days": 4,
+        "needs_clarification": false,
+        "pending_profile_slots": []
+      }
+    ]
+  },
+  "report": "# 北京 智能旅行规划\n\n**出行风格**: 亲子游\n**同行人员**: 朋友\n**预算等级**: 低预算\n**行程节奏**: 适中\n**景点费用预估**: 36.00\n\n## 规划摘要\n这是一版为 北京 设计的 4 天亲子游行程，整体节奏偏适中，预算按照低预算来控制。\n\n**兴趣偏好**: family friendly\n\n## 每日行程\n\n### 第 1 天: 东城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 34.00\n- 路途时间: 约 14 分钟 / 1.1 公里\n- 上午: **天坛** (景点, 东城区)\n  原因: 当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里。\n  天气适配: 晴：适合户外活动，但要留意降雨变化。\n  交通: 从东城区开始当天行程。\n  攻略依据: 也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛 安排3 上午：长城 下午：休息 PS：缆车上，缆车下 安排4 上午：雍和宫 下午：天坛 PS：如果快的话，这两个景点可以一…（北京旅游（带老人版））\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 上午: **天坛公园-燎炉** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：适合作为室内外都能灵活调整的安排。\n  交通: 步行约5分钟（0.4公里）。向东南步行387米到达目的地 -> 向东南步行387米到达目的地\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 下午: **天坛公园-圜丘** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：适合作为室内外都能灵活调整的安排。\n  交通: 步行约9分钟（0.7公里）。向西步行57米左转 -> 向西步行2米到达目的地\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 备注: 天气凉爽，建议穿薄外套\n- 备注: 点位之间的路途时间约为14分钟，总路程约1.1公里。\n\n### 第 2 天: 通州区\n- 主题: 风景地标日\n- 天气: 多云\n- 预计费用: 0.00\n- 路途时间: 约 42 分钟 / 3.1 公里\n- 上午: **北京环球度假区** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 从通州区开始当天行程。\n  本地提醒: 可作为当天主轴停靠点，再搭配附近顺路点。\n- 上午: **哈利·波特的魔法世界** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 步行约41分钟（3.1公里）。沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地\n- 下午: **哈利·波特与禁忌之旅™** (景点, 通州区)\n  原因: 主要基于地理顺路和整体节奏平衡。\n  天气适配: 多云：适合作为室内外都能灵活调整的安排。\n  交通: 步行约1分钟（0.0公里）。向东北步行21米到达目的地 -> 向东北步行21米到达目的地\n- 备注: 天气凉爽，建议穿薄外套\n- 备注: 点位之间的路途时间约为42分钟，总路程约3.1公里。\n\n### 第 3 天: 西城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 2.00\n- 路途时间: 约 0 分钟 / 0.0 公里\n- 上午: **景山公园** (景点, 西城区)\n  原因: 当天更适合安排户外点，这里能吃到较好的天气窗口。\n  天气适配: 晴：适合户外活动，但要留意降雨变化。\n  交通: 从西城区开始当天行程。\n- 备注: 天气凉爽，建议穿薄外套\n\n### 第 4 天: 东城区\n- 主题: 风景地标日\n- 天气: 晴\n- 预计费用: 0.00\n- 路途时间: 约 0 分钟 / 0.0 公里\n- 上午: **中国国家博物馆** (景点, 东城区)\n  原因: 在检索到的攻略里被多次提到。\n  天气适配: 晴：更适合安排室内活动。\n  交通: 从东城区开始当天行程。\n- 备注: 天气舒适，适合穿长袖\n\n## 天气预报\n- 2026-04-27: 晴，9-22℃，降水概率 10%。\n- 2026-04-28: 多云，9-22℃，降水概率 35%。\n- 2026-04-29: 晴，10-24℃，降水概率 10%。\n- 2026-04-30: 晴，15-29℃，降水概率 10%。\n\n## 城市出行贴士\n\n## 本地攻略\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 这个点更适合和附近地点一起安排，不建议为了单独打卡而跨区折返。\n- 尽量按片区移动，不要只按热门程度在城市里来回穿梭。\n\n## 行程审查\n- 这版行程在路线、天气和预算上没有明显问题。\n\n## 重规划说明\n- 系统触发了一次自动重排，并采用了更稳妥的版本。\n\n## 规划说明\n- 规划器会先按片区聚类，再综合天气适配和偏好匹配来排点。\n- 如果某天的天气风险较高，行程会更偏向室内或可灵活切换的地点。\n- 在预算较紧时，高成本景点的优先级会降低，但必去点仍会保留。\n- 如果坐标和高德 Key 可用，系统会根据真实路程时间优化每天的游玩顺序。\n- 系统在出行程后，还会检查节奏、天气适配、预算压力和路线连贯性。\n- 攻略检索信号会直接影响景点评分、片区优先级和路线聚类。\n- 系统做过一次自动重排，用来降低路线、天气或预算方面的风险。\n\n## 预算概览\n- 行程总预算估算：¥ 850-1380\n- 当前行程景点门票估算：¥ 36\n- 酒店每晚参考：¥ 120-200\n- 每日餐饮参考：¥ 80-120\n- 当地交通参考：¥ 50-100\n- 说明: 当前预算只覆盖酒店、餐饮和本地交通。\n- 说明: 长途交通和景点门票暂未计入，除非后续有其他数据源补充。\n\n## 住宿建议\n- 区域: 东城区 — 与当前行程最集中的活动片区最匹配。\n- 区域: 通州区 — 与当前行程最集中的活动片区最匹配。\n- 区域: 西城区 — 与当前行程最集中的活动片区最匹配。\n- 说明: 酒店优先按和行程片区的匹配度排序，其次参考价格可见性和数据来源质量。\n- 说明: 当前酒店预算参考上限约为每晚 ¥ 200。",
+  "itinerary_json": {
+    "city": "Beijing",
+    "trip_days": 4,
+    "overview": "A 4-day family itinerary in Beijing with a slow pace and low budget profile.",
+    "total_estimated_cost": 36.0,
+    "selected_pois": [
+      {
+        "name": "天坛",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.8837,
+        "lon": 116.412,
+        "duration_hours": 2.0,
+        "ticket_price": 34.0,
+        "price_level": 2,
+        "indoor_outdoor": "outdoor",
+        "tags": [
+          "history",
+          "park",
+          "culture"
+        ],
+        "source": [
+          "profile_seed"
+        ],
+        "address": "1 Tiantan East Road, Dongcheng District",
+        "open_hours": "06:00-22:00",
+        "rating": 4.7,
+        "visit_reason": "Major historic landmark with easier pacing than the palace core."
+      },
+      {
+        "name": "天坛公园-圜丘",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.876964,
+        "lon": 116.413162,
+        "duration_hours": 1.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "mixed",
+        "tags": [
+          "family"
+        ],
+        "source": [
+          "amap"
+        ],
+        "address": "天坛路甲1号天坛公园内(东南角)",
+        "open_hours": "08:00-22:00",
+        "rating": null,
+        "visit_reason": "Matched from POI search for '圜丘'."
+      },
+      {
+        "name": "天坛公园-燎炉",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.882667,
+        "lon": 116.413566,
+        "duration_hours": 1.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "mixed",
+        "tags": [
+          "family"
+        ],
+        "source": [
+          "amap"
+        ],
+        "address": "天坛内东里7号天坛公园圜丘内",
+        "open_hours": "",
+        "rating": null,
+        "visit_reason": "Matched from POI search for '圜丘'."
+      },
+      {
+        "name": "北京环球度假区",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.852698,
+        "lon": 116.681212,
+        "duration_hours": 1.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "mixed",
+        "tags": [
+          "attraction"
+        ],
+        "source": [
+          "amap"
+        ],
+        "address": "梨园镇环球大道",
+        "open_hours": "09:00-20:00",
+        "rating": null,
+        "visit_reason": "Matched from POI search for '北京环球影城'."
+      },
+      {
+        "name": "哈利·波特的魔法世界",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.856678,
+        "lon": 116.686716,
+        "duration_hours": 1.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "mixed",
+        "tags": [
+          "attraction"
+        ],
+        "source": [
+          "amap"
+        ],
+        "address": "北京环球度假区",
+        "open_hours": "09:00-20:00",
+        "rating": null,
+        "visit_reason": "Matched from POI search for '哈利波特园区'."
+      },
+      {
+        "name": "哈利·波特与禁忌之旅™",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.856904,
+        "lon": 116.686896,
+        "duration_hours": 1.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "mixed",
+        "tags": [
+          "attraction"
+        ],
+        "source": [
+          "amap"
+        ],
+        "address": "北京环球度假区",
+        "open_hours": "09:00-21:00",
+        "rating": null,
+        "visit_reason": "Matched from POI search for '哈利波特园区'."
+      },
+      {
+        "name": "中国国家博物馆",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.9051,
+        "lon": 116.4013,
+        "duration_hours": 2.5,
+        "ticket_price": 0.0,
+        "price_level": 1,
+        "indoor_outdoor": "indoor",
+        "tags": [
+          "museum",
+          "history",
+          "culture"
+        ],
+        "source": [
+          "profile_seed"
+        ],
+        "address": "16 East Chang'an Avenue",
+        "open_hours": "09:00-17:00",
+        "rating": 4.7,
+        "visit_reason": "High-value indoor history anchor for bad-weather days."
+      },
+      {
+        "name": "景山公园",
+        "category": "attraction",
+        "district": "西城区",
+        "lat": 39.9254,
+        "lon": 116.3962,
+        "duration_hours": 1.2,
+        "ticket_price": 2.0,
+        "price_level": 1,
+        "indoor_outdoor": "outdoor",
+        "tags": [
+          "view",
+          "park",
+          "landmark"
+        ],
+        "source": [
+          "profile_seed"
+        ],
+        "address": "44 Jingshan West Street, Xicheng District",
+        "open_hours": "06:30-21:00",
+        "rating": 4.6,
+        "visit_reason": "Great skyline and palace-overlook anchor."
+      }
+    ],
+    "days": [
+      {
+        "day_index": 1,
+        "area": "东城区",
+        "theme": "Scenic landmark day",
+        "estimated_cost": 34.0,
+        "weather_summary": "晴",
+        "inter_stop_distance_m": 1084,
+        "inter_stop_duration_min": 14,
+        "items": [
+          {
+            "time_slot": "morning",
+            "poi_name": "天坛",
+            "category": "attraction",
+            "district": "东城区",
+            "duration_hours": 2.0,
+            "est_cost": 34.0,
+            "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里",
+            "weather_fit": "晴: outdoor plan, monitor rain risk.",
+            "transport_hint": "Start the day in 东城区.",
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "guide_evidence": "也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛 安排3 上午：长城 下午：休息 PS：缆车上，缆车下 安排4 上午：雍和宫 下午：天坛 PS：如果快的话，这两个景点可以一…",
+            "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+            "pitfall_note": "",
+            "guide_source": "北京旅游（带老人版）"
+          },
+          {
+            "time_slot": "morning",
+            "poi_name": "天坛公园-燎炉",
+            "category": "attraction",
+            "district": "东城区",
+            "duration_hours": 1.5,
+            "est_cost": 0.0,
+            "reasoning": "在检索到的攻略里被多次提到",
+            "weather_fit": "晴: flexible mixed-environment stop.",
+            "transport_hint": "Walking about 5 min (0.4 km). 向东南步行387米到达目的地 -> 向东南步行387米到达目的地",
+            "arrival_mode": "walking",
+            "arrival_distance_m": 387,
+            "arrival_duration_min": 5,
+            "guide_evidence": "",
+            "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+            "pitfall_note": "",
+            "guide_source": ""
+          },
+          {
+            "time_slot": "afternoon",
+            "poi_name": "天坛公园-圜丘",
+            "category": "attraction",
+            "district": "东城区",
+            "duration_hours": 1.5,
+            "est_cost": 0.0,
+            "reasoning": "在检索到的攻略里被多次提到",
+            "weather_fit": "晴: flexible mixed-environment stop.",
+            "transport_hint": "Walking about 9 min (0.7 km). 向西步行57米左转 -> 向西步行2米到达目的地",
+            "arrival_mode": "walking",
+            "arrival_distance_m": 697,
+            "arrival_duration_min": 9,
+            "guide_evidence": "",
+            "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+            "pitfall_note": "",
+            "guide_source": ""
+          }
+        ],
+        "notes": [
+          "天气凉爽，建议穿薄外套",
+          "Avoid overly dense historic-site stacking and keep transit simple.",
+          "Inter-stop travel time is about 14 min across 1.1 km."
+        ]
+      },
+      {
+        "day_index": 2,
+        "area": "通州区",
+        "theme": "Scenic landmark day",
+        "estimated_cost": 0.0,
+        "weather_summary": "多云",
+        "inter_stop_distance_m": 3100,
+        "inter_stop_duration_min": 42,
+        "items": [
+          {
+            "time_slot": "morning",
+            "poi_name": "北京环球度假区",
+            "category": "attraction",
+            "district": "通州区",
+            "duration_hours": 1.5,
+            "est_cost": 0.0,
+            "reasoning": "主要基于地理顺路和整体节奏平衡",
+            "weather_fit": "多云: flexible mixed-environment stop.",
+            "transport_hint": "Start the day in 通州区.",
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "guide_evidence": "",
+            "local_note": "可作为当天主轴停靠点，再搭配附近顺路点。",
+            "pitfall_note": "",
+            "guide_source": ""
+          },
+          {
+            "time_slot": "morning",
+            "poi_name": "哈利·波特的魔法世界",
+            "category": "attraction",
+            "district": "通州区",
+            "duration_hours": 1.5,
+            "est_cost": 0.0,
+            "reasoning": "主要基于地理顺路和整体节奏平衡",
+            "weather_fit": "多云: flexible mixed-environment stop.",
+            "transport_hint": "Walking about 41 min (3.1 km). 沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地",
+            "arrival_mode": "walking",
+            "arrival_distance_m": 3079,
+            "arrival_duration_min": 41,
+            "guide_evidence": "",
+            "local_note": "",
+            "pitfall_note": "",
+            "guide_source": ""
+          },
+          {
+            "time_slot": "afternoon",
+            "poi_name": "哈利·波特与禁忌之旅™",
+            "category": "attraction",
+            "district": "通州区",
+            "duration_hours": 1.5,
+            "est_cost": 0.0,
+            "reasoning": "主要基于地理顺路和整体节奏平衡",
+            "weather_fit": "多云: flexible mixed-environment stop.",
+            "transport_hint": "Walking about 1 min (0.0 km). 向东北步行21米到达目的地 -> 向东北步行21米到达目的地",
+            "arrival_mode": "walking",
+            "arrival_distance_m": 21,
+            "arrival_duration_min": 1,
+            "guide_evidence": "",
+            "local_note": "",
+            "pitfall_note": "",
+            "guide_source": ""
+          }
+        ],
+        "notes": [
+          "天气凉爽，建议穿薄外套",
+          "Inter-stop travel time is about 42 min across 3.1 km."
+        ]
+      },
+      {
+        "day_index": 3,
+        "area": "西城区",
+        "theme": "Scenic landmark day",
+        "estimated_cost": 2.0,
+        "weather_summary": "晴",
+        "inter_stop_distance_m": 0,
+        "inter_stop_duration_min": 0,
+        "items": [
+          {
+            "time_slot": "morning",
+            "poi_name": "景山公园",
+            "category": "attraction",
+            "district": "西城区",
+            "duration_hours": 1.2,
+            "est_cost": 2.0,
+            "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口",
+            "weather_fit": "晴: outdoor plan, monitor rain risk.",
+            "transport_hint": "Start the day in 西城区.",
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "guide_evidence": "",
+            "local_note": "",
+            "pitfall_note": "",
+            "guide_source": ""
+          }
+        ],
+        "notes": [
+          "天气凉爽，建议穿薄外套"
+        ]
+      },
+      {
+        "day_index": 4,
+        "area": "东城区",
+        "theme": "Scenic landmark day",
+        "estimated_cost": 0.0,
+        "weather_summary": "晴",
+        "inter_stop_distance_m": 0,
+        "inter_stop_duration_min": 0,
+        "items": [
+          {
+            "time_slot": "morning",
+            "poi_name": "中国国家博物馆",
+            "category": "attraction",
+            "district": "东城区",
+            "duration_hours": 2.5,
+            "est_cost": 0.0,
+            "reasoning": "在检索到的攻略里被多次提到",
+            "weather_fit": "晴: indoor-friendly choice.",
+            "transport_hint": "Start the day in 东城区.",
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "guide_evidence": "",
+            "local_note": "",
+            "pitfall_note": "",
+            "guide_source": ""
+          }
+        ],
+        "notes": [
+          "天气舒适，适合穿长袖"
+        ]
+      }
+    ],
+    "planning_notes": [
+      "Planner groups stops by district first, then balances weather fit and preference match.",
+      "High-risk weather days bias the plan toward indoor or mixed venues.",
+      "Budget pressure lowers the priority of higher-cost attractions unless they are must-visit locations.",
+      "Within each day, stop order is optimized against real Amap route durations when coordinates and an Amap key are available.",
+      "A post-planning review checks pace, weather fit, budget pressure, and route coherence.",
+      "RAG strategy signals now directly affect POI scoring, district priority, and route clustering.",
+      "Review triggered one automatic replan pass to reduce route, weather, or budget risks."
+    ],
+    "local_tips": [
+      "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+      "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+      "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+      "Keep this stop grouped with nearby places instead of crossing the city just for one check-in.",
+      "Move by district, not by attraction popularity alone.",
+      "Keep major imperial sites and modern districts on separate days because the city is large."
+    ],
+    "review_summary": "Review passed without major routing, weather, or budget issues.",
+    "review_findings": [],
+    "replan_summary": "Review triggered one automatic replan pass and the safer version replaced the original draft.",
+    "replan_metadata": {
+      "attempted": true,
+      "applied": true,
+      "trigger_rules": []
+    },
+    "guide_references": [
+      "北京环球影城 - 哈利波特园区: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+      "哈利波特园区 - 三把扫帚: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+      "北京环球 - 北京四合院内的涮羊肉: 【日常plog之——北京环球给我打钱】 广告的感觉 哈哈哈 不过北京环球也就霸天虎有得玩 其他一点都不好玩…不会再三刷了 图6好吃极了 吹爆 每一道菜都很好吃 下次还要来😋 图7-10还去吃了北京四合",
+      "环球这个机位名不虚传🏰: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+      "北京旅游（带老人版）: 【北京旅游（带老人版）】 故宫 下午：休息 PS：故宫很大，一上午逛完也会比较累，下午在酒店休息休息，晚上可以去有名的地方逛逛故宫 下午：休息 PS：故宫很大，一上午逛完也会比较累，下午在酒店休息休息，晚上可以去有名的地"
+    ],
+    "strategy_summary": {
+      "recommended_pois": [
+        "北京环球影城",
+        "哈利波特园区",
+        "三把扫帚",
+        "天安门广场",
+        "毛主席纪念堂",
+        "国家博物馆",
+        "故宫",
+        "八达岭长城",
+        "雍和宫",
+        "天坛",
+        "颐和园",
+        "圜丘"
+      ],
+      "theme_suggestions": [
+        "leisure",
+        "culture",
+        "打卡",
+        "family",
+        "北京",
+        "food"
+      ],
+      "neighborhood_notes": []
+    },
+    "weather_payload": {
+      "city": "Beijing",
+      "start_date": "",
+      "forecast": [
+        {
+          "date": "2026-04-27",
+          "summary": "晴",
+          "temp_min": 9.0,
+          "temp_max": 22.0,
+          "precipitation_probability": 10,
+          "outdoor_suitability": "good",
+          "suggestions": [
+            "天气凉爽，建议穿薄外套",
+            "Good weather window for outdoor districts and viewpoints."
+          ],
+          "source": "amap_api"
+        },
+        {
+          "date": "2026-04-28",
+          "summary": "多云",
+          "temp_min": 9.0,
+          "temp_max": 22.0,
+          "precipitation_probability": 35,
+          "outdoor_suitability": "good",
+          "suggestions": [
+            "天气凉爽，建议穿薄外套",
+            "Good weather window for outdoor districts and viewpoints."
+          ],
+          "source": "amap_api"
+        },
+        {
+          "date": "2026-04-29",
+          "summary": "晴",
+          "temp_min": 10.0,
+          "temp_max": 24.0,
+          "precipitation_probability": 10,
+          "outdoor_suitability": "good",
+          "suggestions": [
+            "天气凉爽，建议穿薄外套",
+            "Good weather window for outdoor districts and viewpoints."
+          ],
+          "source": "amap_api"
+        },
+        {
+          "date": "2026-04-30",
+          "summary": "晴",
+          "temp_min": 15.0,
+          "temp_max": 29.0,
+          "precipitation_probability": 10,
+          "outdoor_suitability": "good",
+          "suggestions": [
+            "天气舒适，适合穿长袖",
+            "Good weather window for outdoor districts and viewpoints."
+          ],
+          "source": "amap_api"
+        }
+      ],
+      "best_outdoor_days": [
+        "2026-04-27",
+        "2026-04-28",
+        "2026-04-29",
+        "2026-04-30"
+      ],
+      "risky_days": [],
+      "source": "group_c_weather_adapter",
+      "provider_city": "北京",
+      "window_note": ""
+    },
+    "conditions_context": {
+      "weather": {
+        "city": "Beijing",
+        "start_date": "",
+        "forecast": [
+          {
+            "date": "2026-04-27",
+            "summary": "晴",
+            "temp_min": 9.0,
+            "temp_max": 22.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-28",
+            "summary": "多云",
+            "temp_min": 9.0,
+            "temp_max": 22.0,
+            "precipitation_probability": 35,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-29",
+            "summary": "晴",
+            "temp_min": 10.0,
+            "temp_max": 24.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气凉爽，建议穿薄外套",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          },
+          {
+            "date": "2026-04-30",
+            "summary": "晴",
+            "temp_min": 15.0,
+            "temp_max": 29.0,
+            "precipitation_probability": 10,
+            "outdoor_suitability": "good",
+            "suggestions": [
+              "天气舒适，适合穿长袖",
+              "Good weather window for outdoor districts and viewpoints."
+            ],
+            "source": "amap_api"
+          }
+        ],
+        "best_outdoor_days": [
+          "2026-04-27",
+          "2026-04-28",
+          "2026-04-29",
+          "2026-04-30"
+        ],
+        "risky_days": [],
+        "source": "group_c_weather_adapter",
+        "provider_city": "北京",
+        "window_note": ""
+      },
+      "cost_summary": {
+        "city": "Beijing",
+        "days": 4,
+        "budget_level": "low",
+        "currency": "CNY",
+        "breakdown": {
+          "hotel_per_night": {
+            "min": 120.0,
+            "max": 200.0
+          },
+          "food_per_day": {
+            "min": 80.0,
+            "max": 120.0
+          },
+          "local_transport_total": {
+            "min": 50.0,
+            "max": 100.0
+          }
+        },
+        "totals": {
+          "min": 850.0,
+          "max": 1380.0,
+          "mid": 1115.0
+        },
+        "budget_fit": {
+          "user_budget": null,
+          "within_budget": null,
+          "minimum_feasible": null
+        },
+        "pricing_notes": [
+          "Budget currently covers hotel, food, and local transport only.",
+          "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+        ],
+        "source": "group_c_cost_adapter",
+        "provider_city": "北京",
+        "raw_response": {
+          "酒店每晚": "120-200元",
+          "餐饮每天": "80-120元",
+          "交通合计": "50.0-100.0元",
+          "总计最低": 850,
+          "总计最高": 1380
+        }
+      },
+      "budget_summary": {
+        "budget_level": "low",
+        "estimated_core_attraction_cost": 36.0,
+        "candidate_poi_average_ticket_price": 33.09,
+        "assumption": "Accommodation, food, and local transport come from Group C; attraction cost remains our own estimate.",
+        "trip_budget_estimate": {
+          "min": 850.0,
+          "max": 1380.0,
+          "mid": 1115.0
+        },
+        "pricing_notes": [
+          "Budget currently covers hotel, food, and local transport only.",
+          "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+        ],
+        "budget_fit": {
+          "user_budget": null,
+          "within_budget": null,
+          "minimum_feasible": null
+        },
+        "stay_and_food_breakdown": {
+          "hotel_per_night": {
+            "min": 120.0,
+            "max": 200.0
+          },
+          "food_per_day": {
+            "min": 80.0,
+            "max": 120.0
+          },
+          "local_transport_total": {
+            "min": 50.0,
+            "max": 100.0
+          }
+        }
+      }
+    },
+    "lodging_context": {
+      "city": "Beijing",
+      "provider_city": "北京",
+      "check_in_date": "2026-04-27",
+      "check_out_date": "2026-04-30",
+      "budget_level": "low",
+      "target_districts": [
+        "东城区",
+        "通州区",
+        "西城区"
+      ],
+      "recommended_areas": [
+        {
+          "district": "东城区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        },
+        {
+          "district": "通州区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        },
+        {
+          "district": "西城区",
+          "reason": "Matches the itinerary's highest-frequency districts."
+        }
+      ],
+      "hotel_candidates": [],
+      "selection_notes": [
+        "Hotels are ranked by itinerary district match first, then by price visibility and source quality.",
+        "Current hotel budget reference is up to CNY 200 per night.",
+        "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide."
+      ],
+      "source": "hotel_adapter"
+    }
+  },
+  "map_payload": {
+    "city": "Beijing",
+    "city_en": "Beijing",
+    "city_zh": "北京",
+    "center": {
+      "lat": 39.880014,
+      "lon": 116.511381
+    },
+    "days": [
+      {
+        "day_index": 1,
+        "area": "东城区",
+        "theme": "Scenic landmark day",
+        "color": "#0EA5E9",
+        "inter_stop_distance_m": 1084,
+        "inter_stop_duration_min": 14,
+        "stops": [
+          {
+            "sequence": 1,
+            "poi_name": "天坛",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "东城区",
+            "lat": 39.8837,
+            "lon": 116.412,
+            "address": "1 Tiantan East Road, Dongcheng District",
+            "open_hours": "06:00-22:00",
+            "ticket_price": 34.0,
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "transport_hint": "Start the day in 东城区."
+          },
+          {
+            "sequence": 2,
+            "poi_name": "天坛公园-燎炉",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "东城区",
+            "lat": 39.882667,
+            "lon": 116.413566,
+            "address": "天坛内东里7号天坛公园圜丘内",
+            "open_hours": "",
+            "ticket_price": 0.0,
+            "arrival_mode": "walking",
+            "arrival_distance_m": 387,
+            "arrival_duration_min": 5,
+            "transport_hint": "Walking about 5 min (0.4 km). 向东南步行387米到达目的地 -> 向东南步行387米到达目的地"
+          },
+          {
+            "sequence": 3,
+            "poi_name": "天坛公园-圜丘",
+            "time_slot": "afternoon",
+            "category": "attraction",
+            "district": "东城区",
+            "lat": 39.876964,
+            "lon": 116.413162,
+            "address": "天坛路甲1号天坛公园内(东南角)",
+            "open_hours": "08:00-22:00",
+            "ticket_price": 0.0,
+            "arrival_mode": "walking",
+            "arrival_distance_m": 697,
+            "arrival_duration_min": 9,
+            "transport_hint": "Walking about 9 min (0.7 km). 向西步行57米左转 -> 向西步行2米到达目的地"
+          }
+        ],
+        "legs": [
+          {
+            "from_poi": "天坛",
+            "to_poi": "天坛公园-燎炉",
+            "mode": "walking",
+            "distance_m": 387,
+            "duration_min": 5,
+            "from_lat": 39.8837,
+            "from_lon": 116.412,
+            "to_lat": 39.882667,
+            "to_lon": 116.413566,
+            "transport_hint": "Walking about 5 min (0.4 km). 向东南步行387米到达目的地 -> 向东南步行387米到达目的地"
+          },
+          {
+            "from_poi": "天坛公园-燎炉",
+            "to_poi": "天坛公园-圜丘",
+            "mode": "walking",
+            "distance_m": 697,
+            "duration_min": 9,
+            "from_lat": 39.882667,
+            "from_lon": 116.413566,
+            "to_lat": 39.876964,
+            "to_lon": 116.413162,
+            "transport_hint": "Walking about 9 min (0.7 km). 向西步行57米左转 -> 向西步行2米到达目的地"
+          }
+        ]
+      },
+      {
+        "day_index": 2,
+        "area": "通州区",
+        "theme": "Scenic landmark day",
+        "color": "#F97316",
+        "inter_stop_distance_m": 3100,
+        "inter_stop_duration_min": 42,
+        "stops": [
+          {
+            "sequence": 1,
+            "poi_name": "北京环球度假区",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "通州区",
+            "lat": 39.852698,
+            "lon": 116.681212,
+            "address": "梨园镇环球大道",
+            "open_hours": "09:00-20:00",
+            "ticket_price": 0.0,
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "transport_hint": "Start the day in 通州区."
+          },
+          {
+            "sequence": 2,
+            "poi_name": "哈利·波特的魔法世界",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "通州区",
+            "lat": 39.856678,
+            "lon": 116.686716,
+            "address": "北京环球度假区",
+            "open_hours": "09:00-20:00",
+            "ticket_price": 0.0,
+            "arrival_mode": "walking",
+            "arrival_distance_m": 3079,
+            "arrival_duration_min": 41,
+            "transport_hint": "Walking about 41 min (3.1 km). 沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地"
+          },
+          {
+            "sequence": 3,
+            "poi_name": "哈利·波特与禁忌之旅™",
+            "time_slot": "afternoon",
+            "category": "attraction",
+            "district": "通州区",
+            "lat": 39.856904,
+            "lon": 116.686896,
+            "address": "北京环球度假区",
+            "open_hours": "09:00-21:00",
+            "ticket_price": 0.0,
+            "arrival_mode": "walking",
+            "arrival_distance_m": 21,
+            "arrival_duration_min": 1,
+            "transport_hint": "Walking about 1 min (0.0 km). 向东北步行21米到达目的地 -> 向东北步行21米到达目的地"
+          }
+        ],
+        "legs": [
+          {
+            "from_poi": "北京环球度假区",
+            "to_poi": "哈利·波特的魔法世界",
+            "mode": "walking",
+            "distance_m": 3079,
+            "duration_min": 41,
+            "from_lat": 39.852698,
+            "from_lon": 116.681212,
+            "to_lat": 39.856678,
+            "to_lon": 116.686716,
+            "transport_hint": "Walking about 41 min (3.1 km). 沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地"
+          },
+          {
+            "from_poi": "哈利·波特的魔法世界",
+            "to_poi": "哈利·波特与禁忌之旅™",
+            "mode": "walking",
+            "distance_m": 21,
+            "duration_min": 1,
+            "from_lat": 39.856678,
+            "from_lon": 116.686716,
+            "to_lat": 39.856904,
+            "to_lon": 116.686896,
+            "transport_hint": "Walking about 1 min (0.0 km). 向东北步行21米到达目的地 -> 向东北步行21米到达目的地"
+          }
+        ]
+      },
+      {
+        "day_index": 3,
+        "area": "西城区",
+        "theme": "Scenic landmark day",
+        "color": "#10B981",
+        "inter_stop_distance_m": 0,
+        "inter_stop_duration_min": 0,
+        "stops": [
+          {
+            "sequence": 1,
+            "poi_name": "景山公园",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "西城区",
+            "lat": 39.9254,
+            "lon": 116.3962,
+            "address": "44 Jingshan West Street, Xicheng District",
+            "open_hours": "06:30-21:00",
+            "ticket_price": 2.0,
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "transport_hint": "Start the day in 西城区."
+          }
+        ],
+        "legs": []
+      },
+      {
+        "day_index": 4,
+        "area": "东城区",
+        "theme": "Scenic landmark day",
+        "color": "#E11D48",
+        "inter_stop_distance_m": 0,
+        "inter_stop_duration_min": 0,
+        "stops": [
+          {
+            "sequence": 1,
+            "poi_name": "中国国家博物馆",
+            "time_slot": "morning",
+            "category": "attraction",
+            "district": "东城区",
+            "lat": 39.9051,
+            "lon": 116.4013,
+            "address": "16 East Chang'an Avenue",
+            "open_hours": "09:00-17:00",
+            "ticket_price": 0.0,
+            "arrival_mode": "start",
+            "arrival_distance_m": 0,
+            "arrival_duration_min": 0,
+            "transport_hint": "Start the day in 东城区."
+          }
+        ],
+        "legs": []
+      }
+    ],
+    "all_stops": [
+      {
+        "sequence": 1,
+        "poi_name": "天坛",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.8837,
+        "lon": 116.412,
+        "address": "1 Tiantan East Road, Dongcheng District",
+        "open_hours": "06:00-22:00",
+        "ticket_price": 34.0,
+        "arrival_mode": "start",
+        "arrival_distance_m": 0,
+        "arrival_duration_min": 0,
+        "transport_hint": "Start the day in 东城区.",
+        "day_index": 1,
+        "color": "#0EA5E9"
+      },
+      {
+        "sequence": 2,
+        "poi_name": "天坛公园-燎炉",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.882667,
+        "lon": 116.413566,
+        "address": "天坛内东里7号天坛公园圜丘内",
+        "open_hours": "",
+        "ticket_price": 0.0,
+        "arrival_mode": "walking",
+        "arrival_distance_m": 387,
+        "arrival_duration_min": 5,
+        "transport_hint": "Walking about 5 min (0.4 km). 向东南步行387米到达目的地 -> 向东南步行387米到达目的地",
+        "day_index": 1,
+        "color": "#0EA5E9"
+      },
+      {
+        "sequence": 3,
+        "poi_name": "天坛公园-圜丘",
+        "time_slot": "afternoon",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.876964,
+        "lon": 116.413162,
+        "address": "天坛路甲1号天坛公园内(东南角)",
+        "open_hours": "08:00-22:00",
+        "ticket_price": 0.0,
+        "arrival_mode": "walking",
+        "arrival_distance_m": 697,
+        "arrival_duration_min": 9,
+        "transport_hint": "Walking about 9 min (0.7 km). 向西步行57米左转 -> 向西步行2米到达目的地",
+        "day_index": 1,
+        "color": "#0EA5E9"
+      },
+      {
+        "sequence": 1,
+        "poi_name": "北京环球度假区",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.852698,
+        "lon": 116.681212,
+        "address": "梨园镇环球大道",
+        "open_hours": "09:00-20:00",
+        "ticket_price": 0.0,
+        "arrival_mode": "start",
+        "arrival_distance_m": 0,
+        "arrival_duration_min": 0,
+        "transport_hint": "Start the day in 通州区.",
+        "day_index": 2,
+        "color": "#F97316"
+      },
+      {
+        "sequence": 2,
+        "poi_name": "哈利·波特的魔法世界",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.856678,
+        "lon": 116.686716,
+        "address": "北京环球度假区",
+        "open_hours": "09:00-20:00",
+        "ticket_price": 0.0,
+        "arrival_mode": "walking",
+        "arrival_distance_m": 3079,
+        "arrival_duration_min": 41,
+        "transport_hint": "Walking about 41 min (3.1 km). 沿日出巷向东步行377米右转 -> 向东北步行64米到达目的地",
+        "day_index": 2,
+        "color": "#F97316"
+      },
+      {
+        "sequence": 3,
+        "poi_name": "哈利·波特与禁忌之旅™",
+        "time_slot": "afternoon",
+        "category": "attraction",
+        "district": "通州区",
+        "lat": 39.856904,
+        "lon": 116.686896,
+        "address": "北京环球度假区",
+        "open_hours": "09:00-21:00",
+        "ticket_price": 0.0,
+        "arrival_mode": "walking",
+        "arrival_distance_m": 21,
+        "arrival_duration_min": 1,
+        "transport_hint": "Walking about 1 min (0.0 km). 向东北步行21米到达目的地 -> 向东北步行21米到达目的地",
+        "day_index": 2,
+        "color": "#F97316"
+      },
+      {
+        "sequence": 1,
+        "poi_name": "景山公园",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "西城区",
+        "lat": 39.9254,
+        "lon": 116.3962,
+        "address": "44 Jingshan West Street, Xicheng District",
+        "open_hours": "06:30-21:00",
+        "ticket_price": 2.0,
+        "arrival_mode": "start",
+        "arrival_distance_m": 0,
+        "arrival_duration_min": 0,
+        "transport_hint": "Start the day in 西城区.",
+        "day_index": 3,
+        "color": "#10B981"
+      },
+      {
+        "sequence": 1,
+        "poi_name": "中国国家博物馆",
+        "time_slot": "morning",
+        "category": "attraction",
+        "district": "东城区",
+        "lat": 39.9051,
+        "lon": 116.4013,
+        "address": "16 East Chang'an Avenue",
+        "open_hours": "09:00-17:00",
+        "ticket_price": 0.0,
+        "arrival_mode": "start",
+        "arrival_distance_m": 0,
+        "arrival_duration_min": 0,
+        "transport_hint": "Start the day in 东城区.",
+        "day_index": 4,
+        "color": "#E11D48"
+      }
+    ]
+  },
+  "hotel_recommendations": {
+    "city": "Beijing",
+    "provider_city": "北京",
+    "check_in_date": "2026-04-27",
+    "check_out_date": "2026-04-30",
+    "budget_level": "low",
+    "target_districts": [
+      "东城区",
+      "通州区",
+      "西城区"
+    ],
+    "recommended_areas": [
+      {
+        "district": "东城区",
+        "reason": "Matches the itinerary's highest-frequency districts."
+      },
+      {
+        "district": "通州区",
+        "reason": "Matches the itinerary's highest-frequency districts."
+      },
+      {
+        "district": "西城区",
+        "reason": "Matches the itinerary's highest-frequency districts."
+      }
+    ],
+    "hotel_candidates": [],
+    "selection_notes": [
+      "Hotels are ranked by itinerary district match first, then by price visibility and source quality.",
+      "Current hotel budget reference is up to CNY 200 per night.",
+      "No live hotel candidates were returned, so use the recommended areas as the fallback stay guide."
+    ],
+    "source": "hotel_adapter"
+  },
+  "cost_summary": {
+    "city": "Beijing",
+    "days": 4,
+    "budget_level": "low",
+    "currency": "CNY",
+    "breakdown": {
+      "hotel_per_night": {
+        "min": 120.0,
+        "max": 200.0
+      },
+      "food_per_day": {
+        "min": 80.0,
+        "max": 120.0
+      },
+      "local_transport_total": {
+        "min": 50.0,
+        "max": 100.0
+      }
+    },
+    "totals": {
+      "min": 850.0,
+      "max": 1380.0,
+      "mid": 1115.0
+    },
+    "budget_fit": {
+      "user_budget": null,
+      "within_budget": null,
+      "minimum_feasible": null
+    },
+    "pricing_notes": [
+      "Budget currently covers hotel, food, and local transport only.",
+      "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+    ],
+    "source": "group_c_cost_adapter",
+    "provider_city": "北京",
+    "raw_response": {
+      "酒店每晚": "120-200元",
+      "餐饮每天": "80-120元",
+      "交通合计": "50.0-100.0元",
+      "总计最低": 850,
+      "总计最高": 1380
+    }
+  },
+  "plan_cost_summary": {
+    "city": "Beijing",
+    "days": 4,
+    "budget_level": "low",
+    "currency": "CNY",
+    "totals": {
+      "min": 766.0,
+      "max": 1216.0,
+      "mid": 991.0,
+      "base_min": 730.0,
+      "base_max": 1180.0,
+      "attraction_tickets": 36.0,
+      "guide_aligned_attraction_tickets": 34.0
+    },
+    "breakdown": {
+      "hotel_per_night": {
+        "min": 120.0,
+        "max": 200.0,
+        "mid": 160.0
+      },
+      "hotel_total": {
+        "min": 360.0,
+        "max": 600.0,
+        "mid": 480.0
+      },
+      "food_per_day": {
+        "min": 80.0,
+        "max": 120.0,
+        "mid": 100.0
+      },
+      "food_total": {
+        "min": 320.0,
+        "max": 480.0,
+        "mid": 400.0
+      },
+      "local_transport_total": {
+        "min": 50.0,
+        "max": 100.0,
+        "mid": 75.0
+      },
+      "city_transport_total": {
+        "min": 50.0,
+        "max": 100.0,
+        "mid": 75.0
+      },
+      "route_transport_total": {
+        "min": 0.0,
+        "max": 0.0,
+        "mid": 0.0,
+        "driving_distance_km": 0.0
+      },
+      "attraction_tickets": {
+        "min": 36.0,
+        "max": 36.0,
+        "mid": 36.0
+      },
+      "guide_aligned_attractions": {
+        "min": 34.0,
+        "max": 34.0,
+        "mid": 34.0
+      }
+    },
+    "itinerary_costs": {
+      "hotel_nights": 3,
+      "attraction_total": 36.0,
+      "guide_aligned_attraction_total": 34.0,
+      "route_distance_km": 4.18,
+      "route_duration_min": 56,
+      "daily": [
+        {
+          "day_index": 1,
+          "area": "东城区",
+          "theme": "Scenic landmark day",
+          "attraction_cost": 34.0,
+          "guide_aligned_cost": 34.0,
+          "route_distance_km": 1.08,
+          "route_duration_min": 14,
+          "paid_items": [
+            {
+              "day_index": 1,
+              "poi_name": "天坛",
+              "cost": 34.0,
+              "guide_aligned": true,
+              "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里"
+            }
+          ]
+        },
+        {
+          "day_index": 2,
+          "area": "通州区",
+          "theme": "Scenic landmark day",
+          "attraction_cost": 0.0,
+          "guide_aligned_cost": 0.0,
+          "route_distance_km": 3.1,
+          "route_duration_min": 42,
+          "paid_items": []
+        },
+        {
+          "day_index": 3,
+          "area": "西城区",
+          "theme": "Scenic landmark day",
+          "attraction_cost": 2.0,
+          "guide_aligned_cost": 0.0,
+          "route_distance_km": 0.0,
+          "route_duration_min": 0,
+          "paid_items": [
+            {
+              "day_index": 3,
+              "poi_name": "景山公园",
+              "cost": 2.0,
+              "guide_aligned": false,
+              "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口"
+            }
+          ]
+        },
+        {
+          "day_index": 4,
+          "area": "东城区",
+          "theme": "Scenic landmark day",
+          "attraction_cost": 0.0,
+          "guide_aligned_cost": 0.0,
+          "route_distance_km": 0.0,
+          "route_duration_min": 0,
+          "paid_items": []
+        }
+      ],
+      "paid_items": [
+        {
+          "day_index": 1,
+          "poi_name": "天坛",
+          "cost": 34.0,
+          "guide_aligned": true,
+          "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里"
+        },
+        {
+          "day_index": 3,
+          "poi_name": "景山公园",
+          "cost": 2.0,
+          "guide_aligned": false,
+          "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口"
+        }
+      ]
+    },
+    "guide_alignment": {
+      "guide_references": [
+        "北京环球影城 - 哈利波特园区: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+        "哈利波特园区 - 三把扫帚: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片",
+        "北京环球 - 北京四合院内的涮羊肉: 【日常plog之——北京环球给我打钱】 广告的感觉 哈哈哈 不过北京环球也就霸天虎有得玩 其他一点都不好玩…不会再三刷了 图6好吃极了 吹爆 每一道菜都很好吃 下次还要来😋 图7-10还去吃了北京四合",
+        "环球这个机位名不虚传🏰: 【环球这个机位名不虚传🏰】 该好看 然后就坐上去 拍了 出图了 效果很好 原来是打卡机位 北京环球影城哈利波特园区真的不要太好拍 三把扫帚正对面座位这里坐上去拍真的很出片"
+      ],
+      "rag_recommended_pois": [
+        "北京环球影城",
+        "哈利波特园区",
+        "三把扫帚",
+        "天安门广场",
+        "毛主席纪念堂",
+        "国家博物馆",
+        "故宫",
+        "八达岭长城"
+      ],
+      "guide_aligned_items": [
+        {
+          "day_index": 1,
+          "poi_name": "天坛",
+          "cost": 34.0,
+          "reasoning": "当天更适合安排户外点，这里能吃到较好的天气窗口；本地提示里也特别提到：【我与天坛🧧】；它是攻略路线里的核心停靠点；攻略《北京旅游（带老人版）》把它和故宫、雍和宫放在同一条路线里"
+        },
+        {
+          "day_index": 1,
+          "poi_name": "天坛公园-燎炉",
+          "cost": 0.0,
+          "reasoning": "在检索到的攻略里被多次提到"
+        },
+        {
+          "day_index": 1,
+          "poi_name": "天坛公园-圜丘",
+          "cost": 0.0,
+          "reasoning": "在检索到的攻略里被多次提到"
+        },
+        {
+          "day_index": 4,
+          "poi_name": "中国国家博物馆",
+          "cost": 0.0,
+          "reasoning": "在检索到的攻略里被多次提到"
+        }
+      ],
+      "guide_aligned_count": 4
+    },
+    "hotel_context": {
+      "recommended_areas": [
+        "东城区",
+        "通州区",
+        "西城区"
+      ],
+      "candidate_nightly_reference": {},
+      "sample_hotels": []
+    },
+    "pricing_notes": [
+      "Plan-level total adds final itinerary attraction tickets to the city hotel/food/transport envelope.",
+      "Guide-aligned cost is computed from POIs whose planner reasoning or RAG recommendations mention travel-guide evidence.",
+      "Route transport uses the planned inter-stop legs; city-level transport remains the fallback when it is higher.",
+      "Budget currently covers hotel, food, and local transport only.",
+      "Long-haul flights and attraction tickets remain outside this estimate unless another provider adds them."
+    ],
+    "sources": [
+      "Final itinerary POI ticket estimates",
+      "RAG / travel-guide evidence in planner reasoning",
+      "Group C city cost envelope",
+      "Hotel recommendation candidates and stay areas"
+    ],
+    "source": "plan_cost_aggregator",
+    "base_cost_source": "group_c_cost_adapter"
+  },
+  "needs_clarification": false,
+  "missing_profile_slots": [],
+  "pending_profile_slots": [],
+  "tool_logs": [
+    {
+      "tool_name": "understand_turn",
+      "arguments": {
+        "user_request": "北京4天亲子游，和朋友一起，低预算，节奏适中，必去景点无，避开地点无",
+        "source": "heuristic"
+      },
+      "result_preview": "{\"resolved_profile\": {\"city\": \"Beijing\", \"start_date\": \"\", \"trip_days\": 4, \"travel_type\": \"family\", \"travelers\": \"friends\", \"budget_level\": \"low\", \"pace\": \"balanced\", \"interests\": [\"family friendly\"], \"must_visit\": [], \"avoid\": [\"地点无\"], \"notes\": \"\", \"extra_request\": \"\"}, \"missing_profile_slots\": [], \"needs_clarification\": false, \"decomposition_overrides\": {\"strategy_queries\": [\"北京环球影城\", \"北京动物园\", \"中国科学技术馆\", \"颐和园\", \"故宫\", \"天坛\", \"景山公园\", \"中国国家博物馆\", \"东城区\", \"朝阳区\", \"西城区\", \"北京 4天 行程\"], \"geo_queries\": [\"故"
+    },
+    {
+      "tool_name": "decompose_request",
+      "arguments": {
+        "user_request": "北京4天亲子游，和朋友一起，低预算，节奏适中，必去景点无，避开地点无"
+      },
+      "result_preview": "{\"original_request\": \"北京4天亲子游，和朋友一起，低预算，节奏适中，必去景点无，避开地点无\", \"strategy_queries\": [\"北京环球影城\", \"北京动物园\", \"中国科学技术馆\", \"颐和园\", \"故宫\", \"天坛\", \"景山公园\", \"中国国家博物馆\", \"东城区\", \"朝阳区\", \"西城区\", \"北京 4天 行程\"], \"geo_queries\": [\"故宫\", \"天坛\", \"景山公园\", \"中国国家博物馆\"], \"condition_queries\": {\"weather\": {\"city\": \"Beijing\", \"trip_days\": 4, \"start_date\": \"\", \"focus\": \"general\"}, \"cost\": {\"city\": \"Beijing\", \"days\": 4, \"budget_level\": \"low\", \"travelers\": \"friends\", \"user_budget\": null}}, \"planning_constraints\": [\"Pace target: balanced\", \"Bu"
+    },
+    {
+      "tool_name": "get_city_context",
+      "arguments": {
+        "city": "Beijing",
+        "travel_type": "family"
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"recommended_areas\": [{\"name\": \"东城区\", \"why\": \"best for imperial history and dense first-time highlights\"}, {\"name\": \"朝阳区\", \"why\": \"good for modern museums, shopping, and dining\"}, {\"name\": \"西城区\", \"why\": \"strong cultural institutions and classic city texture\"}, {\"name\": \"海淀区\", \"why\": \"good for palace gardens and campus-adjacent museums\"}], \"seed_poi_names\": [\"故宫\", \"天坛\", \"景山公园\", \"中国国家博物馆\", \"颐和园\", \"798艺术区\", \"慕田峪长城\", \"什刹海（后海）\", \"恭王府\", \"王府井大街\", \"首都博物馆\", \"南锣鼓巷\", \"雍和宫\"], \"transport\""
+    },
+    {
+      "tool_name": "get_strategy_context",
+      "arguments": {
+        "city": "Beijing",
+        "queries": [
+          "北京环球影城",
+          "北京动物园",
+          "中国科学技术馆",
+          "颐和园",
+          "故宫",
+          "天坛"
+        ],
+        "travel_type": "family",
+        "top_k": 8
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"provider_city\": \"北京\", \"travel_type\": \"family\", \"retrieval_mode\": \"group_a_search_notes_hybrid\", \"query_bundle\": [\"北京环球影城\", \"北京动物园\", \"中国科学技术馆\", \"颐和园\", \"故宫\", \"天坛\"], \"queries\": [{\"query\": \"北京环球影城\", \"result_count\": 8, \"top_chunk_ids\": [\"865f2ed3a989_001\", \"865f2ed3a989_000\", \"cfcb30e7f471_001\"], \"search_backend\": \"group_a_search_notes\"}, {\"query\": \"北京动物园\", \"result_count\": 8, \"top_chunk_ids\": [\"51a9de945380_004\", \"51a9de945380_005\", \"75463081a192_001\"], \"search_backend\": \"group_a"
+    },
+    {
+      "tool_name": "get_weather_forecast",
+      "arguments": {
+        "city": "Beijing",
+        "trip_days": 4,
+        "start_date": ""
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"start_date\": \"\", \"forecast\": [{\"date\": \"2026-04-27\", \"summary\": \"晴\", \"temp_min\": 9.0, \"temp_max\": 22.0, \"precipitation_probability\": 10, \"outdoor_suitability\": \"good\", \"suggestions\": [\"天气凉爽，建议穿薄外套\", \"Good weather window for outdoor districts and viewpoints.\"], \"source\": \"amap_api\"}, {\"date\": \"2026-04-28\", \"summary\": \"多云\", \"temp_min\": 9.0, \"temp_max\": 22.0, \"precipitation_probability\": 35, \"outdoor_suitability\": \"good\", \"suggestions\": [\"天气凉爽，建议穿薄外套\", \"Good weather window for "
+    },
+    {
+      "tool_name": "search_batch_pois",
+      "arguments": {
+        "city": "Beijing",
+        "queries": [
+          "故宫",
+          "天坛",
+          "景山公园",
+          "中国国家博物馆"
+        ],
+        "limit_per_query": 3
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"provider\": \"profile_seed\", \"queries\": [\"故宫\", \"天坛\", \"景山公园\", \"中国国家博物馆\"], \"results\": [{\"name\": \"故宫\", \"category\": \"attraction\", \"district\": \"东城区\", \"lat\": 39.9163, \"lon\": 116.3972, \"duration_hours\": 3.0, \"ticket_price\": 60, \"price_level\": 2, \"indoor_outdoor\": \"outdoor\", \"tags\": [\"history\", \"landmark\", \"culture\"], \"source\": [\"profile_seed\"], \"address\": \"4 Jingshan Front Street, Dongcheng District\", \"open_hours\": \"08:30-17:00\", \"rating\": 4.8, \"visit_reason\": \"The city's strongest i"
+    },
+    {
+      "tool_name": "get_cost_summary",
+      "arguments": {
+        "city": "Beijing",
+        "days": 4,
+        "budget_level": "low",
+        "user_budget": null
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"days\": 4, \"budget_level\": \"low\", \"currency\": \"CNY\", \"breakdown\": {\"hotel_per_night\": {\"min\": 120.0, \"max\": 200.0}, \"food_per_day\": {\"min\": 80.0, \"max\": 120.0}, \"local_transport_total\": {\"min\": 50.0, \"max\": 100.0}}, \"totals\": {\"min\": 850.0, \"max\": 1380.0, \"mid\": 1115.0}, \"budget_fit\": {\"user_budget\": null, \"within_budget\": null, \"minimum_feasible\": null}, \"pricing_notes\": [\"Budget currently covers hotel, food, and local transport only.\", \"Long-haul flights and attraction tick"
+    },
+    {
+      "tool_name": "get_travel_tips",
+      "arguments": {
+        "city": "Beijing",
+        "poi_names": [
+          "故宫",
+          "天坛",
+          "景山公园",
+          "中国国家博物馆"
+        ],
+        "travel_type": "family",
+        "interests": [
+          "family friendly"
+        ]
+      },
+      "result_preview": "{\"city\": \"Beijing\", \"provider\": \"heuristic\", \"tips\": [{\"poi_name\": \"故宫\", \"tip\": \"Keep this stop grouped with nearby places instead of crossing the city just for one check-in.\", \"source\": \"heuristic\"}, {\"poi_name\": \"天坛\", \"tip\": \"Keep this stop grouped with nearby places instead of crossing the city just for one check-in.\", \"source\": \"heuristic\"}, {\"poi_name\": \"景山公园\", \"tip\": \"Keep this stop grouped with nearby places instead of crossing the city just for one check-in.\", \"source\": \"heuristic\"}, {\"p"
+    },
+    {
+      "tool_name": "_tool_latencies",
+      "arguments": {},
+      "result_preview": "{\"get_city_context\": 0, \"get_strategy_context\": 7454, \"get_weather_forecast\": 3008, \"search_batch_pois\": 1, \"get_cost_summary\": 0, \"get_travel_tips\": 0}"
+    }
+  ]
+}

@@ -46,7 +46,14 @@ python -m rag.evaluate                                         # HR + MRR 指标
 
 # 陪伴 Agent 测评（在 Travel_agent_7035/ 下运行）
 python 5-evaluate/companion_eval_pipeline.py --num-trials 1 --simulator rule --evaluator rule --no-agent-llm
-# 30 任务无 LLM 确定性跑分：strict_success=23.3%, avg_rubric=50.1%
+# 离线规则 baseline：30 tasks x 1 trial，strict=23.3%, rubric=50.1%, tool=31.7%
+
+python 5-evaluate/companion_eval_pipeline.py --num-trials 4 --max-turns 6 --simulator llm --evaluator hybrid
+# 全 LLM benchmark：30 tasks x 4 trials = 120 trials；strict=30.0%, rubric=55.3%, tool=36.2%, Pass@4=36.7%
+
+# 评测看板
+# 5-evaluate/eval_dashboard.html
+# 5-evaluate/companion_eval_runs/full_llm_k4_merged/dashboard.html
 ```
 
 ---
@@ -212,21 +219,31 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 | 项目 | 状态 | 位置 |
 |---|---|---|
 | RAG 检索层 HR/MRR（V7） | ✅ HR=93.5%, MRR=0.98 | `rag/evaluate.py` |
+| RAGAS 生成质量评测 | ✅ 100 cases；overall=0.8602，faithfulness=0.9526，relevancy=0.8860，context_precision=0.7419 | `5-evaluate/ragas_result.json` |
+| RAGAS Golden Test Set | ✅ 100 cases | `5-evaluate/golden_cases.json` |
 | 在线 Tracing（Travel Planner） | ✅ eval_trace.jsonl | `backend/server.py` |
 | 在线 Tracing（Companion Agent） | ✅ 真实 Token 统计 | `7-companion-agent/api.py` |
-| Companion 测评流水线 | ✅ 30任务×rule模式已跑 | `5-evaluate/companion_eval_pipeline.py` |
-| Companion 无 LLM 跑分结果 | ✅ strict=23.3%, rubric=50.1% | `5-evaluate/companion_eval_runs/` |
+| Companion 测评流水线 | ✅ 30任务；rule baseline + full LLM trajectory benchmark 已跑 | `5-evaluate/companion_eval_pipeline.py` |
+| Companion 无 LLM baseline | ✅ strict=23.3%, rubric=50.1%, tool=31.7% | `5-evaluate/companion_eval_runs/` |
+| Companion 全 LLM benchmark | ✅ 120 trials；strict=30.0%, rubric=55.3%, tool=36.2%, Avg@4=30.0%, Pass@4=36.7%, Pass^4=23.3% | `5-evaluate/companion_eval_runs/full_llm_k4_merged/` |
+| Companion PPT 汇总和看板 | ✅ 已生成 summary/dashboard | `5-evaluate/companion_eval_runs/full_llm_k4_merged/ppt_summary.md` |
 | RAGAS 评测代码 | ✅ 代码就绪 | `5-evaluate/ragas_evaluator.py` |
 | 路线质量指标 | ✅ route_quality 字段 | `5-evaluate/ragas_evaluator.py` |
+| 主 Agent 三层评测框架 | ✅ Layer1/2/3 脚本与样例产物已建立；Layer2 北京样例全 PASS | `5-evaluate/eval_main_agent.py` |
+
+### Companion 最新结论（2026-04-27）
+- 全 LLM 120 trials 严格失败 84 次，失败率 70.0%；主要瓶颈不是语气，而是工具闭环、时间/路线可行性和场景约束落地。
+- 三维得分：reasoning=65.4%，tool=36.7%，interaction=69.2%；tool 是最低维度。
+- Top failure tags：`missed_deadline` 28 次、`weather_guess` 26 次、`no_route_check` 24 次、`overpacked_plan` 20 次。
+- Top failed rubrics：`route_checked` 20 次、`call_replan` 16 次、`duration_or_buffer` 16 次、`indoor_constraint` 12 次。
 
 ### 未完成
 | 项目 | 说明 |
 |---|---|
-| RAGAS 生成质量评测 | 代码就绪但未实际运行（需 LLM Judge） |
-| Golden Test Set | `golden_test_set.json` 未建 |
-| 主 Agent 离线测试集 | `test_intent.py` / `test_e2e_structure.py` 等未建 |
-| Companion LLM 全量跑分 | 30任务×4trials 未跑 |
-| 主 Agent 综合评测 | 未做 |
+| 主 Agent 意图理解全量跑分 | `test_intent_understanding.json` 已有 110 cases，需批量执行并沉淀 summary |
+| 主 Agent 内容质量 Judge | 已有脚本和单 case 产物，但当前 content judge 遇到 Azure `api-version` 配置错误，需修复后批量跑 |
+| 主 Agent 综合评测 | 已有 `eval_main_agent.py` 和单个 Beijing run，需扩展到多城市/多 case |
+| Companion 优化后回归 | 当前 full LLM benchmark 已落地；下一步需针对失败标签修复后重跑 30 tasks x 4 trials |
 
 ### 主 Agent 迭代历史（6步优化）
 | 步骤 | 内容 | 状态 |
@@ -242,11 +259,13 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 
 ## 14. 待实现优化
 
-1. **Companion Agent /api/companion 路由 404**：后端 server.py 有路由定义但实际未注册，疑似 import 时 companion_agent 依赖问题导致静默跳过。需排查。
-2. **RAGAS 生成质量评测落地**：需构建 Golden Test Set 并实际运行 `ragas_evaluator.py`。
-3. **主 Agent 离线测试集**：`test_intent.py` / `test_tool_access.py` / `test_e2e_structure.py` / `test_e2e_judge.py`。
-4. **多轮 query 拼接**：`continue_conversation()` 里把 `turn_history` 拼接后再做 RAG 检索。
-5. **意图切换检测**：检测城市/travel_type 根本性变化时清空 `preference_memory`。
+1. **Companion 工具闭环**：重点修 `replan_itinerary`、`get_route`、`duration_or_buffer` 未调用或未被轨迹捕获的问题；这是 full LLM benchmark 的最大短板。
+2. **天气/路线可行性硬约束**：遇到下雨、deadline、赶车、闭馆风险时，强制先查 `get_weather_now` / `get_route` / opening time，再给结论，避免 `weather_guess` 和 `no_route_check`。
+3. **Companion 时间预算与行程压缩**：处理 `missed_deadline`、`overpacked_plan`，让 4 小时/半天/赶车场景先做预算校验，再决定删减 POI。
+4. **主 Agent 内容质量 Judge 配置**：修复 Azure `api-version` 参数问题，跑通 Layer3 后再做多城市批量评测。
+5. **主 Agent 评测规模化**：批量跑 Layer1 110 cases、Layer2 多城市结构校验、Layer3 内容质量 Judge，并写入 `eval_dashboard.html`。
+6. **多轮 query 拼接**：`continue_conversation()` 里把 `turn_history` 拼接后再做 RAG 检索。
+7. **意图切换检测**：检测城市/travel_type 根本性变化时清空 `preference_memory`。
 
 ---
 
@@ -267,7 +286,12 @@ Agent 通过 `backend/WeatherCost/weather_cost_api.py` shim 调用，该 shim �
 | C组天气/费用/酒店 | `4-cost/Group_C/Group_C/c_group_weather_cost_api.py` |
 | 陪伴 Agent 核心 | `7-companion-agent/companion_agent.py` |
 | 陪伴 Agent 测评 | `5-evaluate/companion_eval_pipeline.py` |
+| Companion 全 LLM 汇总 | `5-evaluate/companion_eval_runs/full_llm_k4_merged/ppt_summary.md` |
+| Companion 评测看板 | `5-evaluate/companion_eval_runs/full_llm_k4_merged/dashboard.html` |
 | RAGAS 生成质量评测 | `5-evaluate/ragas_evaluator.py` |
+| RAGAS Golden / 结果 | `5-evaluate/golden_cases.json` / `5-evaluate/ragas_result.json` |
+| 主 Agent 三层评测 | `5-evaluate/eval_main_agent.py` / `5-evaluate/eval_layer1_intent.py` / `5-evaluate/eval_layer2_structure.py` / `5-evaluate/eval_layer3_content.py` |
+| 评测总看板 | `5-evaluate/eval_dashboard.html` / `5-evaluate/build_eval_dashboard.py` |
 | 评测设计文档 | `5-evaluate/eval_plan.md` |
 | 主 Agent 迭代日记 | `5-evaluate/主agent迭代日记.md` |
 | 步骤3/5/6实现规格 | `docs/superpowers/specs/2026-04-26-steps-3-5-6-design.md` |
